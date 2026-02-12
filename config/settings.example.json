@@ -1,0 +1,62 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm:*)",
+      "Bash(npm run:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(turbo:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf ~*)",
+      "Bash(rm -rf /Users/*)",
+      "Bash(rm -rf /home/*)",
+      "Bash(rm -rf $HOME*)",
+      "Bash(rm -rf /*)",
+      "Bash(sudo rm *)",
+      "Bash(git push --force*)",
+      "Bash(git push * --force*)",
+      "Bash(git push -f *)",
+      "Bash(dd if=*of=/dev/*)",
+      "Bash(mkfs*)",
+      "Bash(chmod -R 777 /*)",
+      "Bash(curl*|*sh)",
+      "Bash(wget*|*sh)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(*/.env)",
+      "Read(*/.env.*)"
+    ],
+    "defaultMode": "default"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Blow.aiff"
+          },
+          {
+            "type": "command",
+            "command": "[ \"$TERM_PROGRAM\" != \"ghostty\" ] && osascript -e 'display notification \"Claude has stopped\" with title \"Claude Code\"' || true"
+          },
+          {
+            "type": "command",
+            "command": "[ -n \"$TMUX_PANE\" ] && tmux rename-window -t \"$TMUX_PANE\" \"✅ $(tmux display-message -t \"$TMUX_PANE\" -p '#{window_name}' | sed 's/^✅ //')\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "/bin/bash ~/.claude/statusline.sh"
+  },
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true
+  }
+}
