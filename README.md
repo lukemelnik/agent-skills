@@ -2,7 +2,7 @@
 
 Custom skills, commands, and config for AI coding agents.
 
-Works with [Claude Code](https://code.claude.com) and any agent that supports the [Agent Skills](https://agentskills.io) open standard. Synced across machines via git + symlinks.
+Works with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [Codex](https://github.com/openai/codex). Skills use the shared [SKILL.md](https://agentskills.io) format — one repo, both agents.
 
 ## Setup
 
@@ -12,15 +12,19 @@ cd ~/agent-skills
 ./setup.sh
 ```
 
-The setup script symlinks each skill directory into `~/.claude/skills/`. Use `--force` to replace existing symlinks.
+The setup script symlinks each skill into both `~/.claude/skills/` (Claude Code) and `~/.agents/skills/` (Codex). Use `--force` to replace existing symlinks.
 
-Changes are live immediately (symlinks are transparent). Edit skills in the repo, commit and push to sync across machines.
+Changes are live immediately — symlinks are transparent. Edit skills in the repo, commit and push to sync across machines.
+
+### After setup
+
+If migrating from `~/.claude/commands/`, you can remove the old command files — skills take precedence and work identically.
 
 ## Skills
 
 ### Stack reference
 
-Skills Claude loads automatically when relevant to your conversation.
+Loaded automatically when relevant to your conversation.
 
 | Skill | Description |
 |-------|-------------|
@@ -36,7 +40,7 @@ Skills Claude loads automatically when relevant to your conversation.
 
 ### Workflow commands
 
-Invoked manually with `/command-name`. These drive multi-step workflows.
+Invoked manually with `/command-name` (Claude Code) or `$command-name` (Codex).
 
 | Command | Description |
 |---------|-------------|
@@ -65,7 +69,7 @@ Files in `config/` that customize the Claude Code experience.
 When Claude finishes a task:
 1. Plays a sound (`afplay`)
 2. Sends a macOS notification
-3. Renames the tmux window with a ✅ prefix so you can see at a glance which agents are done
+3. Renames the tmux window with a checkmark prefix so you can see at a glance which agents are done
 
 The `clear-checkmark.sh` script removes the checkmark when you select that window.
 
@@ -85,15 +89,26 @@ A Kanagawa-themed status line showing:
 - Statusline setup
 - Recommended plugins
 
+## Cross-agent compatibility
+
+Both Claude Code and Codex use the `SKILL.md` format with YAML frontmatter. The setup script symlinks into both agent directories:
+
+| Agent | Skills directory | Instructions file |
+|-------|-----------------|-------------------|
+| Claude Code | `~/.claude/skills/` | `CLAUDE.md` |
+| Codex | `~/.agents/skills/` | `AGENTS.md` |
+
+Skills with `disable-model-invocation: true` in their frontmatter are only triggered by explicit slash commands. All other skills are loaded automatically when the agent determines they're relevant.
+
 ## Security note
 
-Skills can include executable scripts. If you install skills from third-party repos (via [skills.sh](https://skills.sh) or otherwise), review the code before using them. This repo only contains skills I wrote — no third-party code.
+Skills can include executable scripts. If you install skills from third-party repos, review the code before using them. This repo only contains skills I wrote — no third-party code.
 
 ## Structure
 
 ```
 agent-skills/
-├── skills/                     # All skills (symlinked into ~/.claude/skills/)
+├── skills/                     # All skills (symlinked into both agent dirs)
 │   ├── component-patterns/     # Stack reference skills
 │   ├── drizzle/
 │   ├── shadcn/
@@ -104,6 +119,7 @@ agent-skills/
 │   ├── vitest/
 │   ├── video-studio/
 │   ├── implement/              # Workflow commands
+│   ├── orchestrate/
 │   ├── review/
 │   ├── tidy/
 │   ├── spec/

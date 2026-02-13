@@ -2,8 +2,12 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 FORCE=false
+
+TARGETS=(
+  "$HOME/.claude/skills"
+  "$HOME/.agents/skills"
+)
 
 for arg in "$@"; do
   case "$arg" in
@@ -12,54 +16,61 @@ for arg in "$@"; do
   esac
 done
 
-mkdir -p "$CLAUDE_SKILLS_DIR"
-
-linked=0
-skipped=0
-
-echo "Installing skills from $SCRIPT_DIR/skills/ → $CLAUDE_SKILLS_DIR/"
-echo ""
-
-for skill_dir in "$SCRIPT_DIR"/skills/*/; do
+link_skill() {
+  local skill_dir="$1"
+  local target_dir="$2"
+  local skill_name
   skill_name=$(basename "$skill_dir")
-  target="$CLAUDE_SKILLS_DIR/$skill_name"
+  local target="$target_dir/$skill_name"
 
   if [ -L "$target" ]; then
     existing_source=$(readlink "$target")
     if [ "$existing_source" = "$skill_dir" ] || [ "$existing_source" = "${skill_dir%/}" ]; then
-      echo "  ✓ $skill_name (already linked)"
-      skipped=$((skipped + 1))
-      continue
+      return 1  # already linked
     fi
 
     if [ "$FORCE" = true ]; then
       rm "$target"
-      echo "  ↻ $skill_name (replaced existing symlink)"
     else
-      echo "  ⚠ $skill_name (symlink exists → $(readlink "$target")). Use --force to replace."
-      skipped=$((skipped + 1))
-      continue
+      echo "    ⚠ $skill_name (symlink exists → $(readlink "$target")). Use --force to replace."
+      return 1
     fi
   elif [ -d "$target" ]; then
     if [ "$FORCE" = true ]; then
       rm -rf "$target"
-      echo "  ↻ $skill_name (replaced existing directory)"
     else
-      echo "  ⚠ $skill_name (directory exists). Use --force to replace."
-      skipped=$((skipped + 1))
-      continue
+      echo "    ⚠ $skill_name (directory exists). Use --force to replace."
+      return 1
     fi
   fi
 
   ln -s "${skill_dir%/}" "$target"
-  echo "  + $skill_name"
-  linked=$((linked + 1))
+  return 0
+}
+
+for target_dir in "${TARGETS[@]}"; do
+  mkdir -p "$target_dir"
+  linked=0
+  skipped=0
+  agent_name=$(basename "$(dirname "$target_dir")")
+
+  echo "$target_dir/"
+
+  for skill_dir in "$SCRIPT_DIR"/skills/*/; do
+    skill_name=$(basename "$skill_dir")
+    if link_skill "$skill_dir" "$target_dir"; then
+      echo "  + $skill_name"
+      linked=$((linked + 1))
+    else
+      skipped=$((skipped + 1))
+    fi
+  done
+
+  echo "  $linked linked, $skipped skipped"
+  echo ""
 done
 
-echo ""
-echo "Done. $linked skills linked, $skipped skipped."
-echo ""
-echo "Plugins to install manually (not included in this repo):"
+echo "Claude Code plugins (install manually):"
 echo "  claude plugins install frontend-design@claude-plugins-official"
 echo "  claude plugins install commit-commands@claude-plugins-official"
 echo "  claude plugins install typescript-lsp@claude-plugins-official"
