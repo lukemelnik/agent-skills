@@ -4,6 +4,13 @@ description: Orchestrate full spec implementation with fresh-context sprints, ti
 disable-model-invocation: true
 ---
 
+# Orchestrate
+
+You are an **orchestrator**. You coordinate the implementation of a spec by delegating each sprint to a fresh sub-agent. **You never write code yourself** — you read specs, manage branches, spawn sub-agents, track progress, and create PRs.
+
+**Issue:** $ARGUMENTS (GitHub issue number, e.g., `42` or `#42`)
+
+
 ## Step 1: Read and Parse the Spec
 
 ```bash
@@ -12,12 +19,12 @@ gh issue view <num> --json title,body,state,url,number
 
 If the issue is closed, alert the user and stop.
 
-Parse the spec body to identify:
+Parse the spec body to extract ONLY:
 - Feature name
-- All sprints and their tasks
-- Total number of sprints
+- Sprint count and a one-line summary per sprint (e.g., "Sprint 1: Database schema and API endpoints")
+- The issue number, title, and URL
 
-Store the full spec body — you'll pass it to sub-agents.
+**Do NOT store the full spec body.** Sub-agents will fetch it themselves. You only need the sprint structure to coordinate.
 
 ## Step 2: Setup
 
@@ -72,9 +79,9 @@ Spawn a **Task sub-agent** (`general-purpose`) with this prompt:
 
 You are implementing Sprint {N} of GitHub issue #{number}: {title}.
 
-<spec>
-{paste the full spec body here}
-</spec>
+FIRST: Fetch the spec yourself:
+  gh issue view {number} --json body --jq .body
+Read it and identify the tasks for Sprint {N}.
 
 YOUR JOB: Implement ONLY Sprint {N}. Complete every task in this sprint.
 
@@ -107,16 +114,18 @@ RULES:
 - Stay focused on Sprint {N} only
 - If blocked, update the progress file with the blocker and state clearly: BLOCKED: <reason>
 
-AT THE END OF YOUR SUMMARY, include an ALERTS section listing any of the following that apply (skip categories with nothing to report):
-- SPEC DEVIATIONS: anything you implemented differently from what the spec described, even if your approach is better. Include WHAT the spec said, WHAT you did instead, and WHY. This is critical — the user must know when the plan was changed, even for good reasons.
+AT THE END OF YOUR SUMMARY, include a **brief** ALERTS section listing any of the following that apply (skip categories with nothing to report). Keep each alert to ONE LINE:
+- SPEC DEVIATIONS: what the spec said vs what you did and why
 - SCHEMA CHANGES: new tables, columns, indexes, enum values added
-- BREAKING API CHANGES: endpoint or Zod schema changes affecting other consumers (iOS, etc.)
-- ARCHITECTURAL DECISIONS: judgment calls where you chose between valid approaches, or took liberties the spec didn't specify. Explain the tradeoff and why you went this direction.
+- BREAKING API CHANGES: endpoint or Zod schema changes affecting other consumers
+- ARCHITECTURAL DECISIONS: judgment calls between valid approaches
 - MANUAL VERIFICATION: acceptance criteria that need visual/manual testing
 - DEPENDENCIES NEEDED: packages or tools the implementation requires but weren't installed
 ```
 
-Wait for the sub-agent to complete. Read its summary.
+Wait for the sub-agent to complete.
+
+**Extract only the ALERTS section from the sub-agent's result.** Add alerts to your alert log. Discard the rest of the summary — do not repeat or store it.
 
 **If the sub-agent reports a blocker:** Stop the entire orchestration and report to the user. Do not proceed.
 
@@ -154,7 +163,9 @@ AT THE END OF YOUR SUMMARY, include an ALERTS section listing any of the followi
 - PATTERN VIOLATIONS: significant deviations from codebase conventions that were fixed
 ```
 
-Wait for the sub-agent to complete. Read its summary.
+Wait for the sub-agent to complete.
+
+**Extract only the ALERTS section from the sub-agent's result.** Add alerts to your alert log. Discard the rest.
 
 ### Between Sprints
 
@@ -177,7 +188,7 @@ and report everything else.
 This is being called from /orchestrate — include the ALERTS section for cross-sprint issues.
 ```
 
-Wait for the sub-agent to complete. Read its summary and extract alerts into your alert log.
+Wait for the sub-agent to complete. **Extract only the ALERTS section and the summary stats.** Add alerts to your alert log. Discard the rest.
 
 ## Step 5: Create PR
 
@@ -243,7 +254,6 @@ If no alerts in a category, omit that category entirely. If no alerts at all, ju
 
 **STOP.**
 
----
 
 ## Error Handling
 
@@ -254,7 +264,11 @@ If no alerts in a category, omit that category entirely. If no alerts at all, ju
 ## Rules for the Orchestrator
 
 1. **Never write code** — delegate everything to sub-agents
-2. **Stay lean** — don't read implementation files yourself, only summaries and the progress file
+2. **Protect your context** — this is the #1 priority. You must survive across all sprints without compaction:
+   - **Never store the full spec body** — sub-agents fetch it themselves via `gh issue view`
+   - **Never repeat sub-agent output** — extract only alerts (one line each), discard the rest
+   - **Never read implementation files** — only the progress file and git log summaries
+   - **Keep announcements to one line** — "Sprint 2 of 4 complete." is enough
 3. **Sprints are sequential** — never run sprints in parallel (they build on each other)
 4. **One retry max** — if a sub-agent fails twice, stop and report
 5. **Don't push to main** — always work on a feature branch

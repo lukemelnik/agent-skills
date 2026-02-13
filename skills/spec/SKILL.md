@@ -4,6 +4,85 @@ description: Create a structured spec for agent-driven implementation
 disable-model-invocation: true
 ---
 
+# Create Spec
+
+> ⚠️ **CRITICAL PRODUCTION ENVIRONMENT**
+>
+> This work deploys to a production system with real users and paying customers. Errors, oversights, or shortcuts can have serious consequences.
+>
+> - **Be thorough**: Take time to understand requirements fully before writing specs
+> - **Be precise**: Ambiguous specs lead to ambiguous implementations
+> - **Think defensively**: Consider edge cases, security implications, and failure modes
+> - **When uncertain, ask**: It's better to clarify than to assume incorrectly
+> - **Quality over speed**: A well-thought-out spec prevents costly rework later
+
+Create a spec optimized for the `/implement` command to execute sprint-by-sprint. The spec will be stored as a GitHub Issue for cross-worktree access.
+
+**Input:** $ARGUMENTS
+
+This should describe what the feature/work is about.
+
+## Step 1: Understand the Request
+
+Parse the input to understand:
+- What feature or work is being planned
+- Scope and goals
+- Complexity level (simple fix vs complex feature)
+
+## Step 2: Research Before Writing
+
+Before creating the spec, gather context:
+- Find relevant existing code patterns
+- Identify files that will likely be touched
+- Note any dependencies or constraints
+- Look for similar features to reference
+- Check `docs/guides/` for relevant integration guides that may inform the implementation
+
+### Pitfalls Research
+
+For non-trivial features, actively research what commonly goes wrong:
+- Search for "X gotchas", "X pitfalls", "X common mistakes" patterns in similar implementations
+- Check if similar features in the codebase had bugs or required fixes (look at git history)
+- Consider: race conditions, state sync issues, auth edge cases, error handling gaps
+- Note any pitfalls discovered in the spec's Constraints section
+
+This prevents discovering problems mid-implementation when context is already loaded.
+
+## Step 3: Create the Draft Spec
+
+Draft the spec in conversation (NOT in a file). Use this exact structure:
+
+```markdown
+# [Feature Name]
+
+## Context
+
+### What
+[1-2 sentences: What is this feature/change?]
+
+### Why
+[1-2 sentences: Why are we building this? What problem does it solve?]
+
+### Key Decisions
+- [Decision 1 and brief rationale]
+- [Decision 2 and brief rationale]
+
+### Relevant Files
+- `path/to/file.ts` - [why it's relevant, what pattern to follow]
+- `path/to/other.ts` - [why it's relevant]
+
+Include pattern hints like "follow the pattern in X" when there's a good example to reference.
+
+### Dependencies
+- [Any blockers or things that must exist first]
+- [External dependencies if any]
+
+### Constraints
+- [Technical constraints]
+- [Business constraints]
+- [Time/scope constraints if any]
+
+
 ## Scope
 
 ### MVP (This Implementation)
@@ -14,7 +93,6 @@ disable-model-invocation: true
 - [Nice-to-have features for later]
 - [Extensions that aren't essential now]
 
----
 
 ## Sprints
 
@@ -43,7 +121,6 @@ Group tasks into sprints. Each sprint should result in demoable, working softwar
 **Validation:**
 - `[validation command]`
 
----
 
 ### Sprint 2: [Goal/Theme]
 [Brief description of what this sprint accomplishes]
@@ -161,7 +238,6 @@ After creating the issue:
 1. Report the issue URL and number to the user
 2. Remind the user they can run `/implement <issue-number>` to begin execution
 
----
 
 ## Guidelines for Good Specs
 

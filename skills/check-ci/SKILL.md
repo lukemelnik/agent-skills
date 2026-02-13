@@ -3,6 +3,96 @@ name: check-ci
 description: Check GitHub Actions for failures, create a fix plan, and resolve after confirmation
 disable-model-invocation: true
 ---
+
+# Check CI
+
+Investigate GitHub Actions failures, create a plan to fix them, and execute after user confirmation.
+
+## Step 1: Get CI Status
+
+Check recent workflow runs:
+```bash
+gh run list --limit 10
+```
+
+Find the failing run:
+```bash
+gh run list --status failure --limit 5
+```
+
+## Step 2: Get Failure Details
+
+View the failed run logs:
+```bash
+gh run view <run-id> --log-failed
+```
+
+Or for more detail:
+```bash
+gh run view <run-id> --log
+```
+
+## Step 3: Analyze Failures
+
+Identify the type of failure:
+
+### Common CI Failures
+
+**Type Errors**
+- TypeScript compilation failures
+- Missing type definitions
+
+**Lint Errors**
+- ESLint/Biome violations
+- Formatting issues
+
+**Test Failures**
+- Unit test assertions failing
+- Integration test timeouts
+
+**Build Failures**
+- Missing dependencies
+- Import errors
+- Bundle size issues
+
+**Environment Issues**
+- Missing env variables
+- Database connection failures
+- Service unavailable
+
+## Step 4: Create Fix Plan
+
+**⚠️ STOP HERE - Do not proceed without user confirmation**
+
+Present a clear plan:
+
+```
+## CI Failure Analysis
+
+**Failed Job:** [job name]
+**Error Type:** [type/lint/test/build/env]
+
+### Root Cause
+[Explain what's causing the failure]
+
+### Proposed Fix
+1. [First step]
+2. [Second step]
+3. [Third step]
+
+### Files to Modify
+- `path/to/file.ts` - [what change]
+- `path/to/other.ts` - [what change]
+
+### Risk Assessment
+- [Low/Medium/High] - [why]
+
+### Verification
+After fix, will run:
+- `pnpm check`
+- `pnpm test` (if test failure)
+- Push and verify CI passes
+
 **Proceed with this fix plan?**
 ```
 
