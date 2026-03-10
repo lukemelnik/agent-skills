@@ -18,6 +18,8 @@ disable-model-invocation: true
 
 Create a spec optimized for the `/implement` command to execute sprint-by-sprint. The spec will be stored as a GitHub Issue for cross-worktree access.
 
+> 🚫 **NEVER create markdown spec files.** Do not write specs to `.md` files, `docs/`, or anywhere on disk. The ONLY output is a GitHub Issue created with `gh issue create`. Draft the spec in conversation, then publish it as an issue.
+
 **Input:** $ARGUMENTS
 
 This should describe what the feature/work is about.

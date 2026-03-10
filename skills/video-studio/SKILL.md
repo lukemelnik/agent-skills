@@ -1,3 +1,8 @@
+---
+name: video-studio
+description: "Create product videos, help docs, and promotional content using Remotion. Use when asked to create promo videos, tutorial videos, or set up video creation capabilities in a project."
+---
+
 # Video Studio Skill
 
 Create product videos, help documentation, and promotional content using Remotion.
