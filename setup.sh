@@ -7,6 +7,7 @@ FORCE=false
 TARGETS=(
   "$HOME/.claude/skills"
   "$HOME/.agents/skills"
+  "$HOME/.pi/agent/skills"
 )
 
 for arg in "$@"; do
