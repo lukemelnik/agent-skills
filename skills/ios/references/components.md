@@ -243,6 +243,7 @@ Key rules:
 - Use `@Bindable` in child views that need two-way bindings to the model's properties.
 - For read-only access, just pass the `@Observable` object directly (no wrapper needed).
 - `@Bindable` also works with `@Environment` values: first declare `@Environment(AppSettings.self) private var appSettings`, then use `@Bindable var settings = appSettings` as a local variable inside `body` to create bindings.
+- **Never use `Binding(get:set:)` in view body code.** Use `@State`/`@Binding` with `onChange()` instead.
 
 ---
 
@@ -497,6 +498,30 @@ ScrollView {
 
 ## 5. Forms and Input
 
+### TextField with Vertical Axis
+
+Prefer `TextField(axis: .vertical)` over `TextEditor` for most multiline input — it supports placeholder text and integrates better with forms:
+
+```swift
+// Good — placeholder, auto-grows, works in Form
+TextField("Notes", text: $notes, axis: .vertical)
+    .lineLimit(3...10)
+
+// Only use TextEditor for full-screen editing or rich text
+```
+
+### Slider in Forms
+
+Wrap `Slider` in `LabeledContent` inside `Form` for proper title/control layout:
+
+```swift
+Form {
+    LabeledContent("Volume") {
+        Slider(value: $volume, in: 0...1)
+    }
+}
+```
+
 ### Settings Form
 
 ```swift
@@ -650,6 +675,20 @@ struct LoginForm: View {
 
 ## 6. Sheets and Modals
 
+### Prefer `sheet(item:)` Over `sheet(isPresented:)` for Optional Data
+
+When presenting a sheet that displays an optional value, use `sheet(item:)` to safely unwrap:
+
+```swift
+// Good — item is safely unwrapped, no force-unwrap needed
+.sheet(item: $selectedItem) { item in
+    ItemDetailView(item: item)
+}
+
+// Shorthand when the view's init matches the closure signature:
+.sheet(item: $selectedItem, content: ItemDetailView.init)
+```
+
 ### Sheet Customization
 
 ```swift
@@ -701,6 +740,17 @@ NavigationStack {
             Text(suggestion).searchCompletion(suggestion)
         }
     }
+}
+```
+
+### Empty Search Results
+
+`ContentUnavailableView.search` auto-includes the search term — no need to pass it manually:
+
+```swift
+// Good — automatically shows "No results for 'query'"
+if filteredItems.isEmpty && !searchText.isEmpty {
+    ContentUnavailableView.search
 }
 ```
 
@@ -863,6 +913,22 @@ Button("Tap Me") { tapped.toggle() }
     } animation: { _ in
         .easeInOut(duration: 0.5)
     }
+```
+
+### Chaining Animations
+
+Chain animations via `withAnimation` completion, not delays:
+
+```swift
+Button("Animate") {
+    withAnimation {
+        scale = 2
+    } completion: {
+        withAnimation {
+            scale = 1
+        }
+    }
+}
 ```
 
 ### Zoom Transition (iOS 18+)

@@ -1,151 +1,55 @@
 ---
 name: review-spec
-description: Review a spec for completeness, clarity, and format conformance
+description: Review a spec for clarity, completeness, and hidden risks
 disable-model-invocation: true
 ---
 
 # Review Spec
 
-You are reviewing a spec as if you were a senior engineer ensuring it's ready for implementation. Be thorough and constructive.
+Review a spec as a senior engineer would — focus on substance over format.
 
 **Spec:** $ARGUMENTS
 
-This can be:
-- A GitHub issue number (e.g., `42` or `#42`)
-- A file path (e.g., `docs/specs/feature.md`)
-- Raw spec content (passed directly)
+This can be a GitHub issue number (e.g., `42`), a file path, or raw content.
 
-## Step 1: Fetch the Spec
+## Step 1: Fetch and Read the Spec
 
-### If Input is an Issue Number
-Fetch the spec from GitHub:
+- Issue number: `gh issue view <num> --json title,body`
+- File path: read the file
+- Raw content: use as-is
 
-```bash
-gh issue view <num> --json title,body
-```
+Read the entire spec. Understand the goal, the approach, and the tasks.
 
-Parse the response to get the spec content from the `body` field.
+## Step 2: Stress-Test the Design
 
-### If Input is a File Path
-Read the spec file directly.
+This is the core of the review. Don't check formatting — check thinking.
 
-### If Input is Raw Content
-Use the content as-is.
+**For every spec:**
+- Are there edge cases not covered? (empty states, nulls, boundaries, concurrent access)
+- What error scenarios are missing? (network failures, invalid input, partial failures)
+- Are auth/permission implications addressed?
+- Are acceptance criteria objectively verifiable, not vague?
 
-## Step 2: Read the Spec
+**For substantial specs:**
+- **Architecture:** Why this approach? What alternatives were considered? Where could this design become a problem later?
+- **Hidden coupling:** Does this affect other features? Break existing behavior? Depend on implicit contracts?
+- **Data integrity:** Race conditions, consistency, crash recovery, idempotency needs?
+- **Performance:** Will this scale? N+1 queries, unbounded lists, missing indexes?
+- **Security:** New attack surface? Privilege escalation? Data exposure?
+- **Migration:** Existing data impact? Downtime risk? Backwards compatibility during rollout?
 
-Read the entire spec carefully. Understand:
-- The overall goal and context
-- The sprint structure
-- All tasks and acceptance criteria
-- Any constraints or dependencies
+## Step 3: Report Findings
 
-## Step 3: Check Format Conformance
+Structure by severity, not by checklist:
 
-Verify the spec follows the standard structure:
+**Must fix** — Issues that will cause bugs, block implementation, or lead to the wrong thing being built.
 
-### Required Sections
-- [ ] **Context** with What, Why, Key Decisions, Relevant Files, Dependencies, Constraints
-- [ ] **Scope** with MVP and Future Enhancements
-- [ ] **Sprints** with numbered sprints and tasks
+**Worth discussing** — Tradeoffs, risks, or ambiguities where the spec author should make a deliberate choice.
 
-### Sprint/Task Structure
-- [ ] Sprints have clear goals/themes
-- [ ] Tasks are numbered within sprints (1.1, 1.2, 2.1, etc.)
-- [ ] Each task has acceptance criteria with checkboxes
-- [ ] Each task has validation commands
+**Minor** — Small improvements, only if worth mentioning.
 
-### Quality Checks
-- [ ] Relevant Files include pattern hints, not just paths
-- [ ] No full code blocks (just file references)
-- [ ] No procedural instructions (how to commit, when to run tidy)
-- [ ] Dependencies between tasks/sprints are clear
-- [ ] No "Completed Work" or "Implementation Notes" sections (these go in progress files)
+For each finding, explain *why* it matters and suggest a fix or a question to resolve it.
 
-## Step 4: Review for Completeness
+## Step 4: Offer to Update
 
-### Acceptance Criteria
-For each task, check:
-- Are criteria specific and measurable?
-- Can you objectively verify each criterion is met?
-- Are there obvious criteria missing?
-- Are criteria testable?
-
-### Edge Cases
-Consider what's missing:
-- Error handling scenarios
-- Empty/null states
-- Boundary conditions
-- Permission/authorization cases
-- Concurrent access issues
-- Mobile/responsive considerations (if UI)
-
-### Dependencies
-- Are all prerequisites identified?
-- Are there hidden dependencies between tasks?
-- Is the sprint order logical?
-
-## Step 5: Review for Clarity
-
-### Ambiguous Requirements
-Flag anything that could be interpreted multiple ways:
-- Vague acceptance criteria ("should work well")
-- Unclear scope ("handle errors appropriately")
-- Missing specifics ("update the UI")
-
-### Assumptions
-Identify assumptions that should be explicit:
-- Technology choices not stated
-- Behavior in edge cases
-- Integration points with existing code
-
-## Step 6: Report Findings
-
-Create a structured report:
-
-### ✅ What's Good
-- [List strengths of the spec]
-
-### 🔴 Critical Issues
-Issues that must be fixed before implementation:
-- [Missing acceptance criteria that would block verification]
-- [Ambiguous requirements that could lead to wrong implementation]
-- [Missing dependencies that would cause blockers]
-
-### 🟡 Suggestions
-Improvements that would make the spec better:
-- [Missing edge cases to consider]
-- [Clarifications that would help]
-- [Better task breakdown]
-
-### 🟢 Minor Notes
-Small improvements, optional:
-- [Format tweaks]
-- [Wording improvements]
-
-## Step 7: Offer to Fix
-
-After presenting findings, ask the user:
-
-"Would you like me to update the spec with these improvements?"
-
-If yes and the spec is from a GitHub issue:
-1. Fix all critical issues
-2. Apply suggestions the user agrees with
-3. Update the issue body:
-   ```bash
-   gh issue edit <num> --body "$(cat <<'EOF'
-   [Updated spec content]
-   EOF
-   )"
-   ```
-4. Show what changed
-
-If yes and the spec is a file:
-1. Fix all critical issues
-2. Apply suggestions the user agrees with
-3. Save the updated spec
-4. Show what changed
-
-
-Now read the spec and begin the review.
+Ask if the user wants you to apply fixes. If yes, update the issue (`gh issue edit <num> --body "..."`) or file and show what changed.

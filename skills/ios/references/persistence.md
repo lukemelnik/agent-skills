@@ -18,6 +18,10 @@
 
 Use `@Model` for persistent types. All stored properties get default values.
 
+> **Warning:** Property observers (`didSet`/`willSet`) are silently ignored on `@Model` properties. SwiftData's macro rewrites property access, so observers never fire. Use `modelContext.save()` callbacks or explicit methods instead.
+
+> **Warning:** `description` cannot be used as a property name in `@Model` classes — it conflicts with the inherited `description` property and is explicitly disallowed.
+
 ```swift
 import SwiftData
 
@@ -46,6 +50,8 @@ import SwiftData
 }
 ```
 
+Enum properties stored in a model must conform to `Codable`. Enums with associated values are supported — they work fine as long as they are `Codable`.
+
 ### Relationships
 
 ```swift
@@ -63,14 +69,21 @@ import SwiftData
 
 Delete rules: `.cascade`, `.nullify` (default), `.deny`, `.noAction`.
 
+> **Warning:** Place `@Relationship` on ONE side only. Using it on both sides of a relationship causes a circular reference.
+
+> **Warning:** SwiftData frequently gets inverse relationships wrong — always specify the inverse explicitly in `@Relationship` (e.g., `inverse: \Item.folder`) rather than relying on SwiftData to infer it.
+
+> **Warning:** The default delete rule `.nullify` sets the related model's reference to `nil` when the parent is deleted. This can leave orphaned objects or crash if the property is non-optional. Always specify an explicit delete rule — `.cascade` is most common.
+
 ### Property Attributes
 
 Use `@Attribute` and `@Transient` macros to customize how SwiftData stores properties:
 
 - `@Attribute(.unique)` — enforces uniqueness; upserts on conflict.
-- `@Attribute(.externalStorage)` — stores large data (images, blobs) as external files instead of inline in the database.
+- `@Attribute(.externalStorage)` — stores large data (images, blobs) as external files instead of inline in the database. Note: this is a *suggestion*, not a requirement — SwiftData may store data inline if it decides that's better. Only applies to `Data` properties.
 - `@Attribute(originalName: "old_name")` — maps to a previous property name, enabling lightweight migration renames.
-- `@Transient` — excludes the property from persistence entirely (must have a default value).
+- `@Transient` — excludes the property from persistence entirely (must have a default value). Resets to its default on every fetch from the store. If the value is derived from other stored properties, prefer a computed property instead — use `@Transient` only for expensive-to-produce values.
+- `#Unique` — declares uniqueness constraints (distinct from `@Attribute(.unique)`). Only one `#Unique` per model; for multiple constraints, pass separate key path arrays: `#Unique<Foo>([\.email], [\.username])`. Not compatible with CloudKit.
 
 ```swift
 @Model class Article {
@@ -114,6 +127,8 @@ let container = try ModelContainer(
 
 `@Query` drives SwiftUI views from the database. Supports sort descriptors, predicates, and animation.
 
+> **Warning:** `@Query` only works inside SwiftUI views. It will not operate correctly in view models, `@Observable` classes, or other non-view types. For non-view fetching, use `ModelContext.fetch()` directly.
+
 ```swift
 struct DraftsListView: View {
     @Environment(\.modelContext) private var context
@@ -153,7 +168,61 @@ init(searchText: String) {
 }
 ```
 
+### Predicate Pitfalls
+
+SwiftData predicates support only a subset of Swift. Some unsupported operations fail to compile, but others compile cleanly and then **crash at runtime**. This section is critical to avoid silent failures.
+
+**String matching — use the right methods:**
+
+- Always use `localizedStandardContains()` for case/diacritic-insensitive search. Never use `lowercased().contains()` — `lowercased()` is not supported in predicates.
+- Use `starts(with:)` instead of `hasPrefix()` — `hasPrefix()` is not supported.
+
+```swift
+// Correct
+#Predicate<Movie> { $0.name.localizedStandardContains("titanic") }
+#Predicate<Website> { $0.url.starts(with: "https://apple.com") }
+
+// Wrong — will not compile
+#Predicate<Movie> { $0.name.lowercased().contains("titanic") }
+#Predicate<Website> { $0.url.hasPrefix("https://apple.com") }
+```
+
+**Operations that will NOT compile:**
+
+- `String.hasSuffix()`, `String.lowercased()`
+- `Sequence.map()`, `Sequence.reduce()`, `Sequence.count(where:)`
+- `Collection.first`
+- Custom operators
+
+**Operations that COMPILE but CRASH at runtime:**
+
+- `x.isEmpty == false` — use `!x.isEmpty` instead. The `== false` form crashes.
+
+```swift
+// Correct — works
+#Predicate<Movie> { !$0.cast.isEmpty }
+
+// CRASHES at runtime despite compiling
+#Predicate<Movie> { $0.cast.isEmpty == false }
+```
+
+- **Computed properties** in predicates — compiles, crashes at runtime.
+- **`@Transient` properties** in predicates — compiles, crashes at runtime.
+- **Custom Codable structs** in predicates — compiles, crashes at runtime.
+- **Regular expressions** in predicates — compiles, crashes at runtime.
+
+```swift
+// CRASHES — regex in predicate
+#Predicate<Movie> { $0.name.contains(/Titanic/) }
+```
+
+All predicates must rely only on stored `@Model` properties that map directly to database columns.
+
 ### CRUD in ModelContext
+
+> **Warning:** `ModelContext` and model instances must NEVER cross actor boundaries. They are not `Sendable`. If you need a model on another actor, send its `PersistentIdentifier` (which is `Sendable`) and re-fetch in the destination context.
+
+> **Warning:** Persistent identifiers are temporary before the first save — temporary IDs start with `"t"` and change after `save()`. Always save before relying on an object's ID.
 
 ```swift
 // Insert
@@ -166,7 +235,7 @@ draft.content = "Updated"
 // Delete
 context.delete(draft)
 
-// Explicit save (usually automatic)
+// Explicit save — prefer this over relying on autosave
 try context.save()
 
 // Fetch manually
@@ -176,6 +245,73 @@ var descriptor = FetchDescriptor<Draft>(
 )
 descriptor.fetchLimit = 20
 let results = try context.fetch(descriptor)
+```
+
+> **Note:** Autosave timing is unpredictable — it was aggressive at launch but is now infrequent. Prefer explicit `save()` calls when correctness matters. There is no need to check `hasChanges` before saving; just call `save()` directly.
+
+### Performance
+
+**Efficient counting:** Use `ModelContext.fetchCount()` with a `FetchDescriptor` when you only need a count. This avoids fetching full objects into memory. Note that the count does not live-update unless something else (like `@Query`) triggers a refresh.
+
+```swift
+let count = try context.fetchCount(FetchDescriptor<Draft>(
+    predicate: #Predicate { $0.content.contains("search") }
+))
+```
+
+**Selective fetching:** Set `propertiesToFetch` on a `FetchDescriptor` to load only the properties you need (all properties are fetched by default).
+
+**Relationship prefetching:** Set `relationshipKeyPathsForPrefetching` when you know certain relationships will be accessed — it's more efficient to fetch them upfront than to fault them in one by one.
+
+```swift
+var descriptor = FetchDescriptor<Folder>()
+descriptor.propertiesToFetch = [\.name]
+descriptor.relationshipKeyPathsForPrefetching = [\.items]
+```
+
+### Indexing (iOS 18+)
+
+Use the `#Index` macro to speed up queries on frequently read properties. Indexes have a small write cost, so avoid them on properties that are updated much more often than they are queried.
+
+```swift
+@Model class Article {
+    #Index<Article>([\.type], [\.author])
+
+    var type: String = ""
+    var author: String = ""
+    var publishDate: Date = Date()
+}
+```
+
+Compound indexes group properties often queried together:
+
+```swift
+#Index<Article>([\.type], [\.type, \.author])
+```
+
+### CloudKit Considerations
+
+When using SwiftData with CloudKit:
+
+- Never use `@Attribute(.unique)` or `#Unique` — not supported with CloudKit and will cause local data failures.
+- All model properties must have default values or be optional.
+- All relationships must be optional.
+- Indexes and subclasses are supported (with correct OS release).
+- Design for eventual consistency — data may not have synced yet.
+
+### Class Inheritance (iOS 26+)
+
+SwiftData supports `@Model` class inheritance starting with iOS 26. Both parent and child classes must use `@Model`, and child classes must be marked `@available(iOS 26, *)` even if iOS 26 is the minimum deployment target. Both parent and child classes must be listed in the `ModelContainer` schema — SwiftData cannot infer the connection.
+
+```swift
+@Model class Article {
+    var type: String = ""
+}
+
+@available(iOS 26, *)
+@Model class Tutorial: Article {
+    var difficulty: Int = 0
+}
 ```
 
 ---

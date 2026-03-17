@@ -87,6 +87,17 @@ Covers: UIViewRepresentable (makeUIView, updateUIView, dismantleUIView, sizeThat
 Read when building data visualizations, charts, graphs, sparklines, or dashboards with Swift Charts.
 
 Covers: Chart container, mark types (BarMark, LineMark, PointMark, AreaMark, RuleMark, RectangleMark, SectorMark), combining marks, Plottable protocol, ForEach in Chart, date-based data, foregroundStyle/symbol/position styling, custom color scales, axis customization (AxisMarks, labels, formatting, hidden axes), scales (fixed domain, log), interaction (chartXSelection, chartOverlay, scrollable charts), annotations, accessibility (audio graphs, chart descriptors), common patterns (sparkline card, threshold bar chart, multi-series line chart, donut chart, real-time chart).
+
+### `references/code-review.md`
+
+Read when reviewing PRs, auditing existing code, or writing new SwiftUI code. Covers deprecated API replacements (with before/after examples), modern Swift idioms to enforce, and view organization rules.
+
+### `references/performance.md`
+
+Read when diagnosing slow rendering, janky scrolling, high CPU/memory usage, excessive view updates, or layout thrash in SwiftUI apps.
+
+Covers: audit workflow (code-first review, Instruments profiling, SwiftUI timeline lanes), common code smells with before/after fixes (formatters in body, unstable identity, conditional view swapping, broad observable dependencies, image decoding), hang diagnosis, remediation patterns.
+
 ### `references/components.md`
 
 Read when implementing specific SwiftUI views — navigation stacks, lists, forms, sheets, search, loading states, animations, gestures.

@@ -67,7 +67,24 @@ for target_dir in "${TARGETS[@]}"; do
     fi
   done
 
-  echo "  $linked linked, $skipped skipped"
+  # Remove symlinks that point into agent-skills but whose source no longer exists
+  cleaned=0
+  for link in "$target_dir"/*/; do
+    link="${link%/}"
+    [ -L "$link" ] || continue
+    link_target=$(readlink "$link")
+    case "$link_target" in
+      "$SCRIPT_DIR"/skills/*)
+        if [ ! -e "$link" ]; then
+          echo "  - $(basename "$link") (stale)"
+          rm "$link"
+          cleaned=$((cleaned + 1))
+        fi
+        ;;
+    esac
+  done
+
+  echo "  $linked linked, $skipped skipped, $cleaned cleaned"
   echo ""
 done
 

@@ -17,6 +17,29 @@
 
 Preferred for new unit tests (iOS 17+/Xcode 16+). IceCubesApp and CodeEdit use it for new tests.
 
+**Important:** Swift Testing does NOT support UI tests -- XCTest must be used there.
+
+### Critical Rules
+
+These are the most common mistakes agents make with Swift Testing:
+
+- **Never negate with `!` in `#expect`** -- `#expect(value == false)` not `#expect(!value)`. The `!` defeats Swift Testing's macro expansion and produces unhelpful failure messages.
+- **`@Suite` is optional** -- only add it when you need a display name or traits. Any struct/class with `@Test` methods is auto-discovered as a suite. Do not add `@Suite` unnecessarily.
+- **`init()` replaces `setUp()`/`tearDown()`** -- use `init()` for structs, `init()`/`deinit` for classes. No setUp/tearDown in Swift Testing.
+- **`.serialized` only affects parameterized tests** -- it does NOT make all tests in a suite run sequentially. It serializes parameterized test cases only.
+- **`@available` works on individual tests but NOT on suites** -- place `@available(iOS 18, *)` on each `@Test` method, not on the suite struct.
+- **No `test` prefix needed** -- use `func userCanLogOut()` rather than `func testUserCanLogOut()`.
+- **Random, parallel execution is the default** -- each test must work in any order at any time.
+- **A test with no `#expect` or `#require` is assumed to pass.**
+
+### Test Hygiene (FIRST)
+
+Good tests should be: **F**ast, **I**solated, **R**epeatable, **S**elf-verifying, **T**imely.
+
+### Test Generation Heuristics
+
+When generating tests, cover: happy path, boundary cases, invalid input, and (if appropriate) concurrency scenarios.
+
 ### @Test and #expect
 
 ```swift
@@ -38,16 +61,53 @@ struct TimelineViewModelTests {
 }
 ```
 
+### #expect vs #require
+
+Both evaluate a condition and fail the test if false. `#require` throws on failure, stopping the test immediately.
+
+Use `#require` for preconditions -- if they fail, the rest of the test is meaningless. Use `#expect` for the actual assertions you care about.
+
+```swift
+@Test func outstandingTasksStringIsPlural() throws {
+    let sut = try createTestUser(projects: 3, itemsPerProject: 10)
+    try #require(sut.projects.isEmpty == false)  // precondition
+    let rowTitle = sut.outstandingTasksString
+    #expect(rowTitle == "30 items")  // actual assertion
+}
+```
+
+`#require` also unwraps optionals (replaces `XCTUnwrap`):
+
+```swift
+let value = try #require(optionalValue)  // fails the test if nil
+```
+
 ### Key Differences from XCTest
 
 - `@Test` instead of `func test...` naming convention
 - `#expect(condition)` instead of `XCTAssert*`
-- `#require(optional)` instead of `XCTUnwrap` (throws on nil):
-  ```swift
-  let value = try #require(optionalValue)  // fails the test if nil
-  ```
-- `@Suite("Name")` for grouping, replaces class inheritance
-- `struct` test types allowed (prefer for value semantics)
+- `#require(optional)` instead of `XCTUnwrap` (throws on nil)
+- `@Suite("Name")` for grouping (optional -- bare structs with `@Test` methods work)
+- `struct` test types preferred (use classes only when you need `deinit`)
+- `init()` for setup, not `setUp()`/`tearDown()`
+
+### Suite Initialization
+
+```swift
+struct PlayerTests {
+    let sut: Player
+
+    init() {
+        sut = Player(name: "Test Player")
+    }
+
+    @Test func nameIsCorrect() {
+        #expect(sut.name == "Test Player")
+    }
+}
+```
+
+Suite initializers must accept no parameters. They can be `async` and/or `throws`.
 
 ### Traits
 
@@ -55,8 +115,38 @@ struct TimelineViewModelTests {
 @Test(.disabled("Reason for disabling"))
 func flaky() { }
 
-@Suite(.serialized)  // Run tests sequentially
-class StatefulTests { }
+@Test(.bug(id: 182))
+func headingsShouldBeItalic() { }
+
+@Test(.bug("https://github.com/you/repo/issues/182"))
+func anotherBugFix() { }
+
+@Test("Loading names", .timeLimit(.minutes(1)))
+func loadNames() async { }
+// NOTE: only .minutes() exists -- there is NO .seconds()
+```
+
+### Tags
+
+Define tags for cross-suite categorization:
+
+```swift
+extension Tag {
+    @Tag static var networking: Self
+    @Tag static var slow: Self
+    @Tag static var edgeCase: Self
+    @Tag static var smoke: Self
+}
+```
+
+Apply to tests or suites:
+
+```swift
+@Test(.tags(.networking))
+func fetchUserProfile() async throws { }
+
+@Suite(.tags(.networking))
+struct APITests { }
 ```
 
 ### Parameterized Tests
@@ -68,10 +158,65 @@ func timelineLoads(filter: String) async throws {
 }
 ```
 
+Two collections form a **Cartesian product** -- use `zip()` for pairwise testing:
+
+```swift
+// Cartesian product: 9 combinations
+@Test(arguments: [1, 2, 3], ["a", "b", "c"])
+func cartesian(num: Int, letter: String) { }
+
+// Pairwise: 3 combinations
+@Test(arguments: zip([1, 2, 3], ["a", "b", "c"]))
+func pairwise(num: Int, letter: String) { }
+```
+
+### #expect(throws:) Patterns
+
+```swift
+// Assert a specific error case
+#expect(throws: GameError.notInstalled) {
+    try game.play()
+}
+
+// Assert no error is thrown
+#expect(throws: Never.self) {
+    try game.play()
+}
+
+// Capture and inspect the thrown error
+let error = #expect(throws: GameError.self) {
+    try playGame(at: 22)
+}
+#expect(error == .disallowedTime)
+```
+
+Avoid broad `#expect(throws: Error.self)` -- always name the specific error type.
+
+### withKnownIssue
+
+Wraps code with a known bug. Expects a failure, and **fails the test if no issue occurs** (meaning the bug was fixed -- update your code):
+
+```swift
+@Test func knownBug() {
+    withKnownIssue("Parsing fails on empty input") {
+        let result = try parser.parse("")
+        #expect(result.isEmpty)
+    }
+}
+```
+
+For flaky issues, use `isIntermittent: true` -- passes if no issue, marks expected failure if one occurs:
+
+```swift
+withKnownIssue("Intermittent timeout", isIntermittent: true) {
+    try await fetchData()
+}
+```
+
 ### Issue Recording
 
 ```swift
-// In async wait loops (replaces XCTFail in callbacks)
+// Replaces XCTFail in callbacks
 Issue.record("Status never changed to finished.")
 ```
 
@@ -97,6 +242,151 @@ await confirmation("event received", expectedCount: 3) { confirm in
     sut.sendEvents(count: 3)
 }
 ```
+
+All work must complete before the `confirmation()` closure exits. Completion-handler-based code won't work -- use `async` or return the `Task` so the test can `await` it.
+
+`confirmation(expectedCount: 0)` is valid -- ensures an event never happens.
+
+Range-based confirmation (Swift 6.1+):
+
+```swift
+await confirmation(expectedCount: 5...10) { confirm in
+    for await _ in loader { confirm() }
+}
+```
+
+### Verification Helpers with SourceLocation
+
+When writing shared verification functions, pass `SourceLocation` so failures report at the caller's line:
+
+```swift
+func verifyDivision(
+    _ result: (quotient: Int, remainder: Int),
+    expectedQuotient: Int,
+    expectedRemainder: Int,
+    sourceLocation: SourceLocation = #_sourceLocation
+) {
+    #expect(result.quotient == expectedQuotient, sourceLocation: sourceLocation)
+    #expect(result.remainder == expectedRemainder, sourceLocation: sourceLocation)
+}
+```
+
+Both `#expect` and `#require` accept `sourceLocation:`.
+
+### CustomTestStringConvertible
+
+Add retroactive conformance **in test targets only** for readable test output:
+
+```swift
+extension GameError: @retroactive CustomTestStringConvertible {
+    public var testDescription: String {
+        switch self {
+        case .notPurchased: "This game has not been purchased."
+        case .notInstalled: "This game is not currently installed."
+        }
+    }
+}
+```
+
+### Actor Isolation in Tests
+
+Mark individual tests or whole suites with `@MainActor`:
+
+```swift
+@MainActor
+struct DataHandlingTests {
+    @Test func loadNames() async { }
+}
+```
+
+`confirmation()` and `withKnownIssue()` accept an `isolation:` parameter for actor-specific closures:
+
+```swift
+await withKnownIssue("Known issue", isolation: MainActor.shared) {
+    // runs on main actor
+}
+```
+
+### Float Tolerance
+
+Swift Testing has no built-in float tolerance. Use Swift Numerics `isApproximatelyEqual(to:absoluteTolerance:)`:
+
+```swift
+#expect(celsius.isApproximatelyEqual(to: 0, absoluteTolerance: 0.000001))
+```
+
+Do not add Swift Numerics as a dependency without user permission.
+
+### Hidden Dependency Exposure
+
+Avoid hidden dependencies on `UserDefaults`, `URLSession`, etc. Progressive refactoring: detect the dependency, inject with a default value, then wrap in a protocol.
+
+`UserDefaults` test isolation with UUID-based suite names:
+
+```swift
+let suite = "suite-\(UUID().uuidString)"
+let userDefaults = UserDefaults(suiteName: suite)
+defer { userDefaults?.removePersistentDomain(forName: suite) }
+```
+
+### Swift 6.2+ Features
+
+**Exit tests** -- test `precondition()`/`fatalError()` paths (not possible in XCTest):
+
+```swift
+@Test func invalidDiceRollsFail() async throws {
+    await #expect(processExitsWith: .failure) {
+        let dice = Dice()
+        let _ = dice.roll(sides: 0)
+    }
+}
+```
+
+**Attachments** -- attach debug data to test results on failure:
+
+```swift
+@Test func defaultCharacterNameIsCorrect() {
+    let result = makeCharacter()
+    #expect(result.name == "Rem")
+    Attachment.record(result, named: "Character")
+}
+```
+
+Types must conform to `Attachable`. `String`, `Data`, and `Encodable` types are supported out of the box.
+
+**Test scoping traits** -- concurrency-safe shared config with `@TaskLocal`:
+
+```swift
+struct DefaultPlayerTrait: TestTrait, TestScoping {
+    func provideScope(for test: Test, testCase: Test.Case?,
+                      performing function: () async throws -> Void) async throws {
+        let player = Player(name: "Test Player")
+        try await Player.$current.withValue(player) {
+            try await function()
+        }
+    }
+}
+
+extension Trait where Self == DefaultPlayerTrait {
+    static var defaultPlayer: Self { Self() }
+}
+
+@Test(.defaultPlayer) func welcomeScreenShowsName() {
+    let result = createWelcomeScreen()
+    #expect(result.contains("Test Player"))
+}
+```
+
+**Raw identifiers** (Swift 6.2+) -- natural-language test names without a separate display string:
+
+```swift
+@Test
+func `Strip HTML tags from string`() {
+    // test code
+}
+```
+
+Only suggest raw identifiers if the project already uses them or the user opts in.
 
 ---
 
@@ -248,7 +538,7 @@ func fetchTimeline() async throws {
     let viewModel = TimelineViewModel()
     await viewModel.fetchNewestStatuses(pullToRefresh: false)
     let items = await viewModel.datasource.getFilteredItems()
-    #expect(!items.isEmpty)
+    #expect(items.isEmpty == false)
 }
 ```
 

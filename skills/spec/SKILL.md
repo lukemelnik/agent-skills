@@ -6,286 +6,117 @@ disable-model-invocation: true
 
 # Create Spec
 
-> ⚠️ **CRITICAL PRODUCTION ENVIRONMENT**
->
-> This work deploys to a production system with real users and paying customers. Errors, oversights, or shortcuts can have serious consequences.
->
-> - **Be thorough**: Take time to understand requirements fully before writing specs
-> - **Be precise**: Ambiguous specs lead to ambiguous implementations
-> - **Think defensively**: Consider edge cases, security implications, and failure modes
-> - **When uncertain, ask**: It's better to clarify than to assume incorrectly
-> - **Quality over speed**: A well-thought-out spec prevents costly rework later
+> This work deploys to a production system with real users and paying customers. Think defensively. When uncertain, ask.
 
-Create a spec optimized for the `/implement` command to execute sprint-by-sprint. The spec will be stored as a GitHub Issue for cross-worktree access.
+Create a spec optimized for the `/implement` command to execute. The spec will be stored as a GitHub Issue.
 
-> 🚫 **NEVER create markdown spec files.** Do not write specs to `.md` files, `docs/`, or anywhere on disk. The ONLY output is a GitHub Issue created with `gh issue create`. Draft the spec in conversation, then publish it as an issue.
+> Do not write specs to files on disk. Draft in conversation, then publish as a GitHub Issue with `gh issue create`.
 
 **Input:** $ARGUMENTS
 
-This should describe what the feature/work is about.
+## Step 1: Research
 
-## Step 1: Understand the Request
-
-Parse the input to understand:
-- What feature or work is being planned
-- Scope and goals
-- Complexity level (simple fix vs complex feature)
-
-## Step 2: Research Before Writing
-
-Before creating the spec, gather context:
-- Find relevant existing code patterns
-- Identify files that will likely be touched
-- Note any dependencies or constraints
+Before writing anything, gather context:
+- Find relevant existing code patterns and files that will be touched
 - Look for similar features to reference
-- Check `docs/guides/` for relevant integration guides that may inform the implementation
+- Check `docs/guides/` for relevant integration guides
+- For non-trivial work: check git history for related bugs/fixes, consider what commonly goes wrong with this kind of feature
 
-### Pitfalls Research
+## Step 2: Draft the Spec
 
-For non-trivial features, actively research what commonly goes wrong:
-- Search for "X gotchas", "X pitfalls", "X common mistakes" patterns in similar implementations
-- Check if similar features in the codebase had bugs or required fixes (look at git history)
-- Consider: race conditions, state sync issues, auth edge cases, error handling gaps
-- Note any pitfalls discovered in the spec's Constraints section
-
-This prevents discovering problems mid-implementation when context is already loaded.
-
-## Step 3: Create the Draft Spec
-
-Draft the spec in conversation (NOT in a file). Use this exact structure:
+Draft in conversation using this structure:
 
 ```markdown
 # [Feature Name]
 
 ## Context
 
-### What
-[1-2 sentences: What is this feature/change?]
+**What:** [1-2 sentences]
 
-### Why
-[1-2 sentences: Why are we building this? What problem does it solve?]
+**Why:** [1-2 sentences]
 
-### Key Decisions
-- [Decision 1 and brief rationale]
-- [Decision 2 and brief rationale]
+**Key Decisions:**
+- [Decision and rationale]
 
-### Relevant Files
+**Relevant Files:**
 - `path/to/file.ts` - [why it's relevant, what pattern to follow]
-- `path/to/other.ts` - [why it's relevant]
 
-Include pattern hints like "follow the pattern in X" when there's a good example to reference.
-
-### Dependencies
-- [Any blockers or things that must exist first]
-- [External dependencies if any]
-
-### Constraints
-- [Technical constraints]
-- [Business constraints]
-- [Time/scope constraints if any]
-
+**Constraints:**
+- [Technical, business, or dependency constraints — only if they exist]
 
 ## Scope
 
-### MVP (This Implementation)
-- [Core functionality that must be included]
-- [Essential behavior]
+**In:** [Core functionality for this implementation]
 
-### Future Enhancements (Out of Scope)
-- [Nice-to-have features for later]
-- [Extensions that aren't essential now]
+**Out:** [Explicitly excluded — things that might seem in scope but aren't]
 
+## Tasks
 
-## Sprints
+Ordered by dependency. Group into sprints only if there are natural demoable milestones (don't force sprint structure on small work).
 
-Group tasks into sprints. Each sprint should result in demoable, working software that builds on previous sprints.
+### [Sprint 1: Theme] (only if multiple sprints warranted)
 
-### Sprint 1: [Goal/Theme]
-[Brief description of what this sprint accomplishes]
+#### Task 1: [Name]
+[What needs to happen and why, not how to do it]
 
-#### Task 1.1: [Task Name]
-[Brief description of what needs to be done]
+**Done when:**
+- [ ] [Specific, verifiable outcome]
+- [ ] [Specific, verifiable outcome]
 
-**Acceptance criteria:**
-- [ ] [Specific measurable outcome]
-- [ ] [Specific measurable outcome]
-
-**Validation:**
-- `[command to verify this task, e.g., pnpm check-types]`
-- `[additional validation if needed]`
-
-#### Task 1.2: [Task Name]
-[Brief description]
-
-**Acceptance criteria:**
-- [ ] [Specific measurable outcome]
-
-**Validation:**
-- `[validation command]`
-
-
-### Sprint 2: [Goal/Theme]
-[Brief description of what this sprint accomplishes]
-
-#### Task 2.1: [Task Name]
+#### Task 2: [Name]
 ...
-
-[Continue for all sprints and tasks...]
 ```
 
-**Note:** Do NOT include "Completed Work" or "Implementation Notes" sections. The GitHub Issue is the immutable source of truth for WHAT to build. Progress is tracked locally in progress files.
+### Spec principles
 
-## Step 4: Present the Draft
+- **Breadcrumbs, not blueprints.** Reference files and patterns ("follow the pattern in `contacts-router.ts`"), never include code blocks. Code becomes stale; pointers don't.
+- **Say what, not how.** Describe the desired outcome and constraints. The implementing agent can figure out the steps.
+- **Right-size the structure.** A 2-task fix doesn't need sprints. A 15-task feature does. Match the format to the work.
+- **Acceptance criteria must be objectively verifiable.** "Works correctly" is not a criterion. "Returns 403 for unauthenticated requests" is.
 
-Present the spec to the user in conversation and explain what you've planned.
+## Step 3: Stress-Test the Design
 
-## Step 5: Assess Complexity and Interview (If Needed)
+After drafting, critically examine the spec before presenting it. The depth of this examination should match the complexity of the work — don't interrogate a button color change the same way you'd interrogate a new payment flow.
 
-### For Simple/Straightforward Work
-If this is a quick fix, minor change, or the scope is very clear and limited:
-- Ask the user if the spec looks good or if they have any changes
-- If approved, you're done with drafting
-- If they have feedback, make the changes and confirm
+**Always consider, regardless of size:**
+- Edge cases: empty states, null values, boundary conditions, concurrent access
+- Error scenarios: what happens when things fail? Network errors, invalid input, partial failures
+- Auth/permissions: who can do this? What happens if someone who shouldn't tries?
 
-### For Complex Features
-If this is a substantial feature with multiple tasks or architectural decisions, conduct a comprehensive interview.
+**For substantial features, also dig into:**
 
-**Ask all your questions at once (max 10-15 questions).** Cover these areas in a single batch:
+- **Architecture tradeoffs:** Why this approach over alternatives? What are we trading off? Where could this design paint us into a corner?
+- **Hidden coupling:** Does this change affect other features in non-obvious ways? Will it break existing behavior? Are there implicit contracts with other parts of the system?
+- **Data integrity:** Race conditions, consistency issues, what happens if the process crashes mid-operation? Do we need transactions, idempotency, or cleanup?
+- **Performance at scale:** Does this work fine with 10 records but fall over at 10,000? N+1 queries, unbounded lists, missing indexes?
+- **Security surface:** New inputs that could be exploited? Privilege escalation paths? Data exposure?
+- **Migration path:** Is there existing data that needs to change? Can we deploy this without downtime? Do we need backwards compatibility during rollout?
 
-1. **Potential Pitfalls / Foot Guns**
-   - What could go wrong with this approach?
-   - Are there edge cases that might cause issues?
-   - Security considerations?
-   - Performance implications?
+Incorporate anything you discover into the spec's Constraints or acceptance criteria. If something surfaces a genuine design question you can't resolve, note it for the user.
 
-2. **Enhancement Opportunities**
-   - Are there practical features that would make this significantly better?
-   - Patterns from the codebase that could be leveraged?
-   - UX improvements worth considering?
+## Step 4: Present and Discuss
 
-3. **Clarify Intent**
-   - Ask about specific behaviors that aren't clear
-   - Confirm assumptions you made in the design
-   - Understand the user's priorities
+Present the draft. If you identified design questions, tradeoffs, or risks during the stress test, raise them alongside the draft — not as a formulaic questionnaire, but as genuine concerns:
 
-4. **MVP vs Future**
-   - Which parts are essential for the first version?
-   - What can be deferred to future iterations?
+- Lead with what you think the answer should be and why
+- Flag risks you're uncertain about and explain the tradeoff
+- Ask about specific behaviors where the right choice isn't obvious from context
 
-**Present your thoughts as questions/suggestions, not demands.** The user decides what's in scope.
+Frame concerns proportionally. A small feature might warrant "one thing to flag..." while a complex feature might need a real discussion about architecture.
 
-If the user responds that they've captured enough or want to move on, skip further iteration and finalize the spec.
+If the user wants to move on, finalize without further iteration.
 
-## Step 6: Iterate Until Approved
+## Step 5: Iterate and Publish
 
-Based on user feedback:
-
-1. **Update the spec draft** with any changes:
-   - Adjust scope (MVP vs Future)
-   - Add/remove/modify tasks
-   - Update context with new decisions
-   - Add constraints or considerations surfaced in discussion
-
-2. **Present the updated version** and ask if there's anything else to address
-
-3. **Repeat** until the user confirms the spec is complete
-
-## Step 7: Self-Review
-
-Once the user approves the content, perform a self-review:
-
-### Check Format Conformance
-- [ ] Context section with What, Why, Key Decisions, Relevant Files, Dependencies, Constraints
-- [ ] Scope section with MVP and Future Enhancements
-- [ ] Sprints with numbered sprints and tasks
-- [ ] Each task has acceptance criteria with checkboxes
-- [ ] Each task has validation commands
-
-### Quality Checks
-- [ ] Relevant Files include pattern hints, not just paths
-- [ ] No full code blocks (just file references)
-- [ ] No procedural instructions
-- [ ] Dependencies between tasks/sprints are clear
-- [ ] Acceptance criteria are specific and measurable
-
-If issues are found, fix them and confirm with the user.
-
-## Step 8: Create GitHub Issue
-
-Once the spec is approved and reviewed, create a GitHub Issue:
+Update based on feedback, then create the GitHub Issue:
 
 ```bash
-gh issue create --title "[Feature Name]" --body "[Spec body]" --label "spec"
-```
-
-**Important:**
-- The `spec` label distinguishes full specs from lightweight issues
-- If the "spec" label doesn't exist, create it: `gh label create spec --description "Structured implementation spec" --color "0052CC"`
-- Use a HEREDOC to pass the body to ensure correct formatting
-
-Example:
-```bash
-gh issue create --title "Notification Batching" --body "$(cat <<'EOF'
-# Notification Batching
-
-## Context
-...
+gh issue create --title "[Feature Name]" --body "$(cat <<'EOF'
+[spec content]
 EOF
-)"  --label "spec"
+)" --label "spec"
 ```
 
-## Step 9: Finalize
+If the "spec" label doesn't exist, create it first: `gh label create spec --description "Structured implementation spec" --color "0052CC"`
 
-After creating the issue:
-1. Report the issue URL and number to the user
-2. Remind the user they can run `/implement <issue-number>` to begin execution
-
-
-## Guidelines for Good Specs
-
-### Context Section
-- Be specific, not vague
-- Include actual file paths the agent will need
-- Note patterns to follow (reference existing similar code): "follow the pattern in `contacts-router.ts`"
-- State constraints upfront so agent doesn't waste time on invalid approaches
-- Reference relevant guides from `docs/guides/` when applicable
-- Give breadcrumbs, not full code blocks (code becomes stale)
-
-### Scope Section
-- MVP should be the smallest useful version
-- Be explicit about what's NOT included to prevent scope creep
-- Future enhancements capture good ideas without committing to them now
-
-### Sprints
-- Each sprint should result in demoable, working software
-- Group related tasks that together form a coherent milestone
-- Earlier sprints should unblock later sprints
-- A sprint is typically 2-5 tasks (enough to be meaningful, small enough to complete)
-
-### Tasks
-- Order by dependency within each sprint
-- Each task should be completable in one focused session
-- Make acceptance criteria concrete and verifiable
-- Don't make tasks too granular (agent can figure out sub-steps)
-- Don't make tasks too broad (should be completable without interruption)
-
-### Validation Commands
-- Specify how to verify each task is complete
-- Common validations: `pnpm check-types`, `pnpm check`, `pnpm test [path]`
-- Can also be manual verification: "Verify the button appears on the settings page"
-- Validation is task-specific - not every task needs the same checks
-
-### What NOT to Include
-- Implementation details the agent can figure out
-- Obvious things ("write clean code")
-- Tasks that are really just sub-steps of other tasks
-- Full code blocks (provide file paths and pattern hints instead)
-- Procedural instructions (how to commit, when to run tidy - that's the implement command's job)
-- **Time estimates** - No "1-2 weeks", "quick fix", "should take a few hours", etc. Focus on what, not how long.
-- **Completed Work / Implementation Notes sections** - These are tracked in local progress files, not in the issue
-
-### Interview Tips
-- Ask a comprehensive set of questions all at once (max 10-15 questions)
-- Cover all your considerations in one batch rather than iterating one question at a time
-- Frame suggestions as options, not requirements - let the user decide what's in scope
-- If the user says they've captured enough, move on and finalize
+Report the issue URL and remind the user they can run `/implement <issue-number>` to begin.

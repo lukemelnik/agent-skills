@@ -1,43 +1,75 @@
 /**
- * Minimal CDP client - no puppeteer, no hangs
+ * Minimal CDP client library — used by watch.js and pick.js
+ * Zero dependencies (Node 22+ built-in WebSocket)
  */
 
-import WebSocket from "ws";
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { resolve } from "node:path";
+
+function getDevToolsWsUrl() {
+  const candidates = [
+    resolve(homedir(), "Library/Application Support/Google/Chrome/DevToolsActivePort"),
+    resolve(homedir(), ".config/google-chrome/DevToolsActivePort"),
+    resolve(homedir(), ".cache/scraping/DevToolsActivePort"),
+  ];
+  for (const path of candidates) {
+    if (existsSync(path)) {
+      try {
+        const lines = readFileSync(path, "utf8").trim().split("\n");
+        if (lines.length >= 2) return `ws://127.0.0.1:${lines[0]}${lines[1]}`;
+      } catch {}
+    }
+  }
+  return null;
+}
+
+function connectWs(url, timeout) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(url);
+    const timer = setTimeout(() => {
+      ws.close();
+      reject(new Error("WebSocket connect timeout"));
+    }, timeout);
+    ws.onopen = () => {
+      clearTimeout(timer);
+      resolve(new CDP(ws));
+    };
+    ws.onerror = () => {
+      clearTimeout(timer);
+      reject(new Error("WebSocket error"));
+    };
+  });
+}
 
 export async function connect(timeout = 5000) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  // Try DevToolsActivePort first (user's Chrome with remote debugging)
+  const devToolsUrl = getDevToolsWsUrl();
+  if (devToolsUrl) {
+    try {
+      return await connectWs(devToolsUrl, timeout);
+    } catch {
+      // DevToolsActivePort may be stale, try HTTP fallback
+    }
+  }
 
+  // Fall back to HTTP endpoint (start.js / --remote-debugging-port)
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     const resp = await fetch("http://localhost:9222/json/version", {
       signal: controller.signal,
     });
     const { webSocketDebuggerUrl } = await resp.json();
     clearTimeout(timeoutId);
+    return await connectWs(webSocketDebuggerUrl, timeout);
+  } catch {}
 
-    return new Promise((resolve, reject) => {
-      const ws = new WebSocket(webSocketDebuggerUrl);
-      const connectTimeout = setTimeout(() => {
-        ws.close();
-        reject(new Error("WebSocket connect timeout"));
-      }, timeout);
-
-      ws.on("open", () => {
-        clearTimeout(connectTimeout);
-        resolve(new CDP(ws));
-      });
-      ws.on("error", (e) => {
-        clearTimeout(connectTimeout);
-        reject(e);
-      });
-    });
-  } catch (e) {
-    clearTimeout(timeoutId);
-    if (e.name === "AbortError") {
-      throw new Error("Connection timeout - is Chrome running with --remote-debugging-port=9222?");
-    }
-    throw e;
-  }
+  throw new Error(
+    "Cannot connect to Chrome. Either:\n" +
+      "  1. Enable remote debugging: chrome://inspect/#remote-debugging\n" +
+      "  2. Run ./scripts/start.js to launch a debug instance",
+  );
 }
 
 class CDP {
@@ -48,8 +80,8 @@ class CDP {
     this.sessions = new Map();
     this.eventHandlers = new Map();
 
-    ws.on("message", (data) => {
-      const msg = JSON.parse(data.toString());
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
       if (msg.id && this.callbacks.has(msg.id)) {
         const { resolve, reject } = this.callbacks.get(msg.id);
         this.callbacks.delete(msg.id);
@@ -64,7 +96,7 @@ class CDP {
       if (msg.method) {
         this.emit(msg.method, msg.params || {}, msg.sessionId || null);
       }
-    });
+    };
   }
 
   on(method, handler) {
@@ -144,13 +176,13 @@ class CDP {
         awaitPromise: true,
       },
       sessionId,
-      timeout
+      timeout,
     );
 
     if (result.exceptionDetails) {
       throw new Error(
         result.exceptionDetails.exception?.description ||
-          result.exceptionDetails.text
+          result.exceptionDetails.text,
       );
     }
     return result.result?.value;
@@ -161,7 +193,7 @@ class CDP {
       "Page.captureScreenshot",
       { format: "png" },
       sessionId,
-      timeout
+      timeout,
     );
     return Buffer.from(data, "base64");
   }
@@ -176,11 +208,10 @@ class CDP {
   }
 
   async evaluateInFrame(sessionId, frameId, expression, timeout = 30000) {
-    // Create isolated world for the frame
     const { executionContextId } = await this.send(
       "Page.createIsolatedWorld",
       { frameId, worldName: "cdp-eval" },
-      sessionId
+      sessionId,
     );
 
     const result = await this.send(
@@ -192,13 +223,13 @@ class CDP {
         awaitPromise: true,
       },
       sessionId,
-      timeout
+      timeout,
     );
 
     if (result.exceptionDetails) {
       throw new Error(
         result.exceptionDetails.exception?.description ||
-          result.exceptionDetails.text
+          result.exceptionDetails.text,
       );
     }
     return result.result?.value;

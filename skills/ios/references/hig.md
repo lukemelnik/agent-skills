@@ -346,11 +346,75 @@ Use `@Environment(\.colorSchemeContrast)` to detect. Provide higher-contrast var
 
 ### 5.6 — Alternative Interactions for All Gestures
 
-Every custom gesture must have an equivalent tap-based or menu-based alternative.
+Every custom gesture must have an equivalent tap-based or menu-based alternative. Never use `onTapGesture()` where `Button` works. If `onTapGesture()` is unavoidable, add `.accessibilityAddTraits(.isButton)`.
 
 ### 5.7 — Support Switch Control and Full Keyboard Access
 
 Test navigation order and focus behavior with external switches and Bluetooth keyboards.
+
+### 5.8 — Buttons and Menus Must Include Text Labels
+
+Buttons with images must always include text for VoiceOver, even if the text is visually hidden:
+
+```swift
+// Good — VoiceOver reads "Add"
+Button("Add", systemImage: "plus", action: addItem)
+
+// Bad — VoiceOver reads only "plus"
+Button(action: addItem) {
+    Image(systemName: "plus")
+}
+```
+
+`Menu` must include a text label, not just an image:
+
+```swift
+// Good
+Menu("Options", systemImage: "ellipsis.circle") { /* items */ }
+
+// Bad — no accessible label
+Menu { /* items */ } label: { Image(systemName: "ellipsis.circle") }
+```
+
+### 5.9 — Decorative Images
+
+Use `Image(decorative:)` or `.accessibilityHidden(true)` for images that add no informational value. Flag images with unclear or unhelpful VoiceOver readings.
+
+### 5.10 — Input Labels for Complex Controls
+
+Use `accessibilityInputLabels()` when a control's visible label is complex, dynamic, or frequently changing (e.g., a live-updating stock price). This gives Voice Control users a stable command.
+
+```swift
+Button(action: showDetails) {
+    Text("AAPL $271.68")
+}
+.accessibilityInputLabels(["Apple", "Apple stock", "AAPL"])
+```
+
+### 5.11 — Differentiate Without Color
+
+Respect `accessibilityDifferentiateWithoutColor` when color is a primary differentiator:
+
+```swift
+@Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
+// When true, add icons, patterns, or strokes alongside color
+```
+
+### 5.12 — Prefer `Label` Over `HStack` for Icon + Text
+
+`Label` provides built-in accessibility (reads as a single element) and adapts to context (icon-only in toolbars, full in lists):
+
+```swift
+// Good — accessible by default
+Label("Favorites", systemImage: "heart")
+
+// Avoid when Label works — separate accessibility elements
+HStack {
+    Image(systemName: "heart")
+    Text("Favorites")
+}
+```
 
 ---
 

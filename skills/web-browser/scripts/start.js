@@ -31,8 +31,8 @@ if (useProfile) {
       "lsof -ti tcp:9222 -sTCP:LISTEN",
       { encoding: "utf-8" },
     ).trim();
-    if (debugPid) {
-      execSync(`kill ${debugPid}`, { stdio: "ignore" });
+    if (debugPid && /^\d+$/.test(debugPid)) {
+      process.kill(parseInt(debugPid));
       await new Promise((r) => setTimeout(r, 1000));
     }
   } catch {}
