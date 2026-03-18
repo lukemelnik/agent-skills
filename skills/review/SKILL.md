@@ -1,7 +1,6 @@
 ---
 name: review
 description: Comprehensive code review with parallel agents, confidence scoring, and auto-fixing
-disable-model-invocation: true
 ---
 
 # Code Review

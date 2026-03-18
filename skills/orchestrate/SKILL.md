@@ -1,7 +1,6 @@
 ---
 name: orchestrate
 description: Orchestrate full spec implementation with fresh-context sprints, review, and PR creation
-disable-model-invocation: true
 ---
 
 # Orchestrate

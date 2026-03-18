@@ -1,7 +1,6 @@
 ---
 name: cli
 description: Agent-friendly CLI design patterns. Use when building or reviewing CLI tools in any language.
-disable-model-invocation: true
 ---
 
 # Agent-Friendly CLI Design

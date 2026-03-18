@@ -1,7 +1,6 @@
 ---
 name: spec
 description: Create a structured spec for agent-driven implementation
-disable-model-invocation: true
 ---
 
 # Create Spec

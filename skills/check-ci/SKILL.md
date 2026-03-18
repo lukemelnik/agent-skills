@@ -1,7 +1,6 @@
 ---
 name: check-ci
 description: Check GitHub Actions for failures, create a fix plan, and resolve after confirmation
-disable-model-invocation: true
 ---
 
 # Check CI
