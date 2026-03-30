@@ -611,3 +611,4 @@ var defaultTint: Color {
 - **Not testing with Increase Contrast / Bold Text** — these accessibility settings affect real users. Verify your tokens are legible in all modes.
 - **Creating too many tokens upfront** — add them when a new semantic purpose actually appears. Unused tokens are noise.
 - **Using `@AppStorage` inside a class** — `@AppStorage` is designed for `View` structs. In `@Observable` classes, use `UserDefaults` with a `didSet` pattern.
+- **Using `configureWithTransparentBackground()` for global navigation bar appearance** — this removes the automatic opaque background that iOS draws when list content scrolls behind the navigation bar, causing title text to overlap with scrolling content. Use `configureWithOpaqueBackground()` with an explicit `backgroundColor` matching your theme instead. This applies to all three appearances: `standardAppearance`, `compactAppearance`, and `scrollEdgeAppearance`.

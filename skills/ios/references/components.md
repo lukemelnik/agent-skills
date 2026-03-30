@@ -702,6 +702,39 @@ When presenting a sheet that displays an optional value, use `sheet(item:)` to s
 }
 ```
 
+### Sheet Sizing Heuristics
+
+- `.medium` and `.large` are preset detents.
+- `.height(...)` and `.fraction(...)` are explicit detents.
+- There is no built-in `.small` detent.
+- Use fixed heights for short action sheets and pickers, not full forms.
+- Forms with multiple sections, multiline input, validation errors, or keyboard interaction should usually default to `.large` or a tall `.fraction(...)`.
+- If the sheet contains a `ScrollView` or `Form`, add bottom breathing room so the last field and error state do not sit against the home indicator.
+- For scrollable sheet content, prefer `.presentationContentInteraction(.scrolls)`.
+
+```swift
+.sheet(isPresented: $showEditor) {
+    EditorSheet()
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        .presentationContentInteraction(.scrolls)
+}
+
+struct EditorSheet: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                formSections
+            }
+            .padding()
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: 24)
+        }
+    }
+}
+```
+
 ### Confirmation Dialog
 
 ```swift

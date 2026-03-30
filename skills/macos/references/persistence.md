@@ -505,6 +505,56 @@ actor ContentCache {
 }
 ```
 
+### Versioned Settings with Migration Testing
+
+When persisting Codable settings that evolve across app versions, use a versioned schema with stored fixtures to test migrations:
+
+```swift
+struct AppSettings: Codable {
+    static let currentVersion = 3
+
+    var version: Int = Self.currentVersion
+    var theme: String = "system"
+    var fontSize: Int = 14
+    // v3: added field with default
+    var autoSave: Bool = true
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let version = try container.decode(Int.self, forKey: .version)
+        self.version = Self.currentVersion
+
+        // Migrate based on stored version
+        self.theme = try container.decodeIfPresent(String.self, forKey: .theme) ?? "system"
+        self.fontSize = try container.decodeIfPresent(Int.self, forKey: .fontSize) ?? 14
+        self.autoSave = (version >= 3)
+            ? try container.decodeIfPresent(Bool.self, forKey: .autoSave) ?? true
+            : true  // default for pre-v3
+    }
+}
+```
+
+Test migrations using stored JSON fixtures from each prior version:
+
+```
+Tests/Fixtures/AppSettings/
+    v1.json   ← actual serialized output from v1
+    v2.json   ← actual serialized output from v2
+```
+
+```swift
+@Test(arguments: ["v1", "v2"])
+func settingsMigration(version: String) throws {
+    let url = Bundle.module.url(forResource: version, withExtension: "json", subdirectory: "Fixtures/AppSettings")!
+    let data = try Data(contentsOf: url)
+    let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+    #expect(settings.version == AppSettings.currentVersion)
+    // Assert migrated values are sensible
+}
+```
+
+The fixtures are real serialized output captured from each version — not hand-written JSON. This catches regressions that unit tests on migration code alone would miss (e.g., a renamed field that breaks deserialization of v1 data).
+
 ---
 
 ## 7. Document-Based Persistence with NSDocument

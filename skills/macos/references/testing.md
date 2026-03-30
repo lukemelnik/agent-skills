@@ -844,3 +844,62 @@ Use `#Preview` as a lightweight validation layer alongside snapshot tests.
 - Verify toolbar rendering in preview
 - Check window-size-dependent layouts at different frame sizes
 - Previews should cover: light/dark, empty/loaded states, sidebar collapsed/expanded
+
+---
+
+## 14. Scenario-Based State Machine Testing
+
+For stateful systems that process events over time (gesture recognizers, hotkey processors, animation state machines, multi-step workflows), use a declarative scenario pattern:
+
+```swift
+struct ScenarioStep {
+    let time: TimeInterval
+    let input: InputEvent
+    let expectedOutput: Output?
+    let expectedState: State?
+}
+
+func runScenario(config: Config, steps: [ScenarioStep]) {
+    var processor = Processor(config: config)
+    for step in steps.sorted(by: { $0.time < $1.time }) {
+        // Control time via dependency injection
+        withDependencies {
+            $0.date.now = Date(timeIntervalSince1970: step.time)
+        } operation: {
+            let output = processor.process(step.input)
+            if let expected = step.expectedOutput {
+                #expect(output == expected, "\(step.time)s: expected \(expected), got \(String(describing: output))")
+            } else {
+                #expect(output == nil, "\(step.time)s: expected no output, got \(String(describing: output))")
+            }
+            if let expectedState = step.expectedState {
+                #expect(processor.state == expectedState, "\(step.time)s: wrong state")
+            }
+        }
+    }
+}
+```
+
+Each test becomes a readable sequence of events:
+
+```swift
+@Test
+func pressAndHold_startsAndStops() {
+    runScenario(
+        config: .init(hotkey: .init(key: .a, modifiers: [.command])),
+        steps: [
+            ScenarioStep(time: 0.0, input: .keyDown(.a, [.command]), expectedOutput: .startRecording),
+            ScenarioStep(time: 0.5, input: .keyUp(.a, [.command]), expectedOutput: .stopRecording),
+        ]
+    )
+}
+```
+
+Key design decisions:
+- Steps are **time-stamped** (absolute), not sequential delays — avoids flaky timing
+- Time is controlled via **dependency injection**, not `Task.sleep`
+- Each step declares **expected output AND expected state** (both optional)
+- Failure messages include the **timestamp** for easy debugging
+- The harness sorts steps by time, so test readability isn't order-dependent
+
+Use this pattern for any stateful system with >3 interacting dimensions (timing, input type, prior state).

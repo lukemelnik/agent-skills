@@ -119,7 +119,7 @@ To offload:
 
 ### Async patterns
 - `references/async-streams.md` — `AsyncStream.makeStream(of:)`, continuation lifecycle, buffering policies, delegate wrapping.
-- `references/bridging.md` — Checked continuations (resume exactly once), `@unchecked Sendable`, `nonisolated(nonsending)`, runtime actor assertions.
+- `references/bridging.md` — Checked continuations (resume exactly once), token-based lifecycle for system resources (bridging callback APIs into structured concurrency with cancellation), `@unchecked Sendable`, `nonisolated(nonsending)`, runtime actor assertions.
 
 ### Migration and debugging
 - `references/interop.md` — Completion handlers -> async/await, delegates -> AsyncStream, DispatchQueue -> @MainActor/@concurrent, serial queue -> actor, locks vs Mutex, Combine -> AsyncSequence.

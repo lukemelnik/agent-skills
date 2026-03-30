@@ -7,8 +7,9 @@
 3. [Dependency Injection](#3-dependency-injection)
 4. [Module / Package Structure](#4-module--package-structure)
 5. [Concurrency (Swift 6)](#5-concurrency-swift-6)
-6. [Service Layer](#6-service-layer)
-7. [When to Use AppKit vs SwiftUI vs Hybrid](#7-when-to-use-appkit-vs-swiftui-vs-hybrid)
+6. [Logging](#6-logging)
+7. [Service Layer](#7-service-layer)
+8. [When to Use AppKit vs SwiftUI vs Hybrid](#8-when-to-use-appkit-vs-swiftui-vs-hybrid)
 
 ---
 
@@ -295,7 +296,70 @@ DispatchQueue.main.async { self.handleEvent(event) }
 
 ---
 
-## 6. Service Layer
+## 6. Logging
+
+### Category-Based Unified Logging
+
+Use Apple's `os.Logger` with an enum of categories for consistent, filterable diagnostics. This is always-on (not `#if DEBUG`-gated) — `os.Logger` has near-zero overhead and the OS handles filtering. Use Console.app to filter by subsystem and category.
+
+```swift
+import os.log
+
+enum AppLog {
+    static let subsystem = "com.example.MyApp"
+
+    enum Category: String {
+        case networking = "Networking"
+        case persistence = "Persistence"
+        case auth = "Auth"
+        case ui = "UI"
+    }
+
+    static func logger(_ category: Category) -> os.Logger {
+        os.Logger(subsystem: subsystem, category: category.rawValue)
+    }
+
+    // Convenience accessors
+    static let networking = logger(.networking)
+    static let persistence = logger(.persistence)
+    static let auth = logger(.auth)
+    static let ui = logger(.ui)
+}
+```
+
+Usage: `AppLog.networking.info("Request completed: \(url, privacy: .private)")`. Use `privacy: .private` for user data, file paths, and anything potentially sensitive — these are redacted in release builds but visible during debug.
+
+### Pure Decision Engines
+
+When a reducer, ViewModel, or client has complex conditional logic (e.g., "should we keep this recording?", "should we retry this request?", "which state should we transition to?"), extract the decision into a pure struct with a static function:
+
+```swift
+struct RetryDecisionEngine {
+    struct Context {
+        var attemptCount: Int
+        var lastError: AppError
+        var elapsedTime: TimeInterval
+    }
+
+    enum Decision {
+        case retry(after: TimeInterval)
+        case giveUp(reason: String)
+    }
+
+    static func decide(_ context: Context) -> Decision {
+        guard context.attemptCount < 3 else { return .giveUp(reason: "max retries") }
+        guard context.elapsedTime < 30 else { return .giveUp(reason: "timeout") }
+        let backoff = pow(2.0, Double(context.attemptCount))
+        return .retry(after: backoff)
+    }
+}
+```
+
+Benefits: trivially testable (construct context, assert decision), no dependencies, no async, documents the rules in one place. Use this pattern whenever branching logic depends on multiple inputs and the "right answer" isn't obvious.
+
+---
+
+## 7. Service Layer
 
 ### Protocol-Based Endpoint Pattern
 
@@ -329,7 +393,7 @@ Own the network client at the app or document composition root and inject it via
 
 ---
 
-## 7. When to Use AppKit vs SwiftUI vs Hybrid
+## 8. When to Use AppKit vs SwiftUI vs Hybrid
 
 | Approach | Use When | Examples |
 |----------|----------|---------|

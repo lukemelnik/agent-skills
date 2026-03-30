@@ -22,11 +22,17 @@ description: Build native iOS apps with SwiftUI. Covers architecture (project st
 
 Read the relevant reference based on the task:
 
+### `references/project-setup.md`
+
+Read when creating a new iOS project, setting up XcodeGen, configuring build settings, setting up linting/formatting, or troubleshooting build/display issues (letterboxing, missing Info.plist, asset catalog errors).
+
+Covers: directory layout, XcodeGen `project.yml` template, full Makefile (build, run, test, lint, format, setup, release, version bumping), `.gitignore`, `.swiftlint.yml` with custom architecture/theming/HIG rules, `.swiftformat` config, `ExportOptions.plist`, `CLAUDE.md` template, pre-commit hook setup, asset catalog setup, common gotchas (app not filling screen, background not extending behind safe areas, code signing errors, SwiftFormat/SwiftLint conflicts).
+
 ### `references/architecture.md`
 
 Read when scaffolding features, refactoring structure, setting up DI, managing state, writing tests, or reviewing PR quality.
 
-Covers: project structure, @Observable architecture, dependency injection, structured concurrency, state management, navigation, error handling, performance, testing.
+Covers: project structure, @Observable architecture, dependency injection, structured concurrency, state management, navigation, logging (category-based os.Logger, privacy annotations), error handling, pure decision engines (extracting complex branching into testable structs), performance, testing.
 
 ### `references/hig.md`
 
@@ -74,7 +80,7 @@ Covers: SwiftData + CloudKit (ModelConfiguration, schema restrictions, debugging
 
 Read when writing unit tests, UI tests, setting up mocks, testing async code, adding snapshot tests, or reviewing test coverage.
 
-Covers: Swift Testing framework (@Test, #expect, @Suite, traits, parameterized tests), XCTest essentials (XCTestCase, assertions, expectations), testing @Observable ViewModels, async test patterns (ActorIsolated, withMainSerialExecutor, polling waits), protocol-based mocking (actor mocks, multi-protocol mocks, tracking mocks, closure-based DI), snapshot testing (swift-snapshot-testing with device configs), UI testing with XCUIApplication (launch config, accessibility queries, wait helpers, screenshots), preview-based testing.
+Covers: Swift Testing framework (@Test, #expect, @Suite, traits, parameterized tests), XCTest essentials (XCTestCase, assertions, expectations), testing @Observable ViewModels, async test patterns (ActorIsolated, withMainSerialExecutor, polling waits), protocol-based mocking (actor mocks, multi-protocol mocks, tracking mocks, closure-based DI), snapshot testing (swift-snapshot-testing with device configs), UI testing with XCUIApplication (launch config, accessibility queries, wait helpers, screenshots), preview-based testing, scenario-based state machine testing (declarative time-stamped steps, dependency-injected time control).
 
 ### `references/uikit-bridge.md`
 

@@ -573,21 +573,81 @@ Key points:
 - Parse the URL path components to match against known route patterns.
 - Fall back to `.systemAction` for unrecognized URLs so the system browser handles them.
 
-## 8. Error Handling
+## 8. Logging
+
+### Category-Based Unified Logging
+
+Use Apple's `os.Logger` with an enum of categories for consistent, filterable diagnostics. This is always-on (not `#if DEBUG`-gated) — `os.Logger` has near-zero overhead and the OS handles filtering. Use Console.app (macOS) or Xcode console to filter by subsystem and category.
+
+```swift
+import os.log
+
+enum AppLog {
+    static let subsystem = "com.example.MyApp"
+
+    enum Category: String {
+        case networking = "Networking"
+        case persistence = "Persistence"
+        case auth = "Auth"
+        case ui = "UI"
+    }
+
+    static func logger(_ category: Category) -> os.Logger {
+        os.Logger(subsystem: subsystem, category: category.rawValue)
+    }
+
+    static let networking = logger(.networking)
+    static let persistence = logger(.persistence)
+    static let auth = logger(.auth)
+    static let ui = logger(.ui)
+}
+```
+
+Usage: `AppLog.networking.info("Request completed: \(url, privacy: .private)")`. Use `privacy: .private` for user data, file paths, and anything potentially sensitive — these are redacted in release builds but visible during debug.
+
+## 9. Error Handling
 
 - Use typed domain errors and map to user-facing messages.
 - Provide retry paths for recoverable failures.
 - Use structured logs with context (feature, operation, ids).
 - Keep analytics events consistent and intentional.
 
-## 9. Accessibility and Localization
+### Pure Decision Engines
+
+When a ViewModel or service has complex conditional logic (e.g., "should we retry this request?", "which state should we transition to?"), extract the decision into a pure struct with a static function:
+
+```swift
+struct RetryDecisionEngine {
+    struct Context {
+        var attemptCount: Int
+        var lastError: AppError
+        var elapsedTime: TimeInterval
+    }
+
+    enum Decision {
+        case retry(after: TimeInterval)
+        case giveUp(reason: String)
+    }
+
+    static func decide(_ context: Context) -> Decision {
+        guard context.attemptCount < 3 else { return .giveUp(reason: "max retries") }
+        guard context.elapsedTime < 30 else { return .giveUp(reason: "timeout") }
+        let backoff = pow(2.0, Double(context.attemptCount))
+        return .retry(after: backoff)
+    }
+}
+```
+
+Benefits: trivially testable (construct context, assert decision), no dependencies, no async, documents the rules in one place. Use this pattern whenever branching logic depends on multiple inputs and the "right answer" isn't obvious.
+
+## 10. Accessibility and Localization
 
 - Add accessibility labels/values/hints for controls.
 - Verify Dynamic Type behavior.
 - Verify contrast and tap target size.
 - Externalize all user-facing strings for localization.
 
-## 10. Performance
+## 11. Performance
 
 - Ensure stable identity for list rows.
 - Keep heavy work off main thread.
@@ -595,7 +655,7 @@ Key points:
 - Avoid repeated expensive computations in `body`.
 - Profile with Instruments for hot paths before major optimizations.
 
-## 11. Testing
+## 12. Testing
 
 - Add/adjust ViewModel tests for behavior changes.
 - Validate loading/success/error transitions.
@@ -603,7 +663,7 @@ Key points:
 - Add smoke UI tests for core user flows.
 - Keep preview coverage for key states.
 
-## 12. PR Checklist
+## 13. PR Checklist
 
 - UI follows design tokens and shared patterns
 - Navigation is stable and type-safe

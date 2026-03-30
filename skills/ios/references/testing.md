@@ -904,3 +904,61 @@ Use `#Preview` as a lightweight validation layer. Not a substitute for unit test
 - Previews for interactive iteration during development
 - Snapshot tests in CI to catch regressions automatically
 - Both should cover: loading, loaded, empty, error states
+
+---
+
+## 9. Scenario-Based State Machine Testing
+
+For stateful systems that process events over time (gesture recognizers, multi-step workflows, input handling state machines), use a declarative scenario pattern:
+
+```swift
+struct ScenarioStep {
+    let time: TimeInterval
+    let input: InputEvent
+    let expectedOutput: Output?
+    let expectedState: State?
+}
+
+func runScenario(config: Config, steps: [ScenarioStep]) {
+    var processor = Processor(config: config)
+    for step in steps.sorted(by: { $0.time < $1.time }) {
+        // Control time via dependency injection
+        withDependencies {
+            $0.date.now = Date(timeIntervalSince1970: step.time)
+        } operation: {
+            let output = processor.process(step.input)
+            if let expected = step.expectedOutput {
+                #expect(output == expected, "\(step.time)s: expected \(expected), got \(String(describing: output))")
+            } else {
+                #expect(output == nil, "\(step.time)s: expected no output, got \(String(describing: output))")
+            }
+            if let expectedState = step.expectedState {
+                #expect(processor.state == expectedState, "\(step.time)s: wrong state")
+            }
+        }
+    }
+}
+```
+
+Each test becomes a readable sequence of events:
+
+```swift
+@Test
+func longPress_startsAndCompletes() {
+    runScenario(
+        config: .init(threshold: 0.5),
+        steps: [
+            ScenarioStep(time: 0.0, input: .touchDown, expectedOutput: .began),
+            ScenarioStep(time: 0.5, input: .holdCheck, expectedOutput: .recognized),
+        ]
+    )
+}
+```
+
+Key design decisions:
+- Steps are **time-stamped** (absolute), not sequential delays — avoids flaky timing
+- Time is controlled via **dependency injection**, not `Task.sleep`
+- Each step declares **expected output AND expected state** (both optional)
+- Failure messages include the **timestamp** for easy debugging
+
+Use this pattern for any stateful system with >3 interacting dimensions (timing, input type, prior state).

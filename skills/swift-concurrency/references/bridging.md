@@ -50,6 +50,44 @@ This silences the compiler's Sendable checks entirely. It is a promise that you 
 Before reaching for `@unchecked Sendable`, check whether Swift 6's region-based isolation already solves the problem — many cases that previously required it now compile cleanly.
 
 
+## Token-Based Lifecycle for System Resources
+
+When wrapping callback-based system APIs (CGEvent taps, FSEvents, IOKit notifications, audio session observers) into structured concurrency, return a cancellation token and bridge it with `withTaskCancellationHandler`:
+
+```swift
+struct MonitorToken: Sendable {
+    private let cancelHandler: @Sendable () -> Void
+    init(cancel: @escaping @Sendable () -> Void) { self.cancelHandler = cancel }
+    func cancel() { cancelHandler() }
+    static let noop = MonitorToken(cancel: {})
+}
+```
+
+The system resource registers a handler and returns a token. The caller bridges it into structured concurrency:
+
+```swift
+func startMonitoring() async {
+    let token = systemMonitor.observe { event in
+        // handle event
+    }
+    defer { token.cancel() }
+
+    await withTaskCancellationHandler {
+        // Keep alive until cancelled
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(60))
+        }
+    } onCancel: {
+        token.cancel()  // Clean up system resource when task is cancelled
+    }
+}
+```
+
+This pattern ensures the system resource is cleaned up whether the task is cancelled by structured concurrency (parent cancellation, `.task()` modifier disappearing) or explicitly. The token struct is `Sendable`, making it safe to capture in the `onCancel` closure.
+
+Use this over raw `Task` handles when the underlying API uses its own registration/deregistration mechanism that doesn't map to Swift's task lifecycle.
+
+
 ## `nonisolated(nonsending)` (Swift 6.2)
 
 Marks an async function so it stays on the caller's actor (the new default behavior) even when the function would otherwise hop executors. Use this when you want to explicitly document that a function should not be offloaded, or to override a protocol requirement that would otherwise be `@concurrent`.

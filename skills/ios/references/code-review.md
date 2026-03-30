@@ -201,6 +201,30 @@ Text("\(red)\(blue)")
 - `ForEach(items.enumerated(), id: \.element.id)` — no need to convert to array first
 - `ImageRenderer` over `UIGraphicsImageRenderer` for rendering SwiftUI views to images
 
+### Cramped form sheets
+
+Flag sheets that default to `.medium` when they present a real form with multiple sections, multiline input, keyboard entry, or dynamic validation/errors. These often look clipped near the home indicator even when technically scrollable.
+
+```swift
+// Bad
+.sheet(isPresented: $showEditor) {
+    EditorSheet()
+        .presentationDetents([.medium, .large])
+}
+
+// Good
+.sheet(isPresented: $showEditor) {
+    EditorSheet()
+        .presentationDetents([.large])
+        .presentationContentInteraction(.scrolls)
+}
+```
+
+Also check the sheet content itself:
+- add bottom inset or bottom padding for scrollable form content
+- prefer `.height(...)` only for short action sheets, not full forms
+- remember `.medium` / `.large` are presets; `.height(...)` / `.fraction(...)` are explicit detents
+
 ---
 
 ## 2. Swift Idioms

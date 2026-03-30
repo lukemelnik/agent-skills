@@ -200,36 +200,51 @@ For clearly fixable findings:
 2. Run gates: `pnpm check && pnpm check-types && pnpm test`
 3. Commit: `git add <files> && git commit -m "review: fix <description>"`
 
-### Report all findings:
+### Report findings:
+
+Structure the report so fixed items come first (quick skim), then items needing user attention come last (sorted by severity). Never interleave fixed and unfixed items in the same list.
 
 ```
 ## Review Results
 
-### 🔴 Critical (must fix)
-- [Agent]: Description — file:line (confidence: N) [FIXED/NEEDS ATTENTION]
+### Auto-fixed (N)
 
-### 🟡 Important (should fix)
-- [Agent]: Description — file:line (confidence: N) [FIXED/NEEDS ATTENTION]
+| Fix | File | What changed |
+|-----|------|-------------|
+| Short description | `file:line` | Before → After |
 
-### 🟢 Suggestions
-- [Agent]: Description — file:line (confidence: N)
+### Gates: pass/fail
+
+`pnpm check`, `pnpm check-types`, `pnpm test`
 
 ### ✅ Spec Compliance (if spec provided)
 - [Criterion]: ✅/⚠️/❌/🔄 — evidence
 
-### 📊 Summary
-- Issues found: N (after filtering)
-- Auto-fixed: N
-- Need user attention: N
-- Spec criteria: N/M met
+---
+
+### Needs your attention (N)
+
+**Critical** (if any)
+
+1. **Title** — `file:line` (confidence: N, category)
+   Description of the issue and suggested fix.
+
+**Important** (if any)
+
+2. **Title** — `file:line` (confidence: N, category)
+   Description.
+
+**Minor** (if any)
+
+3. **Title** — `file:line` (confidence: N, category)
+   Description.
 ```
 
-### Items needing user input:
-Clearly list any findings that:
-- Require architectural decisions
-- Have tradeoffs needing human judgment
-- Are uncertain (confidence 50-74) but potentially important
-- Represent spec deviations the user should approve
+Key rules for the report format:
+- Fixed items are a summary table — the user should be able to skim and move on
+- "Needs your attention" is always the last section, sorted by severity (Critical > Important > Minor)
+- Each attention item is numbered with a bold title, file location, confidence score, and category
+- Include items needing user input: architectural decisions, tradeoffs needing human judgment, uncertain findings (confidence 50-74) that are potentially important, and spec deviations the user should approve
 
 
 ## When Called from /orchestrate
