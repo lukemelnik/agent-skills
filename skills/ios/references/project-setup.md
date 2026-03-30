@@ -73,7 +73,6 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"          # iPhone only; "1,2" for universal
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES  # CRITICAL — see §9
-        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: false  # Skip export compliance on upload
 
   MyAppTests:
     type: bundle.unit-test
@@ -866,11 +865,18 @@ init() {
 
 **Cause:** The app doesn't declare its encryption usage. Without `ITSAppUsesNonExemptEncryption`, Apple requires a manual compliance declaration for every build before it can be tested.
 
-**Fix:** Add to the target settings in `project.yml`:
+**Fix:** Add via XcodeGen's `info.properties` block in `project.yml` (NOT as an `INFOPLIST_KEY_` build setting — that prefix doesn't work for this key):
 
 ```yaml
-INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: false
+targets:
+  MyApp:
+    info:
+      path: MyApp/Info.plist
+      properties:
+        ITSAppUsesNonExemptEncryption: false
 ```
+
+When using `info.properties`, also move `UILaunchScreen`, `NSCameraUsageDescription`, etc. into the `properties` block and remove the corresponding `INFOPLIST_KEY_` build settings.
 
 This tells Apple the app doesn't use non-exempt encryption (standard HTTPS is exempt). If your app uses custom encryption beyond HTTPS, set this to `true` and file a compliance declaration in App Store Connect.
 
