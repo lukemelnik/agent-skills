@@ -36,32 +36,39 @@ For every screenshot, rate **Great / Usable / Retake** with honest feedback. Coa
 
 Pair each benefit with the best screenshot. Consider relevance, visual impact, clarity at thumbnail size, and uniqueness. Present pairings with reasoning. Confirm with user before proceeding.
 
-## Phase 4: Composition
+## Phase 4: Layout Selection & Composition
 
-Read [references/composition.md](references/composition.md) for the full process.
+Present the available layout options and let the user choose. Each layout has its own reference doc with prompts and generation instructions:
 
-**Summary:** Determine brand color automatically from codebase/screenshots → run `scripts/compose.py` to generate scaffold images (headline text + device frame + screenshot on solid background) → crop/resize to exact App Store dimensions → present to user for review.
+| Layout | Description | Reference |
+|--------|-------------|-----------|
+| **Vertical** | Classic — one upright phone per screenshot, headline above. Reliable, crisp text guaranteed via Pillow scaffold. | [references/layouts/vertical.md](references/layouts/vertical.md) |
+| **Centered Spread** | Panoramic — 3 phones in a fan formation, one wide image sliced into panels. Creates continuous swipe effect. Requires AI image generation. | [references/layouts/centered-spread.md](references/layouts/centered-spread.md) |
+
+### If Vertical:
+Read [references/composition.md](references/composition.md). Determine brand color → run `scripts/compose.py` → present scaffolds → ask if user wants AI enhancement (optional polish pass). If no enhancement, scaffolds go straight to `final/`.
+
+### If Centered Spread:
+Read [references/layouts/centered-spread.md](references/layouts/centered-spread.md). Requires AI image generation (Google Flow, Gemini MCP, or similar). Determine brand color → fill in the prompt template → user generates the panoramic → slice into panels with the provided Python script.
+
+### AI Enhancement (Vertical layout only, optional)
+
+After reviewing scaffold screenshots, ask: **"Would you like to enhance these with AI image generation for a more polished look?"**
+
+If yes, read [references/ai-enhance.md](references/ai-enhance.md). If no, copy scaffolds directly to `final/`.
 
 Output structure:
 ```
 .aso-screenshots/
   01-benefit-slug/
-    scaffold.png          ← compose.py output
-    final.png             ← approved version (scaffold or enhanced)
+    scaffold.png          ← compose.py output (vertical only)
+    final.png             ← approved version
   02-benefit-slug/
     ...
   final/                  ← App Store-ready, numbered
     01-benefit-slug.png
     02-benefit-slug.png
 ```
-
-## Phase 5: AI Enhancement (Optional)
-
-After reviewing the scaffold screenshots, ask the user: **"Would you like to enhance these with AI image generation for a more polished look?"**
-
-If yes, read [references/ai-enhance.md](references/ai-enhance.md). This uses available image generation MCP tools to add photorealistic device frames, breakout elements, and visual polish. 3 variants per screenshot, user picks favorite.
-
-If no, copy the scaffold screenshots directly to `final/`.
 
 ## Phase 6: Upload
 
