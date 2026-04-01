@@ -51,6 +51,8 @@ Professional, high-budget App Store quality. No watermarks, no extra text, no Ap
 
 After generating the 4:3 panoramic, slice into panels and resize to App Store dimensions:
 
+**Important:** If the source image isn't wide enough, `crop_w` can exceed `panel_w`, causing the edge panels to extend beyond the image bounds and produce black bars. The script below detects this and trims the source height to fit. A 4:3 panoramic at 2400×1792 needs ~29px trimmed — barely visible.
+
 ```python
 from PIL import Image
 
@@ -60,6 +62,15 @@ panel_w = w // 3
 target_ratio = 1290 / 2796  # iPhone 6.7"
 
 crop_w = int(h * target_ratio)
+
+# If crop_w > panel_w, the edge panels would extend beyond
+# the image and produce black bars. Trim the height to fit.
+if crop_w > panel_w:
+    h = int(panel_w / target_ratio)
+    top = (img.height - h) // 2
+    img = img.crop((0, top, w, top + h))
+    crop_w = int(h * target_ratio)
+
 offset = (panel_w - crop_w) // 2
 
 for i in range(3):
