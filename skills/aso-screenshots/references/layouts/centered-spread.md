@@ -80,10 +80,7 @@ for i in range(3):
     panel.save(f"final/0{i+1}.png", "PNG")
 ```
 
-For different display sizes, adjust the target ratio:
-- iPhone 6.5": 1242/2688
-- iPhone 6.7": 1290/2796
-- iPhone 6.9": 1320/2868
+Only generate 6.7" (1290×2796) — it's the current App Store standard. Do not generate 6.5" or other sizes unless explicitly asked.
 
 ## Scaling to More Screenshots
 

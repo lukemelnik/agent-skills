@@ -83,13 +83,15 @@ asc screenshots upload \
 
 ## App Store Dimensions
 
-| Display | Portrait |
-|---------|----------|
-| iPhone 6.5" | 1242 × 2688 |
-| iPhone 6.7" (default) | 1290 × 2796 |
-| iPhone 6.9" | 1320 × 2868 |
+Only generate 6.7" by default — it's the current App Store standard. The 6.5" size is no longer required.
 
-Default to 6.7" unless user specifies otherwise.
+| Display | Portrait | Required |
+|---------|----------|----------|
+| iPhone 6.7" (default) | 1290 × 2796 | ✅ |
+| iPhone 6.9" | 1320 × 2868 | No |
+| iPhone 6.5" | 1242 × 2688 | No |
+
+Do **not** generate additional sizes unless the user explicitly asks for them.
 
 ## Key Principles
 
