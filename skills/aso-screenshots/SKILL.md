@@ -38,7 +38,37 @@ Pair each benefit with the best screenshot. Consider relevance, visual impact, c
 
 ## Phase 4: Layout Selection & Composition
 
-Present the available layout options and let the user choose. Each layout has its own reference doc with prompts and generation instructions:
+Present the available layout options and let the user choose. Each layout has its own reference doc with prompts and generation instructions.
+
+### Project folder conventions for screenshot work
+
+When working in a repo that already has a `screenshots/` folder at the project root, prefer using that folder instead of inventing a parallel structure.
+
+### Context-size safety for screenshot work
+
+To avoid API payload overages and `413 request_too_large` errors:
+
+- Do **not** load multiple high-resolution screenshots into model context unless absolutely necessary
+- Prefer working from file paths, repo assets, and script outputs instead of repeatedly opening large image files
+- Only open a single full-resolution image at a time when visual inspection is necessary
+- Do not batch-read many PNGs in one turn
+- Prefer updating `config.md` and rerunning the skill scripts over repeatedly attaching or reading source images
+
+- Store screenshot sets under `screenshots/<version>/` such as `screenshots/v3/`
+- Reuse the current version folder for iterative tweaks within the same session
+- Ask the user before creating a new version folder if the work feels like a new direction or a major reset
+- Within each version folder, prefer this structure:
+
+```text
+screenshots/
+  v3/
+    config.md   ← style, copy, font suggestions, layout tuning, panel mapping
+    raw/        ← original simulator captures or raw panoramic source
+    enhanced/   ← AI-enhanced panoramic source + review composites
+    final/      ← final App Store-ready numbered panels
+```
+
+For centered-spread iterations, treat the AI-enhanced panoramic as the working source of truth for slicing. Run the skill's slicing script against the current version folder so it reads `screenshots/<version>/enhanced/panoramic.png` and `screenshots/<version>/config.md` rather than unrelated desktop exports or temporary files.
 
 | Layout | Description | Reference |
 |--------|-------------|-----------|
@@ -46,10 +76,10 @@ Present the available layout options and let the user choose. Each layout has it
 | **Centered Spread** | Panoramic — 3 phones in a fan formation, one wide image sliced into panels. Creates continuous swipe effect. Requires AI image generation. | [references/layouts/centered-spread.md](references/layouts/centered-spread.md) |
 
 ### If Vertical:
-Read [references/composition.md](references/composition.md). Determine brand color → run `scripts/compose.py` → present scaffolds → ask if user wants AI enhancement (optional polish pass). If no enhancement, scaffolds go straight to `final/`.
+Read [references/composition.md](references/composition.md) and [references/layouts/vertical.md](references/layouts/vertical.md). Determine brand color → set `style: vertical` in `screenshots/<version>/config.md` → use each panel section's `raw:`/`screenshot:` + `big:`/`small:` values to run `scripts/compose.py` → present scaffolds → ask if user wants AI enhancement (optional polish pass). If no enhancement, write approved finished screenshots to `final/`.
 
 ### If Centered Spread:
-Read [references/layouts/centered-spread.md](references/layouts/centered-spread.md). Requires AI image generation (Google Flow, Gemini MCP, or similar). Determine brand color → fill in the prompt template → user generates the panoramic → slice into panels with the provided Python script.
+Read [references/layouts/centered-spread.md](references/layouts/centered-spread.md). Requires AI image generation (Google Flow, Gemini MCP, or similar). Determine brand color → fill in the prompt template → user generates the panoramic → save that panoramic in `screenshots/<version>/enhanced/panoramic.png` → store style, copy, and optional font suggestions in `screenshots/<version>/config.md` → run the skill's `scripts/slice_panoramic.py` against that version folder so finished screenshots are written to `screenshots/<version>/final/`.
 
 ### AI Enhancement (Vertical layout only, optional)
 

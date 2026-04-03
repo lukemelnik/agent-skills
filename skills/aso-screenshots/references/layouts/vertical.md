@@ -2,6 +2,8 @@
 
 Classic App Store screenshot layout — one phone per screenshot, upright, with headline text above.
 
+Use `screenshots/<version>/config.md` as the per-version source of truth. Set `style: vertical` and define one section per output screenshot with its `panel:`, `raw:` or `screenshot:`, `big:`, and `small:` values.
+
 ## How It Works
 
 Each screenshot is generated independently using `scripts/compose.py`:
@@ -13,15 +15,17 @@ Each screenshot is generated independently using `scripts/compose.py`:
 
 ## Generation
 
-Run compose.py for each benefit/screenshot pair:
+Run compose.py for each panel defined in `config.md`:
 ```bash
 python3 "$SKILL_DIR/scripts/compose.py" \
   --bg "#6B4FC4" \
   --verb "PRACTICE" \
   --desc "VOCAL EXERCISES" \
-  --screenshot .aso-screenshots/raw/practice.png \
-  --output .aso-screenshots/01-practice-vocals/scaffold.png
+  --screenshot ./screenshots/v3/raw/practice.png \
+  --output ./screenshots/v3/final/02.png
 ```
+
+The finished approved screenshot should end up in `screenshots/<version>/final/`.
 
 ## AI Enhancement (Optional)
 
