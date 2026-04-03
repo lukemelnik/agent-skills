@@ -54,6 +54,10 @@ _Emerging shape of the solution._
 
 Interview the user. Challenge assumptions. Watch for XY problems. Be thorough but not tedious — match depth to complexity.
 
+### Initial scan
+
+Before asking the first question, do a quick codebase scan relevant to the topic. Pre-populate the Not Yet Discussed section with areas you think are relevant. This gives the user a sense of scope and ensures nothing obvious is missed early.
+
 ### Research and self-answer
 
 Formulate your questions first, then search the codebase (schema, services, config, related code) for answers. When you find an answer, still surface the question along with your finding — e.g. "Q: What email provider are we using? From the codebase: MailerLite, already integrated in `email.service.ts`." This shows your understanding and lets the user correct you if your interpretation is wrong. Only leave questions unanswered when the codebase genuinely can't answer them.
@@ -63,7 +67,7 @@ Formulate your questions first, then search the codebase (schema, services, conf
 - Start broad: "What's the core problem? What does success look like?"
 - Probe for hidden requirements: "Who uses this? What happens when X fails? How does this interact with Y?"
 - Challenge when appropriate: "You mentioned X, but have you considered Y? It might solve the underlying problem better."
-- Batch related questions — don't ask one at a time.
+- Batch related questions — 2-3 per exchange is a good pace. Don't overwhelm.
 - Identify the objective early: is this a marketing goal, a technical fix, a UX improvement? The objective shapes every subsequent decision.
 
 ### Updating the doc during discovery
@@ -76,11 +80,11 @@ After each exchange, update the spec file with what you learned:
 
 Use `edit` for targeted updates. Never rewrite the whole file.
 
-**All sections use checkboxes `- [ ]` / `- [x]` consistently.** When an item is resolved, check it off and note the outcome inline (e.g. `- [x] Unsubscribe flow → moved to Decisions`). Do not use strikethrough for resolved items.
+**All sections use checkboxes `- [ ]` / `- [x]` consistently**, except Ruled Out (items there are final by nature — use plain list items with rationale). When an item is resolved, check it off and note the outcome inline (e.g. `- [x] Unsubscribe flow → moved to Decisions`). Do not use strikethrough for resolved items.
 
 ### Annotations
 
-The user may add `>` blockquote annotations in the spec file. Check the file periodically (every few exchanges). When you see an annotation:
+The user may add `>` blockquote annotations anywhere in the spec file. **Read the spec file before every response** during discovery — both to refresh your understanding and to check for new annotations. When you see an annotation:
 1. Address it in conversation
 2. Remove the annotation and incorporate the result into the appropriate section
 
@@ -101,7 +105,7 @@ Delegate a review to a subagent with clean context. This catches blind spots, se
 
 ```
 subagent({
-  agent: "coder",
+  agent: "general-purpose",  // or check available agents with subagent
   task: `You are reviewing a feature spec for completeness and risks. Read the spec file at ${specFilePath} and the relevant codebase files it references.
 
 Analyze for:
