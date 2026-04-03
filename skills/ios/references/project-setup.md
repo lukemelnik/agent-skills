@@ -262,6 +262,12 @@ archive: bump generate
 ## release:minor, or release:major so the marketing version is bumped.
 ## Every release must bump the version.
 ENV_APPLE ?= .env.apple
+## App Store Connect IDs for auto-distribution to internal TestFlight group.
+## Set these after creating the app and internal group in ASC.
+## Find APP_ID: asc apps list --output table
+## Find GROUP_ID: asc testflight groups list --app <APP_ID> --internal --output table
+ASC_APP_ID   ?=
+ASC_GROUP_ID ?=
 _release: archive
 	set -a && . $(ENV_APPLE) && set +a && \
 	xcodebuild -exportArchive \
@@ -274,6 +280,15 @@ _release: archive
 		-t ios \
 		-u "$$APPLE_ID" \
 		-p "$$APPLE_PASSWORD"
+ifneq ($(ASC_APP_ID),)
+ifneq ($(ASC_GROUP_ID),)
+	@echo "⏳ Waiting for build to process..."
+	asc builds wait --app $(ASC_APP_ID) --newest
+	@echo "📲 Distributing to internal TestFlight group..."
+	@BUILD_ID=$$(asc builds latest --app $(ASC_APP_ID) --output json | grep '"id"' | head -1 | sed 's/.*"id": *"\([^"]*\)".*/\1/') && \
+	asc builds add-groups --build "$$BUILD_ID" --group $(ASC_GROUP_ID)
+endif
+endif
 
 ## Tag current commit with the marketing version
 tag:
@@ -865,7 +880,7 @@ init() {
 
 **Cause:** The app doesn't declare its encryption usage. Without `ITSAppUsesNonExemptEncryption`, Apple requires a manual compliance declaration for every build before it can be tested.
 
-**Fix:** Add via XcodeGen's `info.properties` block in `project.yml` (NOT as an `INFOPLIST_KEY_` build setting — that prefix doesn't work for this key):
+**Fix:** Add via XcodeGen's `info` block in `project.yml` (NOT as an `INFOPLIST_KEY_` build setting — that prefix doesn't work for this key):
 
 ```yaml
 targets:
@@ -876,7 +891,22 @@ targets:
         ITSAppUsesNonExemptEncryption: false
 ```
 
-When using `info.properties`, also move `UILaunchScreen`, `NSCameraUsageDescription`, etc. into the `properties` block and remove the corresponding `INFOPLIST_KEY_` build settings.
+When using `info:` with a `path:`, also move `UILaunchScreen`, `NSCameraUsageDescription`, etc. into the `properties` block and remove the corresponding `INFOPLIST_KEY_` build settings.
+
+**⚠️ CRITICAL:** When using `info: path:`, XcodeGen **regenerates the Info.plist on every `make generate`**, overwriting any manual edits. You must add the version variables to `project.yml`'s `info: properties:` block so XcodeGen writes them correctly:
+
+```yaml
+targets:
+  MyApp:
+    info:
+      path: MyApp/Info.plist
+      properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ITSAppUsesNonExemptEncryption: false
+```
+
+Without these, XcodeGen writes hardcoded defaults (`1.0` / `1`) to the plist, silently overriding `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` from build settings. Every upload will fail with "bundle version must be higher than previously uploaded version" because `make bump` updates `project.yml` but the regenerated plist wins.
 
 This tells Apple the app doesn't use non-exempt encryption (standard HTTPS is exempt). If your app uses custom encryption beyond HTTPS, set this to `true` and file a compliance declaration in App Store Connect.
 
@@ -886,8 +916,8 @@ This tells Apple the app doesn't use non-exempt encryption (standard HTTPS is ex
 
 **Fix:**
 1. Add `ITSAppUsesNonExemptEncryption: false` as above
-2. Ensure an internal TestFlight group exists with your Apple ID added
-3. Internal groups auto-receive all processed builds — no manual distribution needed
+2. Ensure an internal TestFlight group exists with testers added (see §12)
+3. Set `ASC_APP_ID` and `ASC_GROUP_ID` in the Makefile so builds auto-distribute to the internal group
 
 ### `UIRequiredDeviceCapabilities` rejection on upload
 
@@ -896,3 +926,75 @@ This tells Apple the app doesn't use non-exempt encryption (standard HTTPS is ex
 **Cause:** Explicitly setting `UIRequiredDeviceCapabilities` to `[arm64]` is redundant for iOS 17+ (all iOS 17 devices are arm64) and Apple rejects it.
 
 **Fix:** Remove `INFOPLIST_KEY_UIRequiredDeviceCapabilities` from `project.yml`. Don't set it at all — iOS 17 minimum deployment target implies arm64.
+
+### Version not bumping — uploads fail with "bundle version must be higher"
+
+**Symptom:** `xcrun altool --upload-app` fails with "The bundle version must be higher than the previously uploaded version" even after running `make bump`.
+
+**Cause:** A physical `Info.plist` (referenced via `info: path:` in `project.yml`) has hardcoded `CFBundleShortVersionString` and `CFBundleVersion` values like `1.0` / `1`. These override `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` build settings — `make bump` updates `project.yml` but the plist wins.
+
+**Fix:** In the physical Info.plist, replace hardcoded values with build setting variables:
+
+```xml
+<key>CFBundleShortVersionString</key>
+<string>$(MARKETING_VERSION)</string>
+<key>CFBundleVersion</key>
+<string>$(CURRENT_PROJECT_VERSION)</string>
+```
+
+**Prevention:** When creating a project with `info: path:`, always verify the plist uses variables, not literals. Alternatively, use `GENERATE_INFOPLIST_FILE: YES` without a physical plist (but then `ITSAppUsesNonExemptEncryption` must be set via XcodeGen `info: properties:` instead).
+
+---
+
+## 12. TestFlight Internal Group Setup
+
+After the first release, the agent should help the user set up an internal TestFlight group for auto-distribution. Internal groups are **per-app** in App Store Connect — they don't carry over from other apps.
+
+### Agent behavior
+
+After the first successful upload to App Store Connect (or when setting up release infrastructure), **ask the user**:
+
+> "Would you like to set up an internal TestFlight group so builds auto-distribute to your team? I'll need to know which email addresses to add as testers."
+
+Then walk through these steps:
+
+### Steps
+
+1. **Find the app ID:**
+   ```
+   asc apps list --output table
+   ```
+
+2. **Create an internal group** (if one doesn't exist):
+   ```
+   asc testflight groups create --app <APP_ID> --name "Team" --internal
+   ```
+
+3. **Ask the user which testers to add.** Do NOT assume emails or hardcode them. Prompt:
+   > "Which email addresses should I add to the internal TestFlight group? These must be Apple IDs of people in your App Store Connect team."
+
+4. **Add testers:**
+   ```
+   asc testflight groups add-testers --id <GROUP_ID> --email "person@example.com"
+   ```
+
+5. **Enable automatic distribution** for the internal group in App Store Connect:
+   - Go to **TestFlight** → click the internal group (e.g. "Team") → **Settings** tab
+   - Under **Build Distribution**, change from "Manual" to **"Automatic"** for Xcode builds
+   - This ensures every new build is automatically distributed to the internal group without manual action
+   - **Do NOT enable automatic distribution for external groups** — external groups require manual assignment and beta review
+
+   Note: The ASC web UI may not always show a toggle for this. As a fallback, the Makefile auto-distribute (step 6) handles it via the API.
+
+6. **Set the Makefile variables** so future builds auto-distribute to the internal group only:
+   ```makefile
+   ASC_APP_ID   ?= 1234567890
+   ASC_GROUP_ID ?= xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+   ```
+
+### Important
+
+- **Always enable automatic distribution for internal groups.** This is per-app and must be set for each new app.
+- **Never enable automatic distribution for external groups.** External groups require manual build assignment and beta review.
+- The `ASC_GROUP_ID` in the Makefile must point to an **internal** group only.
+- Internal group testers must already be members of the App Store Connect team with the Developer, Admin, or App Manager role.
