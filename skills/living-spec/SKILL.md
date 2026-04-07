@@ -13,10 +13,10 @@ Create specs through conversation, not monologue. A shared markdown document upd
 
 1. Create `specs/` directory if it doesn't exist.
 2. Create the working doc: `specs/YYYY-MM-DD-<slug>.md` using the template below.
-3. Open a tmux pane with nvim for the user:
+3. Open a tmux pane with nvim for the user, targeting the current pane so the split happens in the agent's window:
 
 ```bash
-tmux split-window -h "nvim -c 'set autoread | autocmd FocusGained,CursorHold,CursorHoldI * checktime | set updatetime=1000' specs/YYYY-MM-DD-slug.md"
+tmux split-window -h -t $TMUX_PANE "nvim -c 'set autoread | autocmd FocusGained,CursorHold,CursorHoldI * checktime | set updatetime=1000' specs/YYYY-MM-DD-slug.md"
 ```
 
 4. Tell the user: "The spec is open in the right pane. You can annotate anytime with a `>` blockquote — save with `:w` and I'll see it. Let's start."
@@ -62,6 +62,8 @@ Before asking the first question, do a quick codebase scan relevant to the topic
 
 Formulate your questions first, then search the codebase (schema, services, config, related code) for answers. When you find an answer, still surface the question along with your finding — e.g. "Q: What email provider are we using? From the codebase: MailerLite, already integrated in `email.service.ts`." This shows your understanding and lets the user correct you if your interpretation is wrong. Only leave questions unanswered when the codebase genuinely can't answer them.
 
+**Do thorough independent research before asking the user anything.** Read subscription models, plan structures, feature flags, existing gating patterns, API schemas, and related code *before* formulating questions. The user should never have to correct you on facts that are discoverable in the codebase. Front-load your investigation so your questions are informed and specific, not exploratory.
+
 ### How to interview
 
 - Start broad: "What's the core problem? What does success look like?"
@@ -69,6 +71,19 @@ Formulate your questions first, then search the codebase (schema, services, conf
 - Challenge when appropriate: "You mentioned X, but have you considered Y? It might solve the underlying problem better."
 - Batch related questions — 2-3 per exchange is a good pace. Don't overwhelm.
 - Identify the objective early: is this a marketing goal, a technical fix, a UX improvement? The objective shapes every subsequent decision.
+
+### Probe deeply on significant features
+
+**When a feature surfaces during discovery that is non-trivial (new pages, new API endpoints, new user-facing flows), do not accept it at face value.** Treat it as a mini-discovery session within the larger spec. Before marking it as decided:
+
+1. **Map the full surface area.** What does this feature actually consist of? What UI elements, data flows, API changes, state management? List every component, not just the headline.
+2. **Challenge the scope.** "You said add search — but what does the full page look like? What data is on it? How does it differ from what already exists? What can you do here that you can't do elsewhere?"
+3. **Probe for hidden consequences.** New pages create navigation questions, gating questions, data volume questions, mobile vs. desktop questions. Surface all of these before agreeing to build.
+4. **Ask about adjacent features.** "If we're building an All Activity page, should it also show top-performing content? Trends? What about export?" The user may have a larger vision they haven't articulated. Draw it out.
+5. **Grill on the "why".** Why does this feature exist as a separate page vs. enhancing what's already there? What user problem does it solve that the existing UI doesn't? If the answer is vague, push harder.
+6. **Check for ripple effects.** Does this new feature change how existing features work? Does the dashboard widget need to link differently? Does the navigation structure change? Does this affect both platforms?
+
+**The goal is to leave no room for "oh, we also need X" later.** A feature that gets one sentence in conversation should get a full section in the spec with every detail resolved before implementation begins. Never rush to check off a big item — the cost of under-specifying a major feature far exceeds the cost of spending extra time in discovery.
 
 ### Updating the doc during discovery
 
@@ -153,7 +168,9 @@ Clean up the working doc in place — it becomes the final spec. No second file.
 [Solution shape, data flow, schemas, key patterns]
 
 ## Relevant Files
-- `path/to/file.ts` — [why relevant, what pattern to follow]
+- `path/to/file.ts` — [why relevant: what to read, what to modify, what pattern to follow]
+
+_List **every file** discovered during research that the implementer will need to read or modify. Group by area (API, iOS, web, shared). This saves the implementing agent significant search time — all the file discovery happened during spec creation, so encode that knowledge here._
 
 ## Implementation Steps
 - [ ] Step 1
@@ -177,4 +194,15 @@ Clean up the working doc in place — it becomes the final spec. No second file.
 - **Right-size.** Match detail to complexity.
 - **Verifiable acceptance criteria.** "Works correctly" is not a criterion. "Returns 403 for unauthenticated requests" is.
 
-Offer to close the tmux pane or leave it open.
+## Phase 5: Handoff
+
+Offer the user three options:
+1. **Launch an implementing agent** — split a pane below the spec and start a new agent session to implement it. Use:
+   ```bash
+   # Find the nvim pane showing the spec (it's in our window)
+   SPEC_PANE=$(tmux list-panes -t $(tmux display-message -p '#{window_id}') -F '#{pane_id} #{pane_current_command}' | grep nvim | head -1 | awk '{print $1}')
+   tmux split-window -v -t $SPEC_PANE "pi \"implement the spec at specs/YYYY-MM-DD-slug.md\""
+   ```
+   This puts the implementing agent directly below the spec for easy reference.
+2. **Close the spec pane** — kill the nvim pane.
+3. **Leave it open** — keep the spec visible for manual reference.
