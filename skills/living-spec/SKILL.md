@@ -9,6 +9,8 @@ Create specs through conversation, not monologue. A shared markdown document upd
 
 **Input:** $ARGUMENTS — brief description of what to spec out.
 
+Right-size the process. If the requested change is truly trivial and a spec would add more friction than clarity, say so and let the user choose whether to skip `/living-spec`. If they still want one, produce a single-sprint spec.
+
 ## Setup
 
 1. Create `specs/` directory if it doesn't exist.
@@ -23,7 +25,7 @@ tmux split-window -h -t $TMUX_PANE "nvim -c 'set autoread | autocmd FocusGained,
 
 ## Working Doc Template
 
-The working template includes permanent sections (survive finalization) and working sections (stripped during cleanup). This means finalization is a light pass — the structure stays the same, implementation sections get added, working sections get removed.
+The working template includes permanent sections (survive finalization) and working sections (stripped during cleanup). Finalization should still be a light pass — the structure stays mostly the same, implementation-planning sections (`Relevant Files`, `Tasks`, `Verification`) are added after discovery. `Changes During Implementation` is optional and only appears later if the plan materially changes.
 
 ```markdown
 # [Feature Name]
@@ -61,14 +63,14 @@ _How could this fail in prod? What do we watch? How do we deploy safely? How do 
 - [ ] _Unresolved items needing input_
 
 ## Not Yet Discussed
-- _Known areas we haven't touched_
+- [ ] _Known areas we haven't touched_
 ```
 
 ## Phase 1: Discovery
 
 **Goal:** Understand what the user actually needs, not just what they asked for.
 
-Interview the user. Challenge assumptions. Watch for XY problems. Be thorough but not tedious — match depth to complexity.
+Interview the user. Challenge assumptions. Watch for XY problems. Be thorough but not tedious — match depth to complexity. Resolve one consequential branch at a time.
 
 ### Pre-research and draft (before asking anything)
 
@@ -80,6 +82,7 @@ Interview the user. Challenge assumptions. Watch for XY problems. Be thorough bu
 4. **Draft Constraints / Invariants** from what you find in the codebase (existing patterns, performance characteristics, compatibility requirements).
 5. **Populate Prior Art / Blessed Patterns** with existing solutions, helpers, and patterns that should be reused. Search for similar features already implemented. The goal is "curated collision points" with existing code, not dumping the whole repo.
 6. **Pre-populate Not Yet Discussed** with areas you think are relevant. This gives the user a sense of scope and ensures nothing obvious is missed early.
+7. **Answer codebase-discoverable questions yourself first.** If the codebase can answer a question, research it instead of asking the user.
 
 Present your draft to the user with something like: "I've done an initial scan and drafted what I could. Here's where I landed — correct anything that's off, then we'll dig into the open questions."
 
@@ -90,9 +93,11 @@ When you find codebase answers to your own questions, still surface them — e.g
 After presenting the draft, the interview is about validating, correcting, and filling gaps — not cold-starting from "what's the problem."
 
 - **Validate the draft first.** "Does this Goal capture what you want? Anything in Non-Goals that should be in scope, or vice versa?"
+- **Ask one consequential question at a time.** Resolve that branch before opening another. Batch only trivial clarifications.
+- **Provide a recommended answer with each consequential question.** Tell the user what you think the default should be and why.
+- **If the codebase can answer it, research instead of asking.** Use the user for intent, priorities, and judgment — not for facts already in the repo.
 - **Probe for hidden requirements:** "Who uses this? What happens when X fails? How does this interact with Y?"
 - **Challenge when appropriate:** "You mentioned X, but have you considered Y? It might solve the underlying problem better."
-- **Batch related questions** — 2-3 per exchange is a good pace. Don't overwhelm.
 - **Watch for XY problems.** If the user is asking for a mechanism, ask about the outcome they want. The mechanism might not be the right solution.
 
 ### What to probe during discovery
@@ -102,6 +107,7 @@ Beyond the core feature questions, actively probe for:
 - **Constraints / invariants:** "Are there performance budgets? Compatibility requirements? Things we absolutely cannot break?" Populate the Constraints section — don't let these live as tribal knowledge.
 - **Failure modes and risks:** "How could this fail in prod? What happens if the process crashes mid-operation? Do we need idempotency, transactions, cleanup?" Populate Risks & Rollback.
 - **Scope boundaries:** Push for explicit non-goals early. "What are we deliberately *not* doing? What might someone assume is in scope but isn't?"
+- **Architecture / dependency surface:** Is this extending an existing pattern or introducing a meaningful architectural shift? Does it imply a new external dependency or service? Flag both early instead of hiding them in implementation details.
 
 ### Probe deeply on significant features
 
@@ -113,6 +119,7 @@ Beyond the core feature questions, actively probe for:
 4. **Ask about adjacent features.** "If we're building an All Activity page, should it also show top-performing content? Trends? What about export?" The user may have a larger vision they haven't articulated. Draw it out.
 5. **Grill on the "why".** Why does this feature exist as a separate page vs. enhancing what's already there? What user problem does it solve that the existing UI doesn't? If the answer is vague, push harder.
 6. **Check for ripple effects.** Does this new feature change how existing features work? Does the dashboard widget need to link differently? Does the navigation structure change? Does this affect both platforms?
+7. **Name architectural shifts explicitly.** If the proposal implies a major architectural change, call that out as a first-class decision rather than letting it slip into implementation.
 
 **The goal is to leave no room for "oh, we also need X" later.** A feature that gets one sentence in conversation should get a full section in the spec with every detail resolved before implementation begins. Never rush to check off a big item — the cost of under-specifying a major feature far exceeds the cost of spending extra time in discovery.
 
@@ -142,7 +149,7 @@ When the user signals they're done, or all checkboxes are checked and you have n
 2. Scan Not Yet Discussed — ask about anything that matters
 3. Scan for unchecked Open Questions — resolve or explicitly defer
 4. Check that Goal, Non-Goals, and Constraints are filled in — these are easy to skip during discovery but critical for implementation
-5. Ask: "I think we've covered everything. Anything else before I stress-test and review?"
+5. Ask: "I think we've covered everything. Anything else before I stress-test and plan the execution?"
 
 ## Phase 3: Stress Test
 
@@ -160,14 +167,36 @@ When the user signals they're done, or all checkboxes are checked and you have n
 - **Performance at scale:** Does this work fine with 10 records but fall over at 10,000? N+1 queries, unbounded lists, missing indexes?
 - **Security surface:** New inputs that could be exploited? Privilege escalation paths? Data exposure?
 - **Migration path:** Is there existing data that needs to change? Can we deploy this without downtime? Do we need backwards compatibility during rollout?
+- **Dependency surface:** Can this be done with existing code and libraries? If a new external dependency seems required, flag it explicitly and treat user approval as unresolved — never assume installation.
 
 If you discover issues, raise them with the user and update the spec (Decisions, Constraints, Risks, etc.) before proceeding.
 
-## Phase 4: Subagent Review
+## Phase 4: Execution Planning
+
+**Goal:** Turn the discovered design into an implementation-ready plan.
+
+The spec should define the work and what must be proven, not the execution style. TDD, code-first implementation, and orchestration belong to the implementation skill, not this spec.
+
+1. **Complete Relevant Files.** Add every file the implementer is likely to read or modify, including test helpers, factories, and reference implementations when they matter.
+2. **Create Tasks organized into sprints.** Always include sprint headings. Even the smallest spec gets `Sprint 1`.
+3. **Break the work into dependency-ordered tasks.** Each task should produce a meaningful outcome, not just a vague area of effort.
+4. **For each task, include:**
+   - A short outcome-oriented description
+   - `**Risk:** low | medium | high`
+   - `**Primary proof boundary:** none | unit | integration | e2e`
+   - `**Required proof:**` bullets describing what behavior must be demonstrated. If the task is purely mechanical, say so explicitly.
+   - `**Done when:**` checkboxes with specific, verifiable outcomes
+5. **Prefer one canonical proof boundary per behavior.** Do not duplicate deep proof requirements across multiple transports unless transport-specific behavior itself matters.
+6. **Flag major architectural changes explicitly.** If the plan implies a meaningful architectural shift, capture it in Decisions & Trade-offs and Risks before finalizing.
+7. **Flag dependency additions explicitly.** If the plan appears to require a new external dependency, call it out and treat explicit user approval as required.
+8. **Add Verification.** Capture the overall acceptance criteria for the feature, separate from per-task proof.
+9. **Walk the plan with the user.** Tighten any ambiguous tasks, proof obligations, or sprint boundaries before review.
+
+## Phase 5: Subagent Review
 
 **Gate:** Do not run this phase if any unchecked `- [ ]` items remain in Open Questions or Not Yet Discussed. Resolve all items first.
 
-Delegate a review to a subagent with clean context. This catches blind spots, security issues, and foot guns.
+Delegate a review to a subagent with clean context. This catches blind spots, security issues, task gaps, and foot guns.
 
 ```
 subagent({
@@ -178,8 +207,9 @@ Analyze for:
 1. **Security concerns** — auth gaps, input validation, data exposure, webhook verification
 2. **Edge cases** — race conditions, empty states, error handling, partial failures
 3. **Architectural foot guns** — things that will be painful to change later, hidden coupling
-4. **Missing pieces** — anything the spec assumes exists but doesn't, or steps that are underspecified
+4. **Task-plan gaps** — missing tasks, unclear dependencies, insufficient proof obligations, or weak acceptance criteria
 5. **Contradictions** — decisions that conflict with each other
+6. **Major architecture / dependency implications** — hidden architectural shifts or new external dependencies the spec implies but does not acknowledge
 
 Return a structured list of findings with severity (critical/warning/note) and specific recommendations. Be concise.`
 })
@@ -188,10 +218,10 @@ Return a structured list of findings with severity (critical/warning/note) and s
 When the subagent returns:
 1. Add a `## Review Findings` section to the working doc with all findings as unchecked items, grouped by severity (critical first, then warning, then note)
 2. Walk through them with the user **a few at a time**, just like discovery — don't dump the full list in conversation
-3. As each finding is addressed, check it off in the doc and update the relevant section (Decisions, Architecture, etc.)
+3. As each finding is addressed, check it off in the doc and update the relevant section (Decisions, Architecture, Tasks, etc.)
 4. Do not proceed to finalization until all critical and warning items are checked off. Notes can be deferred.
 
-## Phase 5: Finalization
+## Phase 6: Finalization
 
 Clean up the working doc in place — it becomes the final spec. No second file. Git history preserves the working version.
 
@@ -201,9 +231,10 @@ The structure mostly stays the same. Finalization is a light pass, not a rewrite
 
 1. **Strip working sections.** Remove: Open Questions, Not Yet Discussed, Review Findings, and the `---` divider. Their value has been absorbed into the permanent sections above.
 2. **Clean up permanent sections.** Remove any remaining placeholder text (e.g. `_Laws of physics..._`). Drop any permanent section that's genuinely empty — not every spec needs Risks & Rollback or Ruled Out.
-3. **Add Relevant Files.** Breadcrumbs pointing to existing code the implementer should reference. List **every file** discovered during research that the implementer will need to read or modify. Group by area (API, iOS, web, shared). This saves the implementing agent significant search time.
-4. **Add Tasks.** Structured implementation steps with acceptance criteria, ordered by dependency. Group into sprints only if there are natural milestones (don't force sprint structure on small work).
-5. **Add Verification.** Specific, testable acceptance criteria for the overall feature.
+3. **Ensure Relevant Files is complete.** Breadcrumbs pointing to existing code the implementer should reference. List **every file** discovered during research that the implementer will need to read or modify. Group by area (API, iOS, web, shared). This saves the implementing agent significant search time.
+4. **Ensure Tasks are sprint-based and implementation-ready.** Every task should live under a sprint heading and include risk, primary proof boundary, required proof, and done-when criteria.
+5. **Ensure Verification is specific.** Add specific, testable acceptance criteria for the overall feature.
+6. **Do not add empty maintenance sections.** `Changes During Implementation` should only appear later if implementation materially changes the plan.
 
 ### Final doc structure
 
@@ -240,16 +271,26 @@ _1-2 sentences._
 
 ## Tasks
 
-### [Sprint 1: Theme] (only if multiple sprints warranted)
+### Sprint 1: [Theme]
 
 #### Task 1: [Name]
 [What needs to happen and why, not step-by-step how]
+
+**Risk:** [low | medium | high]
+**Primary proof boundary:** [none | unit | integration | e2e]
+
+**Required proof:**
+- [Behavior that must be demonstrated]
+- [Behavior that must be demonstrated]
 
 **Done when:**
 - [ ] [Specific, verifiable outcome]
 - [ ] [Specific, verifiable outcome]
 
 #### Task 2: [Name]
+...
+
+### Sprint 2: [Theme] (add only if needed)
 ...
 
 ## Risks & Rollback
@@ -260,19 +301,34 @@ _1-2 sentences._
 ## Verification
 - [ ] [Specific, testable acceptance criterion]
 - [ ] [Specific, testable acceptance criterion]
+
+## Changes During Implementation
+_Optional. Add only if implementation materially changes the plan._
+- [Change] — [what changed and why]
 ```
 
 ### Final spec principles
 - **Breadcrumbs, not blueprints.** Reference files and patterns, not code blocks. Code becomes stale; pointers don't.
-- **Say what, not how.** Describe outcomes and constraints. The implementing agent figures out the steps.
-- **Right-size.** Match detail to complexity. A 2-task fix doesn't need sprints.
+- **Define the work, not the execution style.** The spec should state outcomes, constraints, and proof obligations. TDD, code-first execution, and orchestration belong to implementation skills.
+- **Always use sprints.** Small work can live entirely inside `Sprint 1`.
+- **Prefer a canonical proof boundary per behavior.** Duplicate deep coverage across multiple transports only when transport behavior itself matters.
 - **Preserve the "why".** Decisions & Trade-offs and Ruled Out stay in the final doc. They prevent implementing agents from second-guessing choices and give future readers the reasoning without archaeology.
 - **Verifiable acceptance criteria.** "Works correctly" is not a criterion. "Returns 403 for unauthenticated requests" is.
 
-## Phase 6: Handoff
+### Maintaining the spec during implementation
+
+The final spec is still a living document. If implementation materially changes the plan:
+
+1. **Update the affected sprint/task/verification sections** so the main body reflects current truth.
+2. **Add `Changes During Implementation`** with a concise bullet explaining what changed and why.
+3. **If scope, non-goals, decisions, or constraints change, confirm with the user first.**
+4. **Flag major architectural changes explicitly.** Do not bury them in a task note.
+5. **Never install a new external dependency without explicit user consent.** If implementation uncovers that need, surface it as a blocker or approval request.
+
+## Phase 7: Handoff
 
 Offer the user three options:
-1. **Launch an implementing agent** — split a pane below the spec and start a new agent session running the `/implement` skill, which carries the full workflow (tasks, gates, commits, push, PR creation):
+1. **Launch an implementing agent** — split a pane below the spec and start a new agent session with the implementation skill the user wants. If they don't specify one, default to `/implement`. Example:
    ```bash
    # Find the nvim pane showing the spec (it's in our window)
    SPEC_PANE=$(tmux list-panes -t $(tmux display-message -p '#{window_id}') -F '#{pane_id} #{pane_current_command}' | grep nvim | head -1 | awk '{print $1}')
