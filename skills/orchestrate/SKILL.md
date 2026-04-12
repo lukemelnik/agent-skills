@@ -84,6 +84,7 @@ Spawn a fresh `general-purpose` subagent. Tell it to:
 - read `~/.pi/agent/skills/implement-tdd/SKILL.md`
 - follow that workflow, **adapted to this sprint only**
 - execute **only** the tasks in Sprint `{N}`
+- respect each task's `Risk`, `Primary proof boundary`, `Required proof`, and `Done when` criteria
 - update the spec itself as progress is made
 - if material changes occur, update affected sprint/task/verification sections and add `Changes During Implementation`
 - stop and report if scope, non-goals, decisions, or constraints would need to change
@@ -132,6 +133,7 @@ Use a task prompt shaped like:
 Review the current branch against Sprint {N} of the spec at {specReference}.
 Focus on:
 - correctness against Sprint {N} tasks and Done when criteria
+- whether the task's stated Risk appears matched by the depth of implementation and proof
 - whether Required proof appears satisfied at the intended proof boundary
 - security, edge cases, and hidden coupling
 - cross-sprint integration with already completed work
