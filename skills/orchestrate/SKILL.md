@@ -164,9 +164,28 @@ After both phases complete:
 3. Announce: `Sprint {N} complete. Starting Sprint {N+1} of {M}.`
 4. Continue to the next sprint.
 
-## Step 5: Final review
+## Step 5: Final verification and review
 
-After all sprints are complete, spawn one final `general-purpose` review subagent.
+After all sprints are complete, run two final phases.
+
+### Phase A: Final verification pass
+
+Spawn one fresh `general-purpose` subagent. Tell it to:
+- read the current spec from the source of truth
+- read `~/.pi/agent/skills/implement-tdd/SKILL.md`
+- follow only the final-verification portions of that workflow
+- run the full required gate suite
+- walk the spec's `Verification` section and mark it accurately
+- update the spec if any material implementation changes still need to be reflected
+- do **not** push or open a PR
+
+Extract only the final verification summary and `ALERTS` section. Add alerts to your log.
+
+If this sub-agent reports a blocker, stop and report it.
+
+### Phase B: Final review
+
+Spawn one fresh `general-purpose` review subagent.
 
 Tell it to review the full implementation against the full spec, with emphasis on:
 - cross-sprint integration
