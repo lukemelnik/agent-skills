@@ -745,7 +745,7 @@ One-line description of what the app does.
 
 - **Build**: Uses XcodeGen (`project.yml`) — run `make generate` to create `.xcodeproj`
 - **Target**: iOS 17+, iPhone only
-- **Architecture**: @Observable + MVVM, dependency injection, no singletons in views
+- **Architecture**: @Observable + SwiftUI-native state, dependency injection, no singletons in views, view models only when they earn their keep
 - **Theme**: [describe palette], centralized in UI/Theme/
 - **No backend** — everything runs locally
 

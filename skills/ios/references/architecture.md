@@ -30,6 +30,7 @@ Core/
 Features/
   <Feature>/
     <Feature>View.swift
+    <Feature>Model.swift
     <Feature>ViewModel.swift
     Components/
 UI/
@@ -44,9 +45,10 @@ Tests/
 ```
 
 For each new feature, include:
-- View + ViewModel
+- A view plus extracted subviews as needed
+- A reference model/store or view model only when the feature needs one
 - Domain model mapping (if needed)
-- Unit tests for ViewModel
+- Unit tests for the feature logic that owns behavior
 - Preview states (loading/empty/error/success)
 
 Definition of done:
@@ -58,7 +60,8 @@ Definition of done:
 
 ## 2. Architecture and DI
 
-- Use dedicated view model files (not nested in views).
+- Prefer vanilla SwiftUI first: local `@State`, explicit inputs, and `@Environment` for shared services.
+- Use dedicated view model files when the feature genuinely needs a reference type for orchestration or long-lived feature state.
 - Prefer `@Observable` + `@MainActor` for UI-facing models on iOS 17+.
 - If you must support iOS 16, keep `ObservableObject`/`@Published` at the compatibility boundary instead of mixing state systems throughout the same feature.
 - Inject dependencies via protocol-based initializers.
@@ -217,9 +220,9 @@ swiftSettings: [
 ]
 ```
 
-### @MainActor and @Observable ViewModels
+### @MainActor and @Observable UI Models
 
-In Swift 6, `@Observable` ViewModels mutated from SwiftUI views should be `@MainActor`-isolated to guarantee property access happens on the main thread. `@Observable` classes are not `Sendable` by default. Mark UI-facing ViewModels `@MainActor` explicitly (or rely on `defaultIsolation` at the package level):
+In Swift 6, `@Observable` models mutated from SwiftUI views should be `@MainActor`-isolated to guarantee property access happens on the main thread. `@Observable` classes are not `Sendable` by default. Mark UI-facing reference models and view models `@MainActor` explicitly (or rely on `defaultIsolation` at the package level):
 
 ```swift
 @MainActor
@@ -232,7 +235,7 @@ In Swift 6, `@Observable` ViewModels mutated from SwiftUI views should be `@Main
 
 In packages with `.defaultIsolation(MainActor.self)`, the `@MainActor` annotation is implicit -- you only need `@Observable class`.
 
-> **Protocol constraints:** `@Observable` is a macro, not a protocol you can use as a generic constraint. For protocol-based DI with ViewModels, define the property and method requirements the view needs -- do not attempt to constrain a protocol to `Observable` conformance.
+> **Protocol constraints:** `@Observable` is a macro, not a protocol you can use as a generic constraint. For protocol-based DI with feature models or view models, define the property and method requirements the view needs -- do not attempt to constrain a protocol to `Observable` conformance.
 
 ### Sendable Conformance
 
@@ -475,9 +478,10 @@ return items.filter { shouldShow($0, filter: snapshot) }
 ## 5. State Management
 
 - Use local `@State` for local UI concerns only.
-- Use `@State private var vm = MyViewModel()` to own an `@Observable` object in a view (replaces `@StateObject` from ObservableObject).
-- Use `@Bindable var vm` to create two-way bindings to `@Observable` properties (e.g., `$vm.searchText`).
-- Use ViewModel state for feature/business state.
+- Use plain value state before introducing a reference model.
+- Use `@State private var model = MyFeatureModel()` to own an `@Observable` object in a view (replaces `@StateObject` from ObservableObject).
+- Use `@Bindable var model` to create two-way bindings to `@Observable` properties (e.g., `$model.searchText`).
+- Reach for a view model only when async orchestration, cross-section feature state, or test seams justify it.
 - Use shared/global state only when truly cross-feature.
 - Keep one-way data flow and derived state computed, not duplicated.
 - Avoid side effects directly in body builders.
@@ -614,7 +618,7 @@ Usage: `AppLog.networking.info("Request completed: \(url, privacy: .private)")`.
 
 ### Pure Decision Engines
 
-When a ViewModel or service has complex conditional logic (e.g., "should we retry this request?", "which state should we transition to?"), extract the decision into a pure struct with a static function:
+When a feature model, view model, or service has complex conditional logic (e.g., "should we retry this request?", "which state should we transition to?"), extract the decision into a pure struct with a static function:
 
 ```swift
 struct RetryDecisionEngine {
@@ -657,7 +661,7 @@ Benefits: trivially testable (construct context, assert decision), no dependenci
 
 ## 12. Testing
 
-- Add/adjust ViewModel tests for behavior changes.
+- Add or adjust tests for the feature logic that changed (view model, store, service, reducer).
 - Validate loading/success/error transitions.
 - Verify dependency call counts in mocks.
 - Add smoke UI tests for core user flows.
@@ -667,7 +671,7 @@ Benefits: trivially testable (construct context, assert decision), no dependenci
 
 - UI follows design tokens and shared patterns
 - Navigation is stable and type-safe
-- ViewModel boundaries are clean
+- State ownership and feature boundaries are clean
 - Accessibility/localization addressed
 - Tests updated for changed behavior
 - Build and gates pass

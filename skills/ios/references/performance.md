@@ -14,6 +14,7 @@ Collect:
 - Target view/feature code.
 - Data flow: state, environment, observable models.
 - Symptoms and reproduction steps.
+- Whether the issue reproduces on device or simulator, and in Debug or Release.
 
 Focus on:
 - View invalidation storms from broad state changes.
@@ -184,6 +185,7 @@ var body: some View {
 
 - Use `Self._printChanges()` in debug only to inspect what triggers updates.
 - Use Instruments for hangs and hitches.
+- Distinguish code-level suspicion from trace-backed conclusions when reporting findings.
 - Profile early and often during feature development.
 
 ## Hangs

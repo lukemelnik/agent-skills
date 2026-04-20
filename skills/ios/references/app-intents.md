@@ -1,5 +1,15 @@
 # App Intents Framework
 
+Start with the smallest useful action surface, not a mirror of the app's navigation tree.
+
+First pass workflow:
+
+1. Identify the 1-3 highest-value actions a user would want outside the app.
+2. Add the smallest `AppEntity` surface needed for lookup or routing.
+3. Decide whether the action completes inline or should open the app with `openAppWhenRun`.
+4. Add `AppShortcutsProvider` entries so the actions are discoverable.
+5. Verify the runtime handoff path is clear and centralized.
+
 ## Table of Contents
 
 1. [AppIntent Protocol](#1-appintent-protocol)

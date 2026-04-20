@@ -153,7 +153,7 @@ When the user signals they're done, or all checkboxes are checked and you have n
 
 ## Phase 3: Stress Test
 
-**Self-examine the spec before delegating to the subagent.** The depth should match complexity — don't interrogate a button color change the same way you'd interrogate a new payment flow.
+**Self-examine the spec before the review pass.** The depth should match complexity — don't interrogate a button color change the same way you'd interrogate a new payment flow.
 
 **Always consider, regardless of size:**
 - Edge cases: empty states, null values, boundary conditions, concurrent access
@@ -192,34 +192,27 @@ The spec should define the work and what must be proven, not the execution style
 8. **Add Verification.** Capture the overall acceptance criteria for the feature, separate from per-task proof.
 9. **Walk the plan with the user.** Tighten any ambiguous tasks, proof obligations, or sprint boundaries before review.
 
-## Phase 5: Subagent Review
+## Phase 5: Manual Review
 
 **Gate:** Do not run this phase if any unchecked `- [ ]` items remain in Open Questions or Not Yet Discussed. Resolve all items first.
 
-Delegate a review to a subagent with clean context. This catches blind spots, security issues, task gaps, and foot guns.
+Review the spec yourself in the current conversation. **Do not use a subagent for this phase unless the user explicitly asks for one.** The point is to do a direct completeness/risk pass as part of `/living-spec`, not to silently turn it into `/review`.
 
-```
-subagent({
-  agent: "general-purpose",  // or check available agents with subagent
-  task: `You are reviewing a feature spec for completeness and risks. Read the spec file at ${specFilePath} and the relevant codebase files it references.
-
-Analyze for:
-1. **Security concerns** — auth gaps, input validation, data exposure, webhook verification
+Run a structured pass over the spec and referenced code, looking for:
+1. **Security concerns** — auth gaps, input validation, data exposure
 2. **Edge cases** — race conditions, empty states, error handling, partial failures
-3. **Architectural foot guns** — things that will be painful to change later, hidden coupling
-4. **Task-plan gaps** — missing tasks, unclear dependencies, insufficient proof obligations, or weak acceptance criteria
+3. **Architectural foot guns** — hidden coupling, painful-to-change decisions, accidental one-offs
+4. **Task-plan gaps** — missing tasks, unclear dependencies, insufficient proof obligations, weak acceptance criteria
 5. **Contradictions** — decisions that conflict with each other
 6. **Major architecture / dependency implications** — hidden architectural shifts or new external dependencies the spec implies but does not acknowledge
 
-Return a structured list of findings with severity (critical/warning/note) and specific recommendations. Be concise.`
-})
-```
-
-When the subagent returns:
-1. Add a `## Review Findings` section to the working doc with all findings as unchecked items, grouped by severity (critical first, then warning, then note)
+When you find issues:
+1. Add a `## Review Findings` section to the working doc with findings as unchecked items, grouped by severity (critical first, then warning, then note)
 2. Walk through them with the user **a few at a time**, just like discovery — don't dump the full list in conversation
 3. As each finding is addressed, check it off in the doc and update the relevant section (Decisions, Architecture, Tasks, etc.)
 4. Do not proceed to finalization until all critical and warning items are checked off. Notes can be deferred.
+
+If the user asks for a lighter pass, summarize only the highest-value findings instead of exhaustively enumerating everything.
 
 ## Phase 6: Finalization
 

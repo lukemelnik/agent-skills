@@ -1,13 +1,34 @@
 ---
 name: ios
-description: Build native iOS apps with SwiftUI. Covers architecture (project structure, state management, concurrency, DI, testing), Human Interface Guidelines (layout, navigation, typography, color, accessibility, gestures, components, privacy), SwiftUI component patterns, and localization/internationalization. Use when building, reviewing, or refactoring iOS/iPhone SwiftUI apps.
+description: Build native iOS apps with SwiftUI. Covers architecture (project structure, state ownership, concurrency, DI, testing), SwiftUI UI patterns and refactors, App Intents and system surfaces, performance audits, Human Interface Guidelines, theming, UIKit bridging, and localization/internationalization. Use when building, reviewing, refactoring, or diagnosing iOS/iPhone SwiftUI apps.
 ---
 
 # iOS Development
 
+## Quick start
+
+Choose the narrowest path that matches the request:
+
+- **New screen or feature**: start with `references/architecture.md`, then `references/components.md`.
+- **Refactor a large SwiftUI view**: start with `references/architecture.md`, then `references/code-review.md` and `references/components.md`.
+- **Performance issue or janky scrolling**: start with `references/performance.md`.
+- **App Intents, Siri, Spotlight, widgets, or Action Button**: start with `references/app-intents.md`.
+- **Design system or visual polish**: start with `references/theming.md` and `references/hig.md`.
+- **iOS 26+ Liquid Glass UI**: start with `references/liquid-glass.md`.
+- **UIKit bridge or representables**: start with `references/uikit-bridge.md`.
+
+Prefer SwiftUI-native state first. Introduce a view model only when the feature needs a reference type for async orchestration, cross-section feature state, or a clearer testing seam.
+
+Use adjacent skills when the task is narrower than this general iOS skill:
+
+- `ios-debugger` for simulator build/run/UI inspection with XcodeBuildMCP.
+- `swift-concurrency` for actor isolation, Sendable, or Swift 6.2 compiler diagnostics.
+- `apple-release` for signing, archiving, notarization, TestFlight, or App Store submission.
+- `app-review` for pre-submission rejection audits.
+
 ## Core Principles
 
-- Keep views declarative and lightweight; business logic in view models/services.
+- Keep views declarative and lightweight; put durable business logic in services, models, or a view model only when one materially improves the design.
 - Use semantic system styles or app design tokens (fonts, colors, materials) — avoid ad hoc hardcoded visual values.
 - Make loading, empty, error, and success states explicit.
 - Every interactive element: 44pt minimum, accessible, keyboard-navigable.
@@ -16,6 +37,7 @@ description: Build native iOS apps with SwiftUI. Covers architecture (project st
 
 - **Default: iOS 17+** — recommended for `@Observable`, `#Preview`, `sensoryFeedback`, `contentMargins`, modern SwiftUI APIs.
 - Use `if #available(iOS 18, *)` or `@available(iOS 18, *)` for iOS 18+ APIs: new `Tab` syntax, zoom transitions, mesh gradients, custom containers.
+- Use `if #available(iOS 26, *)` for Liquid Glass APIs (`glassEffect`, `GlassEffectContainer`, glass button styles) and always provide a non-glass fallback.
 - iOS 16 support only when business requirements demand it — comes with significant SwiftUI limitations (no `@Observable`, limited navigation).
 
 ## References
@@ -64,6 +86,12 @@ Read when implementing App Intents, Siri integration, Shortcuts support, interac
 
 Covers: AppIntent protocol (perform, return types, openAppWhenRun), @Parameter (types, requestValue, requestDisambiguation, requestConfirmation), AppEntity (EntityQuery, EntityStringQuery, displayRepresentation), AppShortcutsProvider (phrases, ShortcutsLink, SiriTipView), IndexedEntity for Spotlight, interactive widget buttons/toggles (iOS 17+), SetFocusFilterIntent, Action Button registration, Siri dialog patterns, testing intents, common patterns (favorites, open item, create, widget refresh).
 
+### `references/liquid-glass.md`
+
+Read when adopting iOS 26+ Liquid Glass surfaces, reviewing native glass usage, or adding glass treatments with availability fallbacks.
+
+Covers: `glassEffect`, `GlassEffectContainer`, interactive glass, glass button styles, modifier ordering, morphing transitions, fallback materials, and review/implementation checklists.
+
 ### `references/persistence.md`
 
 Read when implementing data storage, choosing a persistence strategy, setting up SwiftData or Core Data, storing credentials, or caching data to disk.
@@ -80,7 +108,7 @@ Covers: SwiftData + CloudKit (ModelConfiguration, schema restrictions, debugging
 
 Read when writing unit tests, UI tests, setting up mocks, testing async code, adding snapshot tests, or reviewing test coverage.
 
-Covers: Swift Testing framework (@Test, #expect, @Suite, traits, parameterized tests), XCTest essentials (XCTestCase, assertions, expectations), testing @Observable ViewModels, async test patterns (ActorIsolated, withMainSerialExecutor, polling waits), protocol-based mocking (actor mocks, multi-protocol mocks, tracking mocks, closure-based DI), snapshot testing (swift-snapshot-testing with device configs), UI testing with XCUIApplication (launch config, accessibility queries, wait helpers, screenshots), preview-based testing, scenario-based state machine testing (declarative time-stamped steps, dependency-injected time control).
+Covers: Swift Testing framework (@Test, #expect, @Suite, traits, parameterized tests), XCTest essentials (XCTestCase, assertions, expectations), testing @Observable models, stores, and view models, async test patterns (ActorIsolated, withMainSerialExecutor, polling waits), protocol-based mocking (actor mocks, multi-protocol mocks, tracking mocks, closure-based DI), snapshot testing (swift-snapshot-testing with device configs), UI testing with XCUIApplication (launch config, accessibility queries, wait helpers, screenshots), preview-based testing, scenario-based state machine testing (declarative time-stamped steps, dependency-injected time control).
 
 ### `references/uikit-bridge.md`
 

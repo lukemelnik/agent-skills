@@ -1,0 +1,24 @@
+# Personal/private skills — keep first
+skills/notes-writer/
+skills/private-*/
+
+# macOS
+.DS_Store
+
+# Python cache / tooling
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor noise
+.vscode/
+.idea/
+**/*.swp
+**/*.swo
+
+# Packaged skill artifacts
+*.skill
+dist/

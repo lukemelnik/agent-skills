@@ -5,6 +5,25 @@ description: Build native macOS apps with SwiftUI and AppKit. Covers app archite
 
 # macOS Development
 
+## Quick start
+
+Choose the narrowest skill that matches the request:
+
+- **General macOS architecture, UI, navigation, capabilities, persistence, or HIG questions**: stay in this `macos` skill and load the relevant reference.
+- **Build, launch, logs, shell-first debugging, or Codex Run button setup**: use `build-run-debug`.
+- **Pure `Package.swift` workflow**: use `swiftpm-macos`.
+- **SwiftUI/AppKit boundary work**: use `appkit-interop`.
+- **Unified logging and runtime event verification**: use `telemetry`.
+- **macOS test failures**: use `test-triage`.
+- **Window or scene chrome/placement behavior**: use `window-management`.
+- **Modern Liquid Glass adoption**: use `liquid-glass`.
+- **Codesigning, entitlements, Gatekeeper, or sandbox diagnosis**: use `signing-entitlements`.
+- **Packaging or notarization readiness**: use `packaging-notarization`.
+- **Archiving, shipping, App Store, or Developer ID distribution**: use `apple-release`.
+- **Actor isolation, Sendable, or Swift 6.2 concurrency issues**: use `swift-concurrency`.
+
+Prefer the focused skill when the user request is clearly narrower than broad macOS app development.
+
 ## Core Principles
 
 - Mac users expect menu bars, keyboard shortcuts, and multi-window support.

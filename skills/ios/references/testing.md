@@ -4,7 +4,7 @@
 
 1. [Swift Testing Framework](#1-swift-testing-framework)
 2. [XCTest Essentials](#2-xctest-essentials)
-3. [Testing @Observable ViewModels](#3-testing-observable-viewmodels)
+3. [Testing @Observable Models](#3-testing-observable-models)
 4. [Async Test Patterns](#4-async-test-patterns)
 5. [Protocol-Based Mocking](#5-protocol-based-mocking)
 6. [Snapshot Testing](#6-snapshot-testing)
@@ -451,11 +451,11 @@ func testShareExtensionLoadsText() async {
 
 ---
 
-## 3. Testing @Observable ViewModels
+## 3. Testing @Observable Models
 
 ### Direct State Mutation Testing
 
-IceCubesApp pattern -- construct ViewModel, call methods, assert state changes:
+IceCubesApp pattern -- construct the model, store, or view model, call methods, assert state changes:
 
 ```swift
 @MainActor

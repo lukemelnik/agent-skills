@@ -84,12 +84,41 @@ Three phones in a symmetrical fan formation:
 
 ## Prompt Template
 
-Adapt the background elements and brand colors to the specific app. The `[APP_DOMAIN_ELEMENTS]` placeholder should be replaced with something relevant — e.g., "sound wave shapes and audio waveforms" for a music app, "chart lines and data visualization curves" for a finance app.
+### Background mood, NOT domain icons
+
+The `[BACKGROUND_MOOD]` placeholder describes the *feel* of the abstract shapes — NOT recognizable iconography from the app's domain. AI image models will interpret literal references too literally and add concrete elements you don't want.
+
+**Do not** prompt with things like:
+- "sheet music notation" → will draw an actual staff with notes and clefs
+- "audio waveforms" → will draw recognizable waveform graphs
+- "financial chart lines" → will draw axis labels and numbers
+- "recipe ingredients" → will draw individual food items
+
+**Do** prompt with abstract mood/shape descriptors like:
+- "slow horizontal rhythmic curves with a soft glow, like long-exposure light trails"
+- "large sweeping organic gradient bands, completely abstract"
+- "diffuse atmospheric streaks of color, no recognizable shapes"
+- "soft volumetric clouds of color flowing horizontally"
+
+The goal is *atmosphere*, not *iconography*. The phones carry the domain meaning — the background just sets a mood.
+
+### Template
 
 ```text
 Create a single wide cinematic marketing banner for a [APP_TYPE] app. This is ONE continuous scene — not divided into sections or panels.
 
-BACKGROUND: A single unified gradient flowing smoothly from [BRAND_COLOR] on the left to [BRAND_COLOR_DARK] on the right. The gradient must be completely smooth and continuous with NO color breaks, NO borders, NO visible divisions anywhere. Behind everything, add soft, blurred abstract [APP_DOMAIN_ELEMENTS] that stretch across the entire width continuously. These should be subtle, out of focus, and atmospheric — NOT icons, NOT small individual elements. Think large, gentle, sweeping shapes that span the full image width.
+BACKGROUND: A single unified gradient flowing smoothly from [BRAND_COLOR] on the left to [BRAND_COLOR_DARK] on the right. The gradient must be completely smooth and continuous with NO color breaks, NO borders, NO visible divisions anywhere.
+
+Over the gradient, add ONLY abstract atmospheric shapes: [BACKGROUND_MOOD]. These shapes must be:
+- Large and sweeping, spanning the full image width
+- Soft, blurred, and out of focus
+- Pure abstract form — NO recognizable iconography of any kind
+- NOT musical notation, NOT staff lines, NOT clefs, NOT notes, NOT instruments
+- NOT charts, NOT graphs, NOT data visualizations, NOT axis labels
+- NOT icons, NOT logos, NOT symbols, NOT text of any kind
+- NOT identifiable objects of any kind from any domain
+
+If you are unsure whether a shape is abstract enough, leave it out. Empty gradient is better than literal iconography.
 
 PHONE ARRANGEMENT (CRITICAL — precise positioning):
 Three phones arranged in a symmetrical fan formation, like cards fanned out in a hand:
@@ -100,7 +129,7 @@ Three phones arranged in a symmetrical fan formation, like cards fanned out in a
 
 The phones should have noticeable spacing between them — enough that when the panoramic is sliced into thirds, you can clearly see the gap between the center phone and each side phone. No phones should overlap or touch each other. All three phones should be iPhone 15 Pro mockups with titanium frames, dynamic island visible, casting soft shadows.
 
-Do not add extra UI chrome, watermarks, labels, or unintended text.
+Do not add ANY UI chrome, watermarks, labels, captions, taglines, signatures, or text of any kind anywhere in the image. The image must contain ONLY: smooth gradient + abstract mood shapes + 3 phones. Nothing else.
 ```
 
 ## Slicing

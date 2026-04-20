@@ -204,9 +204,9 @@ TabView {
 }
 ```
 
-### @Bindable with @Observable ViewModels
+### @Bindable with @Observable Models
 
-Use `@Bindable` to create `Binding`s from `@Observable` properties for two-way binding in forms and controls:
+Use `@Bindable` to create `Binding`s from `@Observable` properties for two-way binding in forms and controls, whether the reference type is a store, settings model, or view model:
 
 ```swift
 // @Bindable for creating bindings to @Observable properties

@@ -1,0 +1,1719 @@
+{
+  "$comment": "Ready-to-paste JSON-LD templates for active (non-deprecated) Schema.org types as of February 2026. Schema.org version 29.4 (December 2025). Replace [BRACKETED] placeholders with real values. Use only types listed here — see schema-types-status.md for deprecation status. Always wrap in <script type=\"application/ld+json\">...</script> in the page <head>.",
+  "$conventions": {
+    "context": "Always use https://schema.org (https, not http)",
+    "format": "Always use JSON-LD (Google's recommended format)",
+    "placement": "Inside <head> or end of <body>",
+    "ssr": "Render server-side for time-sensitive markup (Product, Offer, Article). JS-injected schema may face delayed processing per Google's December 2025 JS SEO guidance",
+    "validation": "https://search.google.com/test/rich-results and https://validator.schema.org",
+    "absolute_urls": "All URLs must be absolute, not relative",
+    "iso_dates": "All dates in ISO 8601 format (YYYY-MM-DD or full timestamp)",
+    "graph_for_multiple": "Use @graph to combine multiple schema types on one page"
+  },
+
+  "foundational": {
+    "Organization": {
+      "description": "Company info. Use on homepage or about page. Required for knowledge panel eligibility.",
+      "richResults": "Knowledge panel, sitelinks",
+      "required": ["name", "url"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "[Company Name]",
+        "url": "https://example.com",
+        "logo": "https://example.com/logo.png",
+        "description": "[One-sentence company description]",
+        "sameAs": [
+          "https://twitter.com/example",
+          "https://www.linkedin.com/company/example",
+          "https://www.facebook.com/example",
+          "https://www.youtube.com/@example",
+          "https://github.com/example"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": "+1-555-555-5555",
+          "contactType": "customer service",
+          "email": "support@example.com",
+          "availableLanguage": ["English"]
+        }
+      }
+    },
+
+    "WebSite": {
+      "description": "Site-level info. Use on homepage. Enables sitelinks search box if SearchAction is included.",
+      "richResults": "Sitelinks search box",
+      "required": ["name", "url"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Example",
+        "url": "https://example.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://example.com/search?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    },
+
+    "BreadcrumbList": {
+      "description": "Navigation breadcrumbs. Use on every nested page. Strong rich result eligibility.",
+      "richResults": "Breadcrumb display in SERP",
+      "required": ["itemListElement"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://example.com"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Blog",
+            "item": "https://example.com/blog"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Post Title",
+            "item": "https://example.com/blog/post-title"
+          }
+        ]
+      }
+    },
+
+    "WebPage": {
+      "description": "Generic page-level metadata. Use as base type when no more specific type fits.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "[Page Title]",
+        "description": "[Page description]",
+        "url": "https://example.com/page",
+        "datePublished": "2026-01-15",
+        "dateModified": "2026-04-08",
+        "inLanguage": "en-US",
+        "isPartOf": {
+          "@type": "WebSite",
+          "url": "https://example.com",
+          "name": "Example"
+        }
+      }
+    },
+
+    "ContactPage": {
+      "description": "Contact page. Subtype of WebPage with contact-specific semantics.",
+      "required": ["name", "url"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "name": "Contact Us",
+        "url": "https://example.com/contact"
+      }
+    }
+  },
+
+  "people_and_authorship": {
+    "Person": {
+      "description": "Author or team member. Use for author bylines and team pages. Strong E-E-A-T signal.",
+      "richResults": "Author info in articles",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "[Author Name]",
+        "url": "https://example.com/authors/author-slug",
+        "image": "https://example.com/authors/author-slug.jpg",
+        "jobTitle": "[Job Title]",
+        "description": "[Author bio with relevant expertise]",
+        "worksFor": {
+          "@type": "Organization",
+          "name": "[Company Name]",
+          "url": "https://example.com"
+        },
+        "sameAs": [
+          "https://twitter.com/author",
+          "https://www.linkedin.com/in/author"
+        ]
+      }
+    },
+
+    "ProfilePage": {
+      "description": "Author or creator profile page. Wrap a Person in mainEntity. Added 2025. Strong E-E-A-T signal.",
+      "required": ["mainEntity"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "ProfilePage",
+        "mainEntity": {
+          "@type": "Person",
+          "name": "[Author Name]",
+          "url": "https://example.com/authors/author-slug",
+          "image": "https://example.com/authors/author-slug.jpg",
+          "description": "[Bio and expertise summary]",
+          "jobTitle": "[Job Title]",
+          "sameAs": [
+            "https://twitter.com/author",
+            "https://www.linkedin.com/in/author"
+          ]
+        }
+      }
+    }
+  },
+
+  "content": {
+    "Article": {
+      "description": "Generic article. Use for any editorial content.",
+      "richResults": "Article rich result",
+      "required": ["headline", "author", "datePublished"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "[Article Title]",
+        "image": "https://example.com/article-hero.jpg",
+        "datePublished": "2026-01-15T08:00:00+00:00",
+        "dateModified": "2026-04-08T10:00:00+00:00",
+        "author": {
+          "@type": "Person",
+          "name": "[Author Name]",
+          "url": "https://example.com/authors/author-slug"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Example",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://example.com/logo.png"
+          }
+        },
+        "description": "[1-2 sentence summary]",
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://example.com/article-url"
+        }
+      }
+    },
+
+    "BlogPosting": {
+      "description": "Blog post. Same fields as Article but with blog context.",
+      "richResults": "Article rich result",
+      "required": ["headline", "author", "datePublished"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "[Post Title]",
+        "image": "https://example.com/post-hero.jpg",
+        "datePublished": "2026-01-15T08:00:00+00:00",
+        "dateModified": "2026-04-08T10:00:00+00:00",
+        "author": {
+          "@type": "Person",
+          "name": "[Author Name]"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Example",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://example.com/logo.png"
+          }
+        },
+        "description": "[1-2 sentence summary]",
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://example.com/blog/post-slug"
+        }
+      }
+    },
+
+    "NewsArticle": {
+      "description": "News article. Required for Google News inclusion.",
+      "richResults": "News rich result, Top stories carousel",
+      "required": ["headline", "author", "datePublished", "publisher"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "headline": "[News Headline]",
+        "image": ["https://example.com/news-hero-1x1.jpg", "https://example.com/news-hero-4x3.jpg", "https://example.com/news-hero-16x9.jpg"],
+        "datePublished": "2026-04-08T08:00:00+00:00",
+        "dateModified": "2026-04-08T10:00:00+00:00",
+        "author": {
+          "@type": "Person",
+          "name": "[Reporter Name]"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Example News",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://example.com/logo.png"
+          }
+        }
+      }
+    },
+
+    "DiscussionForumPosting": {
+      "description": "Forum or community thread. Added 2024. Use for forum/discussion content.",
+      "required": ["headline", "author", "datePublished", "text"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "DiscussionForumPosting",
+        "headline": "[Thread Title]",
+        "url": "https://example.com/forum/thread-id",
+        "datePublished": "2026-04-08T08:00:00+00:00",
+        "author": {
+          "@type": "Person",
+          "name": "[Username]"
+        },
+        "text": "[Original post content]",
+        "interactionStatistic": [
+          {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/LikeAction",
+            "userInteractionCount": 42
+          },
+          {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/CommentAction",
+            "userInteractionCount": 15
+          }
+        ]
+      }
+    },
+
+    "Book": {
+      "description": "Book pages. Includes editions and authors.",
+      "required": ["name", "author"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Book",
+        "name": "[Book Title]",
+        "author": {
+          "@type": "Person",
+          "name": "[Author Name]"
+        },
+        "isbn": "[ISBN-13]",
+        "numberOfPages": 320,
+        "bookFormat": "https://schema.org/Hardcover",
+        "datePublished": "2026-01-15",
+        "publisher": {
+          "@type": "Organization",
+          "name": "[Publisher]"
+        },
+        "image": "https://example.com/book-cover.jpg",
+        "description": "[Book summary]"
+      }
+    },
+
+    "Dataset": {
+      "$note": "Rich results retired late 2025, but schema is still valid for AI/LLM citation and Google Dataset Search internal use.",
+      "description": "Research datasets, data downloads.",
+      "required": ["name", "description"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Dataset",
+        "name": "[Dataset Name]",
+        "description": "[What the dataset contains]",
+        "url": "https://example.com/datasets/dataset-id",
+        "creator": {
+          "@type": "Organization",
+          "name": "[Creator Org]"
+        },
+        "datePublished": "2026-01-15",
+        "license": "https://creativecommons.org/licenses/by/4.0/",
+        "distribution": [
+          {
+            "@type": "DataDownload",
+            "encodingFormat": "CSV",
+            "contentUrl": "https://example.com/datasets/data.csv"
+          }
+        ],
+        "keywords": ["keyword1", "keyword2"]
+      }
+    },
+
+    "FAQPage": {
+      "$note": "RESTRICTED for Google rich results: only government and healthcare authority sites since August 2023. STILL useful for AI/LLM citation visibility (ChatGPT, Perplexity, AI Overviews).",
+      "description": "FAQ section. Use only on gov/health sites for Google rich results, OR on commercial sites for AI/LLM citation benefit (NOT for Google rich result expectations).",
+      "required": ["mainEntity"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "[Question 1]",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "[Answer 1 - clear, complete, can stand alone]"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "[Question 2]",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "[Answer 2]"
+            }
+          }
+        ]
+      }
+    }
+  },
+
+  "software": {
+    "SoftwareApplication": {
+      "description": "Generic software application. Use for desktop apps, mobile apps, SaaS.",
+      "richResults": "App rich result with rating and pricing",
+      "required": ["name", "operatingSystem", "applicationCategory", "offers"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "[App Name]",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web, iOS, Android",
+        "description": "[One-sentence description of what the app does]",
+        "image": "https://example.com/app-screenshot.png",
+        "url": "https://example.com",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.7",
+          "ratingCount": "1250"
+        }
+      }
+    },
+
+    "WebApplication": {
+      "description": "Browser-based SaaS. Subtype of SoftwareApplication.",
+      "required": ["name", "applicationCategory", "offers", "browserRequirements"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "[App Name]",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "description": "[What the app does]",
+        "url": "https://example.com",
+        "offers": {
+          "@type": "Offer",
+          "price": "29",
+          "priceCurrency": "USD",
+          "description": "Pro plan, monthly"
+        },
+        "featureList": "Feature 1, Feature 2, Feature 3",
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.8",
+          "ratingCount": "320"
+        }
+      }
+    },
+
+    "MobileApplication": {
+      "description": "Mobile-only apps (iOS, Android). Subtype of SoftwareApplication.",
+      "required": ["name", "operatingSystem", "applicationCategory", "offers"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "MobileApplication",
+        "name": "[App Name]",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "iOS, Android",
+        "description": "[App description]",
+        "image": "https://example.com/app-icon.png",
+        "downloadUrl": "https://apps.apple.com/app/id123456789",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.6",
+          "ratingCount": "5000"
+        }
+      }
+    },
+
+    "SoftwareSourceCode": {
+      "description": "Open source repositories or code pages. Added 2025.",
+      "required": ["name", "codeRepository"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "SoftwareSourceCode",
+        "name": "[Repository Name]",
+        "description": "[What the code does]",
+        "codeRepository": "https://github.com/org/repo",
+        "programmingLanguage": "TypeScript",
+        "runtimePlatform": "Node.js",
+        "author": {
+          "@type": "Person",
+          "name": "[Author Name]"
+        },
+        "license": "https://opensource.org/licenses/MIT",
+        "dateCreated": "2024-01-15",
+        "dateModified": "2026-04-08"
+      }
+    }
+  },
+
+  "commerce": {
+    "Product": {
+      "description": "Physical or digital product. Required for product rich results.",
+      "richResults": "Price, rating, availability in SERP",
+      "required": ["name", "image"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "[Product Name]",
+        "image": ["https://example.com/product-1x1.jpg", "https://example.com/product-4x3.jpg"],
+        "description": "[Product description]",
+        "sku": "[SKU-001]",
+        "mpn": "[Manufacturer Part Number]",
+        "brand": {
+          "@type": "Brand",
+          "name": "[Brand Name]"
+        },
+        "offers": {
+          "@type": "Offer",
+          "url": "https://example.com/products/product-slug",
+          "priceCurrency": "USD",
+          "price": "99.99",
+          "priceValidUntil": "2026-12-31",
+          "availability": "https://schema.org/InStock",
+          "itemCondition": "https://schema.org/NewCondition"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.8",
+          "reviewCount": "127"
+        }
+      }
+    },
+
+    "ProductGroup": {
+      "description": "Product variants grouped by attributes (size, color). Added 2025. Required for variant-aware rich results.",
+      "required": ["name", "productGroupID", "variesBy", "hasVariant"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "ProductGroup",
+        "name": "[Product Family Name]",
+        "description": "[Family description]",
+        "productGroupID": "product-group-123",
+        "variesBy": ["https://schema.org/size", "https://schema.org/color"],
+        "hasVariant": [
+          {
+            "@type": "Product",
+            "name": "[Variant Name - Red, Large]",
+            "sku": "SKU-RED-L",
+            "color": "Red",
+            "size": "Large",
+            "image": "https://example.com/variant-red-l.jpg",
+            "offers": {
+              "@type": "Offer",
+              "price": "29.99",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock"
+            }
+          },
+          {
+            "@type": "Product",
+            "name": "[Variant Name - Blue, Medium]",
+            "sku": "SKU-BLUE-M",
+            "color": "Blue",
+            "size": "Medium",
+            "offers": {
+              "@type": "Offer",
+              "price": "29.99",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock"
+            }
+          }
+        ]
+      }
+    },
+
+    "Offer": {
+      "description": "Standalone offer (use inline with Product usually).",
+      "required": ["price", "priceCurrency"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Offer",
+        "price": "29.99",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "url": "https://example.com/products/product-slug",
+        "validFrom": "2026-01-01",
+        "priceValidUntil": "2026-12-31",
+        "seller": {
+          "@type": "Organization",
+          "name": "[Seller Name]"
+        }
+      }
+    },
+
+    "AggregateOffer": {
+      "description": "Multiple offers from different sellers.",
+      "required": ["lowPrice", "priceCurrency", "offerCount"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "AggregateOffer",
+        "priceCurrency": "USD",
+        "lowPrice": "29.99",
+        "highPrice": "49.99",
+        "offerCount": "5",
+        "offers": []
+      }
+    },
+
+    "OfferShippingDetails": {
+      "description": "Shipping and delivery info. Use inline with Offer.",
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "[Product Name]",
+        "offers": {
+          "@type": "Offer",
+          "price": "99.99",
+          "priceCurrency": "USD",
+          "shippingDetails": {
+            "@type": "OfferShippingDetails",
+            "shippingRate": {
+              "@type": "MonetaryAmount",
+              "value": "0",
+              "currency": "USD"
+            },
+            "shippingDestination": {
+              "@type": "DefinedRegion",
+              "addressCountry": "US"
+            },
+            "deliveryTime": {
+              "@type": "ShippingDeliveryTime",
+              "handlingTime": {
+                "@type": "QuantitativeValue",
+                "minValue": 0,
+                "maxValue": 1,
+                "unitCode": "DAY"
+              },
+              "transitTime": {
+                "@type": "QuantitativeValue",
+                "minValue": 1,
+                "maxValue": 5,
+                "unitCode": "DAY"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "MerchantReturnPolicy": {
+      "description": "Return policy. Required by Google March 2025 for product rich results: returnPolicyCountry must be set.",
+      "required": ["returnPolicyCountry"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "[Product Name]",
+        "offers": {
+          "@type": "Offer",
+          "price": "99.99",
+          "priceCurrency": "USD",
+          "hasMerchantReturnPolicy": {
+            "@type": "MerchantReturnPolicy",
+            "applicableCountry": "US",
+            "returnPolicyCountry": "US",
+            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+            "merchantReturnDays": 30,
+            "returnMethod": "https://schema.org/ReturnByMail",
+            "returnFees": "https://schema.org/FreeReturn"
+          }
+        }
+      }
+    },
+
+    "Review": {
+      "description": "Individual product or service review.",
+      "required": ["author", "reviewRating", "itemReviewed"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Review",
+        "itemReviewed": {
+          "@type": "Product",
+          "name": "[Product Name]"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "[Reviewer Name]"
+        },
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": "5",
+          "bestRating": "5",
+          "worstRating": "1"
+        },
+        "datePublished": "2026-04-08",
+        "reviewBody": "[Review text]"
+      }
+    },
+
+    "AggregateRating": {
+      "description": "Summary of multiple reviews. Use inline with Product, SoftwareApplication, etc.",
+      "required": ["ratingValue", "reviewCount"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "[Product Name]",
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.8",
+          "bestRating": "5",
+          "worstRating": "1",
+          "ratingCount": "127",
+          "reviewCount": "127"
+        }
+      }
+    },
+
+    "Service": {
+      "description": "Service businesses (consulting, repair, etc.).",
+      "required": ["name", "provider"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "[Service Name]",
+        "description": "[What the service does]",
+        "provider": {
+          "@type": "Organization",
+          "name": "[Company Name]",
+          "url": "https://example.com"
+        },
+        "areaServed": {
+          "@type": "Country",
+          "name": "United States"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "150",
+          "priceCurrency": "USD"
+        }
+      }
+    },
+
+    "Certification": {
+      "description": "Product certifications (Energy Star, organic, safety). Replaced EnergyConsumptionDetails April 2025.",
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "[Product Name]",
+        "hasCertification": {
+          "@type": "Certification",
+          "certificationIdentification": "[Certification Name e.g. Energy Star]",
+          "issuedBy": {
+            "@type": "Organization",
+            "name": "[Issuing Organization e.g. EPA]"
+          }
+        }
+      }
+    },
+
+    "LoyaltyProgram": {
+      "description": "Member pricing, loyalty cards. Added June 2025.",
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "MemberProgram",
+        "name": "[Program Name]",
+        "hostingOrganization": {
+          "@type": "Organization",
+          "name": "[Company Name]"
+        },
+        "hasTiers": [
+          {
+            "@type": "MemberProgramTier",
+            "name": "Silver",
+            "hasTierBenefit": "TierBenefitLoyaltyPrice"
+          },
+          {
+            "@type": "MemberProgramTier",
+            "name": "Gold",
+            "hasTierBenefit": "TierBenefitLoyaltyPrice"
+          }
+        ]
+      }
+    }
+  },
+
+  "media": {
+    "VideoObject": {
+      "description": "Video content. Required for video rich results.",
+      "richResults": "Video thumbnail in SERP, video carousel",
+      "required": ["name", "description", "thumbnailUrl", "uploadDate"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": "[Video Title]",
+        "description": "[Video Description]",
+        "thumbnailUrl": ["https://example.com/thumb-1x1.jpg", "https://example.com/thumb-4x3.jpg", "https://example.com/thumb-16x9.jpg"],
+        "uploadDate": "2026-04-08T08:00:00+00:00",
+        "duration": "PT1H30M",
+        "contentUrl": "https://example.com/video.mp4",
+        "embedUrl": "https://example.com/embed/video-id",
+        "publisher": {
+          "@type": "Organization",
+          "name": "[Publisher Name]",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://example.com/logo.png"
+          }
+        }
+      }
+    },
+
+    "BroadcastEvent": {
+      "description": "Live streaming. Required for LIVE badge in Google Search.",
+      "richResults": "LIVE badge",
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": "[Live Stream Title]",
+        "description": "[Stream Description]",
+        "thumbnailUrl": "https://example.com/stream-thumb.jpg",
+        "uploadDate": "2026-04-08T08:00:00+00:00",
+        "contentUrl": "https://example.com/live-stream",
+        "embedUrl": "https://example.com/embed/stream-id",
+        "publication": {
+          "@type": "BroadcastEvent",
+          "isLiveBroadcast": true,
+          "startDate": "2026-04-08T18:00:00+00:00",
+          "endDate": "2026-04-08T20:00:00+00:00"
+        }
+      }
+    },
+
+    "Clip": {
+      "description": "Video chapters / key moments. Enables timestamp links in SERP.",
+      "richResults": "Key moments rich result",
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": "[Video Title]",
+        "description": "[Video Description]",
+        "thumbnailUrl": "https://example.com/thumb.jpg",
+        "uploadDate": "2026-04-08T08:00:00+00:00",
+        "contentUrl": "https://example.com/video.mp4",
+        "hasPart": [
+          {
+            "@type": "Clip",
+            "name": "Introduction",
+            "startOffset": 0,
+            "endOffset": 120,
+            "url": "https://example.com/video?t=0"
+          },
+          {
+            "@type": "Clip",
+            "name": "Main demonstration",
+            "startOffset": 120,
+            "endOffset": 600,
+            "url": "https://example.com/video?t=120"
+          }
+        ]
+      }
+    },
+
+    "SeekToAction": {
+      "description": "Enables seek functionality in video rich results.",
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": "[Video Title]",
+        "description": "[Description]",
+        "thumbnailUrl": "https://example.com/thumb.jpg",
+        "uploadDate": "2026-04-08T08:00:00+00:00",
+        "contentUrl": "https://example.com/video.mp4",
+        "potentialAction": {
+          "@type": "SeekToAction",
+          "target": "https://example.com/video?t={seek_to_second_number}",
+          "startOffset-input": "required name=seek_to_second_number"
+        }
+      }
+    },
+
+    "AudioObject": {
+      "description": "Audio file pages.",
+      "required": ["contentUrl"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "AudioObject",
+        "name": "[Audio Title]",
+        "contentUrl": "https://example.com/audio.mp3",
+        "duration": "PT45M",
+        "uploadDate": "2026-04-08",
+        "encodingFormat": "audio/mpeg",
+        "transcript": "[Optional: full transcript text]"
+      }
+    },
+
+    "ImageObject": {
+      "description": "Standalone image pages or image metadata.",
+      "required": ["contentUrl"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "ImageObject",
+        "contentUrl": "https://example.com/image.jpg",
+        "name": "[Image title]",
+        "caption": "[Image caption]",
+        "creator": {
+          "@type": "Person",
+          "name": "[Photographer]"
+        },
+        "copyrightHolder": {
+          "@type": "Organization",
+          "name": "[Copyright Holder]"
+        },
+        "license": "https://creativecommons.org/licenses/by/4.0/",
+        "creditText": "[Credit line]"
+      }
+    },
+
+    "PodcastSeries": {
+      "description": "Podcast show.",
+      "required": ["name", "url"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "PodcastSeries",
+        "name": "[Podcast Name]",
+        "url": "https://example.com/podcast",
+        "description": "[Podcast description]",
+        "image": "https://example.com/podcast-cover.jpg",
+        "author": {
+          "@type": "Person",
+          "name": "[Host Name]"
+        },
+        "webFeed": "https://example.com/podcast/feed.xml"
+      }
+    },
+
+    "PodcastEpisode": {
+      "description": "Podcast episode.",
+      "required": ["name", "partOfSeries"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "PodcastEpisode",
+        "name": "[Episode Title]",
+        "url": "https://example.com/podcast/episode-slug",
+        "description": "[Episode summary]",
+        "datePublished": "2026-04-08",
+        "duration": "PT45M",
+        "associatedMedia": {
+          "@type": "MediaObject",
+          "contentUrl": "https://example.com/episodes/episode.mp3"
+        },
+        "partOfSeries": {
+          "@type": "PodcastSeries",
+          "name": "[Podcast Name]",
+          "url": "https://example.com/podcast"
+        }
+      }
+    },
+
+    "Movie": {
+      "description": "Movie pages.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Movie",
+        "name": "[Movie Title]",
+        "description": "[Synopsis]",
+        "image": "https://example.com/movie-poster.jpg",
+        "datePublished": "2026-01-15",
+        "director": {
+          "@type": "Person",
+          "name": "[Director Name]"
+        },
+        "actor": [
+          {
+            "@type": "Person",
+            "name": "[Actor 1]"
+          }
+        ],
+        "duration": "PT2H15M",
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.5",
+          "reviewCount": "150"
+        }
+      }
+    },
+
+    "TVSeries": {
+      "description": "TV series pages.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "TVSeries",
+        "name": "[Series Title]",
+        "description": "[Series synopsis]",
+        "image": "https://example.com/series-poster.jpg",
+        "numberOfSeasons": 5,
+        "numberOfEpisodes": 60,
+        "actor": [
+          {
+            "@type": "Person",
+            "name": "[Lead Actor]"
+          }
+        ]
+      }
+    },
+
+    "TVEpisode": {
+      "description": "TV episode pages.",
+      "required": ["name", "partOfSeries"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "TVEpisode",
+        "name": "[Episode Title]",
+        "episodeNumber": 5,
+        "seasonNumber": 2,
+        "partOfSeries": {
+          "@type": "TVSeries",
+          "name": "[Series Name]"
+        },
+        "datePublished": "2026-04-08"
+      }
+    },
+
+    "MusicRecording": {
+      "description": "Individual songs or recordings.",
+      "required": ["name", "byArtist"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "MusicRecording",
+        "name": "[Song Title]",
+        "byArtist": {
+          "@type": "MusicGroup",
+          "name": "[Artist Name]"
+        },
+        "duration": "PT3M30S",
+        "inAlbum": {
+          "@type": "MusicAlbum",
+          "name": "[Album Name]"
+        },
+        "isrcCode": "USRC17607839"
+      }
+    },
+
+    "MusicAlbum": {
+      "description": "Music album pages.",
+      "required": ["name", "byArtist"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "MusicAlbum",
+        "name": "[Album Name]",
+        "byArtist": {
+          "@type": "MusicGroup",
+          "name": "[Artist Name]"
+        },
+        "datePublished": "2026-01-15",
+        "image": "https://example.com/album-cover.jpg",
+        "numTracks": 12,
+        "genre": "Pop"
+      }
+    },
+
+    "MusicGroup": {
+      "description": "Musical artists, bands, performers.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "MusicGroup",
+        "name": "[Artist Name]",
+        "url": "https://example.com/artist-page",
+        "image": "https://example.com/artist-photo.jpg",
+        "genre": "Pop",
+        "sameAs": [
+          "https://open.spotify.com/artist/...",
+          "https://music.apple.com/artist/..."
+        ]
+      }
+    }
+  },
+
+  "events": {
+    "Event": {
+      "description": "Generic event. Use for conferences, meetups, webinars.",
+      "richResults": "Event listing in SERP",
+      "required": ["name", "startDate", "location"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        "name": "[Event Name]",
+        "startDate": "2026-06-15T09:00:00-07:00",
+        "endDate": "2026-06-15T17:00:00-07:00",
+        "eventAttendanceMode": "https://schema.org/MixedEventAttendanceMode",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "location": [
+          {
+            "@type": "Place",
+            "name": "[Venue Name]",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "123 Main St",
+              "addressLocality": "San Francisco",
+              "addressRegion": "CA",
+              "postalCode": "94102",
+              "addressCountry": "US"
+            }
+          },
+          {
+            "@type": "VirtualLocation",
+            "url": "https://example.com/event-stream"
+          }
+        ],
+        "image": "https://example.com/event-hero.jpg",
+        "description": "[Event description]",
+        "offers": {
+          "@type": "Offer",
+          "url": "https://example.com/event/tickets",
+          "price": "199",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock",
+          "validFrom": "2026-01-01T00:00:00-08:00"
+        },
+        "organizer": {
+          "@type": "Organization",
+          "name": "[Organizer Name]",
+          "url": "https://example.com"
+        }
+      }
+    },
+
+    "ConferenceEvent": {
+      "description": "Conference subtype of Event. Added December 2025 (Schema.org v29.4).",
+      "required": ["name", "startDate", "location"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "ConferenceEvent",
+        "name": "[Conference Name]",
+        "startDate": "2026-06-15T09:00:00-07:00",
+        "endDate": "2026-06-17T17:00:00-07:00",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "location": {
+          "@type": "Place",
+          "name": "[Venue]",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "San Francisco",
+            "addressRegion": "CA",
+            "addressCountry": "US"
+          }
+        },
+        "organizer": {
+          "@type": "Organization",
+          "name": "[Organizer]"
+        }
+      }
+    },
+
+    "PerformingArtsEvent": {
+      "description": "Concerts, plays, dance performances. Added December 2025 (Schema.org v29.4).",
+      "required": ["name", "startDate", "location"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "PerformingArtsEvent",
+        "name": "[Performance Name]",
+        "startDate": "2026-04-08T20:00:00-07:00",
+        "location": {
+          "@type": "Place",
+          "name": "[Venue]"
+        },
+        "performer": {
+          "@type": "MusicGroup",
+          "name": "[Performer]"
+        }
+      }
+    },
+
+    "SportsEvent": {
+      "description": "Sports events.",
+      "required": ["name", "startDate", "location"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "SportsEvent",
+        "name": "[Match Name]",
+        "startDate": "2026-04-08T19:00:00-04:00",
+        "location": {
+          "@type": "Place",
+          "name": "[Stadium Name]"
+        },
+        "homeTeam": {
+          "@type": "SportsTeam",
+          "name": "[Home Team]"
+        },
+        "awayTeam": {
+          "@type": "SportsTeam",
+          "name": "[Away Team]"
+        }
+      }
+    },
+
+    "EventSeries": {
+      "description": "Series of related events.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "EventSeries",
+        "name": "[Series Name]",
+        "description": "[Series description]",
+        "subEvent": [
+          {
+            "@type": "Event",
+            "name": "[Event 1]",
+            "startDate": "2026-04-08"
+          }
+        ]
+      }
+    }
+  },
+
+  "food": {
+    "Recipe": {
+      "description": "Cooking recipes. Required for recipe rich results.",
+      "richResults": "Recipe card with ratings, time, image",
+      "required": ["name", "image", "recipeIngredient", "recipeInstructions"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Recipe",
+        "name": "[Recipe Name]",
+        "image": "https://example.com/recipe.jpg",
+        "author": {
+          "@type": "Person",
+          "name": "[Author Name]"
+        },
+        "datePublished": "2026-04-08",
+        "description": "[Recipe summary]",
+        "prepTime": "PT15M",
+        "cookTime": "PT45M",
+        "totalTime": "PT1H",
+        "recipeYield": "4 servings",
+        "recipeCategory": "Main course",
+        "recipeCuisine": "Italian",
+        "nutrition": {
+          "@type": "NutritionInformation",
+          "calories": "450 calories"
+        },
+        "recipeIngredient": [
+          "2 cups flour",
+          "1 tbsp salt"
+        ],
+        "recipeInstructions": [
+          {
+            "@type": "HowToStep",
+            "text": "[Step 1 instructions]"
+          },
+          {
+            "@type": "HowToStep",
+            "text": "[Step 2 instructions]"
+          }
+        ],
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.8",
+          "ratingCount": "127"
+        }
+      }
+    },
+
+    "Menu": {
+      "description": "Restaurant menus.",
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Menu",
+        "name": "Dinner Menu",
+        "hasMenuSection": [
+          {
+            "@type": "MenuSection",
+            "name": "Appetizers",
+            "hasMenuItem": [
+              {
+                "@type": "MenuItem",
+                "name": "[Item Name]",
+                "description": "[Item description]",
+                "offers": {
+                  "@type": "Offer",
+                  "price": "12.99",
+                  "priceCurrency": "USD"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+
+  "local_business": {
+    "$note": "LocalBusiness has many subtypes (Restaurant, Dentist, Lawyer, Plumber, AutoRepair, etc.). Use the most specific subtype that fits.",
+
+    "LocalBusiness": {
+      "description": "Generic physical business. Use a more specific subtype if available.",
+      "richResults": "Business info in maps and SERP",
+      "required": ["name", "address"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "[Business Name]",
+        "image": "https://example.com/storefront.jpg",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "123 Main Street",
+          "addressLocality": "San Francisco",
+          "addressRegion": "CA",
+          "postalCode": "94102",
+          "addressCountry": "US"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "37.7749",
+          "longitude": "-122.4194"
+        },
+        "url": "https://example.com",
+        "telephone": "+1-555-555-5555",
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+            "opens": "09:00",
+            "closes": "18:00"
+          },
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": "Saturday",
+            "opens": "10:00",
+            "closes": "16:00"
+          }
+        ],
+        "priceRange": "$$",
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.7",
+          "reviewCount": "127"
+        }
+      }
+    },
+
+    "Restaurant": {
+      "description": "Restaurant subtype.",
+      "required": ["name", "address", "servesCuisine"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Restaurant",
+        "name": "[Restaurant Name]",
+        "image": "https://example.com/restaurant.jpg",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "123 Main Street",
+          "addressLocality": "San Francisco",
+          "addressRegion": "CA",
+          "postalCode": "94102",
+          "addressCountry": "US"
+        },
+        "telephone": "+1-555-555-5555",
+        "servesCuisine": "Italian",
+        "priceRange": "$$",
+        "acceptsReservations": "True",
+        "menu": "https://example.com/menu"
+      }
+    },
+
+    "Store": {
+      "description": "Retail store subtype.",
+      "required": ["name", "address"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Store",
+        "name": "[Store Name]",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "123 Main Street",
+          "addressLocality": "San Francisco",
+          "addressRegion": "CA",
+          "postalCode": "94102",
+          "addressCountry": "US"
+        },
+        "telephone": "+1-555-555-5555",
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+            "opens": "10:00",
+            "closes": "20:00"
+          }
+        ]
+      }
+    },
+
+    "EducationalOrganization": {
+      "description": "Schools, universities, training providers.",
+      "required": ["name", "url"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "EducationalOrganization",
+        "name": "[School Name]",
+        "url": "https://example.edu",
+        "logo": "https://example.edu/logo.png",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "[Address]",
+          "addressLocality": "[City]",
+          "addressRegion": "[State]",
+          "postalCode": "[ZIP]",
+          "addressCountry": "US"
+        }
+      }
+    }
+  },
+
+  "travel": {
+    "Hotel": {
+      "description": "Hotels and accommodations.",
+      "required": ["name", "address"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Hotel",
+        "name": "[Hotel Name]",
+        "image": "https://example.com/hotel.jpg",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "[Address]",
+          "addressLocality": "[City]",
+          "addressRegion": "[State]",
+          "postalCode": "[ZIP]",
+          "addressCountry": "US"
+        },
+        "starRating": {
+          "@type": "Rating",
+          "ratingValue": "4"
+        },
+        "priceRange": "$$$",
+        "amenityFeature": [
+          {
+            "@type": "LocationFeatureSpecification",
+            "name": "WiFi",
+            "value": true
+          },
+          {
+            "@type": "LocationFeatureSpecification",
+            "name": "Pool",
+            "value": true
+          }
+        ]
+      }
+    },
+
+    "TouristAttraction": {
+      "description": "Tourist destinations and attractions.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "TouristAttraction",
+        "name": "[Attraction Name]",
+        "description": "[Description]",
+        "image": "https://example.com/attraction.jpg",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "[City]",
+          "addressCountry": "US"
+        }
+      }
+    },
+
+    "Trip": {
+      "description": "Travel itineraries and trip pages.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Trip",
+        "name": "[Trip Name]",
+        "description": "[Trip description]",
+        "itinerary": [
+          {
+            "@type": "Place",
+            "name": "[Stop 1]"
+          },
+          {
+            "@type": "Place",
+            "name": "[Stop 2]"
+          }
+        ]
+      }
+    }
+  },
+
+  "jobs_careers": {
+    "JobPosting": {
+      "description": "Job listings. Required for Google for Jobs inclusion.",
+      "richResults": "Google for Jobs listing",
+      "required": ["title", "description", "datePosted", "hiringOrganization", "jobLocation"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "JobPosting",
+        "title": "[Job Title]",
+        "description": "[Full job description, including requirements and responsibilities]",
+        "identifier": {
+          "@type": "PropertyValue",
+          "name": "[Company Name]",
+          "value": "[Internal Job ID]"
+        },
+        "datePosted": "2026-04-08",
+        "validThrough": "2026-05-08T23:59:00+00:00",
+        "employmentType": "FULL_TIME",
+        "hiringOrganization": {
+          "@type": "Organization",
+          "name": "[Company Name]",
+          "sameAs": "https://example.com",
+          "logo": "https://example.com/logo.png"
+        },
+        "jobLocation": {
+          "@type": "Place",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "[Address]",
+            "addressLocality": "[City]",
+            "addressRegion": "[State]",
+            "postalCode": "[ZIP]",
+            "addressCountry": "US"
+          }
+        },
+        "baseSalary": {
+          "@type": "MonetaryAmount",
+          "currency": "USD",
+          "value": {
+            "@type": "QuantitativeValue",
+            "minValue": 80000,
+            "maxValue": 120000,
+            "unitText": "YEAR"
+          }
+        }
+      }
+    },
+
+    "Occupation": {
+      "description": "Career/occupation pages (not specific job listings).",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Occupation",
+        "name": "[Occupation Name]",
+        "description": "[Description]",
+        "occupationLocation": {
+          "@type": "City",
+          "name": "[City]"
+        },
+        "estimatedSalary": [
+          {
+            "@type": "MonetaryAmountDistribution",
+            "name": "base",
+            "currency": "USD",
+            "duration": "P1Y",
+            "median": 80000
+          }
+        ]
+      }
+    }
+  },
+
+  "education": {
+    "Course": {
+      "description": "Educational courses.",
+      "richResults": "Course rich result",
+      "required": ["name", "description", "provider"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Course",
+        "name": "[Course Name]",
+        "description": "[Course description and what students will learn]",
+        "provider": {
+          "@type": "Organization",
+          "name": "[Provider Name]",
+          "sameAs": "https://example.com"
+        },
+        "hasCourseInstance": {
+          "@type": "CourseInstance",
+          "courseMode": "online",
+          "courseWorkload": "PT40H",
+          "instructor": {
+            "@type": "Person",
+            "name": "[Instructor Name]"
+          }
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "199",
+          "priceCurrency": "USD"
+        }
+      }
+    },
+
+    "LearningResource": {
+      "description": "Learning resources, tutorials.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "name": "[Resource Name]",
+        "description": "[Description]",
+        "learningResourceType": "tutorial",
+        "educationalLevel": "beginner",
+        "teaches": "[What students will learn]"
+      }
+    },
+
+    "Quiz": {
+      "description": "Quiz pages.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Quiz",
+        "name": "[Quiz Name]",
+        "about": "[Topic]",
+        "educationalLevel": "intermediate",
+        "hasPart": [
+          {
+            "@type": "Question",
+            "name": "[Question 1]",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "[Correct answer]"
+            }
+          }
+        ]
+      }
+    }
+  },
+
+  "health_medical": {
+    "MedicalWebPage": {
+      "description": "Medical content pages. YMYL — requires high E-E-A-T.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "MedicalWebPage",
+        "name": "[Medical Topic]",
+        "description": "[Description]",
+        "medicalAudience": {
+          "@type": "MedicalAudience",
+          "audienceType": "Patient"
+        },
+        "specialty": "https://schema.org/Cardiovascular",
+        "lastReviewed": "2026-04-08",
+        "reviewedBy": {
+          "@type": "Person",
+          "name": "[Doctor Name]",
+          "honorificPrefix": "Dr.",
+          "jobTitle": "Cardiologist"
+        }
+      }
+    },
+
+    "Drug": {
+      "description": "Medication information pages. YMYL.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Drug",
+        "name": "[Drug Name]",
+        "alternateName": "[Generic Name]",
+        "description": "[What the drug is for]",
+        "drugClass": {
+          "@type": "DrugClass",
+          "name": "[Drug Class]"
+        }
+      }
+    },
+
+    "Physician": {
+      "description": "Doctor/physician pages.",
+      "required": ["name"],
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "Physician",
+        "name": "Dr. [Name]",
+        "image": "https://example.com/doctor.jpg",
+        "telephone": "+1-555-555-5555",
+        "medicalSpecialty": "https://schema.org/Cardiovascular",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "[Address]",
+          "addressLocality": "[City]",
+          "addressRegion": "[State]",
+          "postalCode": "[ZIP]"
+        }
+      }
+    }
+  },
+
+  "accessibility_voice": {
+    "Speakable": {
+      "description": "Marks content as suitable for voice search / Google Assistant audio playback.",
+      "template": {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "[Page Title]",
+        "speakable": {
+          "@type": "SpeakableSpecification",
+          "cssSelector": [".article-headline", ".article-summary"]
+        }
+      }
+    }
+  },
+
+  "multiple_types_example": {
+    "$comment": "Combine multiple schema types on one page using @graph. Use @id to reference between them.",
+    "template": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://example.com/#organization",
+          "name": "Example Co",
+          "url": "https://example.com",
+          "logo": "https://example.com/logo.png"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://example.com/#website",
+          "url": "https://example.com",
+          "name": "Example",
+          "publisher": {
+            "@id": "https://example.com/#organization"
+          }
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://example.com/page#webpage",
+          "url": "https://example.com/page",
+          "name": "Page Title",
+          "isPartOf": {
+            "@id": "https://example.com/#website"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://example.com/page#breadcrumb",
+          "itemListElement": []
+        }
+      ]
+    }
+  }
+}

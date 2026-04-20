@@ -1,13 +1,13 @@
 ---
 name: ios-debugger
-description: Use XcodeBuildMCP to build, run, launch, and debug iOS projects on a simulator. Use when asked to run an iOS app, interact with the simulator UI, inspect on-screen state, capture logs, or run tests via XcodeBuildMCP tools.
+description: Use XcodeBuildMCP to build, run, launch, and debug the current iOS project on a booted simulator. Use when asked to run an iOS app, interact with the simulator UI, inspect on-screen state, capture logs or console output, diagnose runtime behavior, or run tests via XcodeBuildMCP tools.
 ---
 
 # iOS Debugger Agent
 
 ## Overview
 
-Use XcodeBuildMCP to build and run the current project scheme on a booted iOS simulator, interact with the UI, capture logs, and run tests. Prefer MCP tools for simulator control, logs, and view inspection.
+Use XcodeBuildMCP to build and run the current project scheme on a booted iOS simulator, interact with the UI, capture logs, and run tests when requested. Prefer MCP tools for simulator control, logs, and view inspection.
 
 ## Core Workflow
 
@@ -26,15 +26,17 @@ Follow this sequence unless the user asks for a narrower action.
   - `simulatorId` from the booted device
   - Optional: `configuration: "Debug"`, `useLatestOS: true`
 
-### 3) Build + run
+### 3) Build + run (when requested)
 
 - Call `mcp__XcodeBuildMCP__build_run_sim`.
+- If the build fails, inspect the error output and retry only after fixing the issue. Optionally retry with `preferXcodebuild: true`.
+- After a successful build, verify the app actually launched with `mcp__XcodeBuildMCP__describe_ui` or `mcp__XcodeBuildMCP__screenshot` before attempting interaction.
 - If the app is already built and only launch is requested, use `mcp__XcodeBuildMCP__launch_app_sim`.
 - If bundle id is unknown:
   1. `mcp__XcodeBuildMCP__get_sim_app_path`
   2. `mcp__XcodeBuildMCP__get_app_bundle_id`
 
-### 4) Run tests
+### 4) Run tests (when requested)
 
 - Call `mcp__XcodeBuildMCP__test_sim` to run the test suite on the simulator.
 - Review test output, fix failures, re-run until tests pass.
@@ -60,12 +62,12 @@ Use these when asked to inspect or interact with the running app.
 For implementing features end-to-end:
 
 1. Implement the feature code.
-2. Build the app (`build_run_sim`).
-3. If build fails, fix errors and rebuild.
-4. Run tests (`test_sim`).
-5. If tests fail, fix and re-run.
-6. Take a screenshot to verify the UI.
-7. Interact with the feature to confirm it works.
+2. Build the app (`build_run_sim`) if the user wants a runtime check.
+3. If build fails, fix errors and rebuild before interacting with the simulator.
+4. Verify launch with `describe_ui` or `screenshot`.
+5. Run tests (`test_sim`) when the user asked for test validation.
+6. If tests fail, fix and re-run.
+7. Interact with the feature and confirm the observed behavior.
 
 ## Troubleshooting
 
