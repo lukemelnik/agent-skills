@@ -35,6 +35,28 @@ Focus on:
 6. Use Cause & Effect Graph to diagnose *why* updates occur.
 7. Re-record after fixes to compare.
 
+### Analyzing an existing `.trace` file
+
+Use this when the user shares an Instruments trace bundle instead of asking for a fresh profile run.
+
+1. Open the `.trace` in Instruments.
+2. Confirm the active instruments (SwiftUI, Time Profiler, Hangs/Hitches).
+3. Find the reported timeframe (scroll hitch, transition lag, interaction delay).
+4. Inspect **Long View Body Updates** and **Hitches** first.
+5. Use the selected time range to correlate with Time Profiler heavy stacks.
+6. Attribute findings to one of:
+   - state invalidation scope too broad
+   - unstable view identity/list diffing
+   - heavy work on main thread
+   - image decode/layout/text measurement pressure
+7. Report conclusions with evidence:
+   - lane/signal observed
+   - affected view(s) or call stack(s)
+   - likely root cause
+   - smallest safe fix
+
+If the trace is inconclusive, ask for minimal repro steps and rerun profiling on a Release build.
+
 ### SwiftUI Timeline Lanes
 
 - **Update Groups**: overview of time SwiftUI spends calculating updates.

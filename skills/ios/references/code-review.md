@@ -4,13 +4,28 @@ Flag these issues during code review and suggest the modern replacement.
 
 ## Table of Contents
 
-1. [Deprecated & Outdated APIs](#1-deprecated--outdated-apis)
-2. [Swift Idioms](#2-swift-idioms)
-3. [View Organization](#3-view-organization)
+1. [Review Output Contract](#1-review-output-contract)
+2. [Deprecated & Outdated APIs](#2-deprecated--outdated-apis)
+3. [High-Signal Correctness Checks](#3-high-signal-correctness-checks)
+4. [Swift Idioms](#4-swift-idioms)
+5. [View Organization](#5-view-organization)
 
 ---
 
-## 1. Deprecated & Outdated APIs
+## 1. Review Output Contract
+
+Use this structure when the user asks for a review:
+
+1. Organize findings by file.
+2. For each issue: include line(s), violated rule, and a concise before/after fix.
+3. Skip files with no issues.
+4. End with a prioritized short summary (highest-impact fixes first).
+
+Review only real defects or maintainability risks; do not invent speculative issues.
+
+---
+
+## 2. Deprecated & Outdated APIs
 
 ### `cornerRadius()` → `clipShape(.rect(cornerRadius:))`
 
@@ -227,7 +242,21 @@ Also check the sheet content itself:
 
 ---
 
-## 2. Swift Idioms
+## 3. High-Signal Correctness Checks
+
+These checks catch common SwiftUI correctness bugs quickly:
+
+- `@State` and `@FocusState` should be `private`.
+- Never declare injected values as `@State`/`@StateObject` — these wrappers are for view-owned state.
+- Use `@StateObject` for view-owned reference types and `@ObservedObject` for injected reference types.
+- `ForEach` identity must be stable (avoid `.indices` for mutable collections).
+- Keep a constant number of rendered children per `ForEach` element where possible.
+- Always use `.animation(_:value:)` with an explicit `value:` trigger.
+- Prefer `Button` for tappable actions rather than `onTapGesture` on non-semantic views.
+
+---
+
+## 4. Swift Idioms
 
 ### Prefer modern Foundation APIs
 
@@ -318,7 +347,7 @@ Avoid `!` and force `try` unless failure is truly unrecoverable. Prefer `if let`
 
 ---
 
-## 3. View Organization
+## 5. View Organization
 
 ### Never break view bodies into computed properties/methods
 

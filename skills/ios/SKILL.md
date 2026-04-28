@@ -11,13 +11,17 @@ Choose the narrowest path that matches the request:
 
 - **New screen or feature**: start with `references/architecture.md`, then `references/components.md`.
 - **Refactor a large SwiftUI view**: start with `references/architecture.md`, then `references/code-review.md` and `references/components.md`.
+- **Code review or quality audit**: start with `references/code-review.md`, then load only the relevant topical references.
 - **Performance issue or janky scrolling**: start with `references/performance.md`.
+- **Instruments `.trace` file analysis**: start with `references/performance.md`, then use `ios-debugger` if simulator/device reproduction is needed.
 - **App Intents, Siri, Spotlight, widgets, or Action Button**: start with `references/app-intents.md`.
 - **Design system or visual polish**: start with `references/theming.md` and `references/hig.md`.
 - **iOS 26+ Liquid Glass UI**: start with `references/liquid-glass.md`.
 - **UIKit bridge or representables**: start with `references/uikit-bridge.md`.
 
 Prefer SwiftUI-native state first. Introduce a view model only when the feature needs a reference type for async orchestration, cross-section feature state, or a clearer testing seam.
+
+When reviewing code, run a fast modern-API/deprecation pass first using `references/code-review.md`, then dive into architecture/performance/accessibility specifics.
 
 Use adjacent skills when the task is narrower than this general iOS skill:
 
@@ -29,6 +33,9 @@ Use adjacent skills when the task is narrower than this general iOS skill:
 ## Core Principles
 
 - Keep views declarative and lightweight; put durable business logic in services, models, or a view model only when one materially improves the design.
+- Report only genuine, user-impacting issues during review; avoid speculative nitpicks.
+- Prefer native SwiftUI APIs over UIKit bridging unless bridging is required by a concrete capability gap.
+- Do not add third-party frameworks unless the user explicitly requests or approves them.
 - Use semantic system styles or app design tokens (fonts, colors, materials) — avoid ad hoc hardcoded visual values.
 - Make loading, empty, error, and success states explicit.
 - Every interactive element: 44pt minimum, accessible, keyboard-navigable.
@@ -130,7 +137,7 @@ Read when reviewing PRs, auditing existing code, or writing new SwiftUI code. Co
 
 Read when diagnosing slow rendering, janky scrolling, high CPU/memory usage, excessive view updates, or layout thrash in SwiftUI apps.
 
-Covers: audit workflow (code-first review, Instruments profiling, SwiftUI timeline lanes), common code smells with before/after fixes (formatters in body, unstable identity, conditional view swapping, broad observable dependencies, image decoding), hang diagnosis, remediation patterns.
+Covers: audit workflow (code-first review, Instruments profiling, SwiftUI timeline lanes), analyzing shared `.trace` bundles, common code smells with before/after fixes (formatters in body, unstable identity, conditional view swapping, broad observable dependencies, image decoding), hang diagnosis, remediation patterns.
 
 ### `references/components.md`
 
