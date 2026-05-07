@@ -1,0 +1,964 @@
+# iOS Testing
+
+## Table of Contents
+
+1. [Swift Testing Framework](#1-swift-testing-framework)
+2. [XCTest Essentials](#2-xctest-essentials)
+3. [Testing @Observable Models](#3-testing-observable-models)
+4. [Async Test Patterns](#4-async-test-patterns)
+5. [Protocol-Based Mocking](#5-protocol-based-mocking)
+6. [Snapshot Testing](#6-snapshot-testing)
+7. [UI Testing with XCUIApplication](#7-ui-testing-with-xcuiapplication)
+8. [Preview-Based Testing](#8-preview-based-testing)
+
+---
+
+## 1. Swift Testing Framework
+
+Preferred for new unit tests (iOS 17+/Xcode 16+). IceCubesApp and CodeEdit use it for new tests.
+
+**Important:** Swift Testing does NOT support UI tests -- XCTest must be used there.
+
+### Critical Rules
+
+These are the most common mistakes agents make with Swift Testing:
+
+- **Never negate with `!` in `#expect`** -- `#expect(value == false)` not `#expect(!value)`. The `!` defeats Swift Testing's macro expansion and produces unhelpful failure messages.
+- **`@Suite` is optional** -- only add it when you need a display name or traits. Any struct/class with `@Test` methods is auto-discovered as a suite. Do not add `@Suite` unnecessarily.
+- **`init()` replaces `setUp()`/`tearDown()`** -- use `init()` for structs, `init()`/`deinit` for classes. No setUp/tearDown in Swift Testing.
+- **`.serialized` only affects parameterized tests** -- it does NOT make all tests in a suite run sequentially. It serializes parameterized test cases only.
+- **`@available` works on individual tests but NOT on suites** -- place `@available(iOS 18, *)` on each `@Test` method, not on the suite struct.
+- **No `test` prefix needed** -- use `func userCanLogOut()` rather than `func testUserCanLogOut()`.
+- **Random, parallel execution is the default** -- each test must work in any order at any time.
+- **A test with no `#expect` or `#require` is assumed to pass.**
+
+### Test Hygiene (FIRST)
+
+Good tests should be: **F**ast, **I**solated, **R**epeatable, **S**elf-verifying, **T**imely.
+
+### Test Generation Heuristics
+
+When generating tests, cover: happy path, boundary cases, invalid input, and (if appropriate) concurrency scenarios.
+
+### @Test and #expect
+
+```swift
+import Testing
+@testable import MyFeature
+
+@MainActor
+@Suite("Timeline View Model tests")
+struct TimelineViewModelTests {
+    @Test
+    func duplicateStatusIsNotInserted() async throws {
+        let subject = makeSubject()
+        let status = Status.placeholder()
+        await subject.datasource.append(status)
+        await subject.handleEvent(event: StreamEventUpdate(status: status))
+        let count = await subject.datasource.count()
+        #expect(count == 1)
+    }
+}
+```
+
+### #expect vs #require
+
+Both evaluate a condition and fail the test if false. `#require` throws on failure, stopping the test immediately.
+
+Use `#require` for preconditions -- if they fail, the rest of the test is meaningless. Use `#expect` for the actual assertions you care about.
+
+```swift
+@Test func outstandingTasksStringIsPlural() throws {
+    let sut = try createTestUser(projects: 3, itemsPerProject: 10)
+    try #require(sut.projects.isEmpty == false)  // precondition
+    let rowTitle = sut.outstandingTasksString
+    #expect(rowTitle == "30 items")  // actual assertion
+}
+```
+
+`#require` also unwraps optionals (replaces `XCTUnwrap`):
+
+```swift
+let value = try #require(optionalValue)  // fails the test if nil
+```
+
+### Key Differences from XCTest
+
+- `@Test` instead of `func test...` naming convention
+- `#expect(condition)` instead of `XCTAssert*`
+- `#require(optional)` instead of `XCTUnwrap` (throws on nil)
+- `@Suite("Name")` for grouping (optional -- bare structs with `@Test` methods work)
+- `struct` test types preferred (use classes only when you need `deinit`)
+- `init()` for setup, not `setUp()`/`tearDown()`
+
+### Suite Initialization
+
+```swift
+struct PlayerTests {
+    let sut: Player
+
+    init() {
+        sut = Player(name: "Test Player")
+    }
+
+    @Test func nameIsCorrect() {
+        #expect(sut.name == "Test Player")
+    }
+}
+```
+
+Suite initializers must accept no parameters. They can be `async` and/or `throws`.
+
+### Traits
+
+```swift
+@Test(.disabled("Reason for disabling"))
+func flaky() { }
+
+@Test(.bug(id: 182))
+func headingsShouldBeItalic() { }
+
+@Test(.bug("https://github.com/you/repo/issues/182"))
+func anotherBugFix() { }
+
+@Test("Loading names", .timeLimit(.minutes(1)))
+func loadNames() async { }
+// NOTE: only .minutes() exists -- there is NO .seconds()
+```
+
+### Tags
+
+Define tags for cross-suite categorization:
+
+```swift
+extension Tag {
+    @Tag static var networking: Self
+    @Tag static var slow: Self
+    @Tag static var edgeCase: Self
+    @Tag static var smoke: Self
+}
+```
+
+Apply to tests or suites:
+
+```swift
+@Test(.tags(.networking))
+func fetchUserProfile() async throws { }
+
+@Suite(.tags(.networking))
+struct APITests { }
+```
+
+### Parameterized Tests
+
+```swift
+@Test(arguments: [".home", ".local", ".federated"])
+func timelineLoads(filter: String) async throws {
+    // Runs once per argument
+}
+```
+
+Two collections form a **Cartesian product** -- use `zip()` for pairwise testing:
+
+```swift
+// Cartesian product: 9 combinations
+@Test(arguments: [1, 2, 3], ["a", "b", "c"])
+func cartesian(num: Int, letter: String) { }
+
+// Pairwise: 3 combinations
+@Test(arguments: zip([1, 2, 3], ["a", "b", "c"]))
+func pairwise(num: Int, letter: String) { }
+```
+
+### #expect(throws:) Patterns
+
+```swift
+// Assert a specific error case
+#expect(throws: GameError.notInstalled) {
+    try game.play()
+}
+
+// Assert no error is thrown
+#expect(throws: Never.self) {
+    try game.play()
+}
+
+// Capture and inspect the thrown error
+let error = #expect(throws: GameError.self) {
+    try playGame(at: 22)
+}
+#expect(error == .disallowedTime)
+```
+
+Avoid broad `#expect(throws: Error.self)` -- always name the specific error type.
+
+### withKnownIssue
+
+Wraps code with a known bug. Expects a failure, and **fails the test if no issue occurs** (meaning the bug was fixed -- update your code):
+
+```swift
+@Test func knownBug() {
+    withKnownIssue("Parsing fails on empty input") {
+        let result = try parser.parse("")
+        #expect(result.isEmpty)
+    }
+}
+```
+
+For flaky issues, use `isIntermittent: true` -- passes if no issue, marks expected failure if one occurs:
+
+```swift
+withKnownIssue("Intermittent timeout", isIntermittent: true) {
+    try await fetchData()
+}
+```
+
+### Issue Recording
+
+```swift
+// Replaces XCTFail in callbacks
+Issue.record("Status never changed to finished.")
+```
+
+### Confirmation (Replacing XCTestExpectation)
+
+Use `confirmation` to verify that a callback or closure is invoked (replacement for `XCTestExpectation`):
+
+```swift
+@Test
+func callbackIsInvoked() async {
+    await confirmation("callback invoked") { confirm in
+        sut.onComplete { confirm() }
+        sut.start()
+    }
+}
+```
+
+`confirmation` fails the test if `confirm()` is never called (or called more than the expected count). Pass `expectedCount:` for multiple invocations:
+
+```swift
+await confirmation("event received", expectedCount: 3) { confirm in
+    sut.onEvent { _ in confirm() }
+    sut.sendEvents(count: 3)
+}
+```
+
+All work must complete before the `confirmation()` closure exits. Completion-handler-based code won't work -- use `async` or return the `Task` so the test can `await` it.
+
+`confirmation(expectedCount: 0)` is valid -- ensures an event never happens.
+
+Range-based confirmation (Swift 6.1+):
+
+```swift
+await confirmation(expectedCount: 5...10) { confirm in
+    for await _ in loader { confirm() }
+}
+```
+
+### Verification Helpers with SourceLocation
+
+When writing shared verification functions, pass `SourceLocation` so failures report at the caller's line:
+
+```swift
+func verifyDivision(
+    _ result: (quotient: Int, remainder: Int),
+    expectedQuotient: Int,
+    expectedRemainder: Int,
+    sourceLocation: SourceLocation = #_sourceLocation
+) {
+    #expect(result.quotient == expectedQuotient, sourceLocation: sourceLocation)
+    #expect(result.remainder == expectedRemainder, sourceLocation: sourceLocation)
+}
+```
+
+Both `#expect` and `#require` accept `sourceLocation:`.
+
+### CustomTestStringConvertible
+
+Add retroactive conformance **in test targets only** for readable test output:
+
+```swift
+extension GameError: @retroactive CustomTestStringConvertible {
+    public var testDescription: String {
+        switch self {
+        case .notPurchased: "This game has not been purchased."
+        case .notInstalled: "This game is not currently installed."
+        }
+    }
+}
+```
+
+### Actor Isolation in Tests
+
+Mark individual tests or whole suites with `@MainActor`:
+
+```swift
+@MainActor
+struct DataHandlingTests {
+    @Test func loadNames() async { }
+}
+```
+
+`confirmation()` and `withKnownIssue()` accept an `isolation:` parameter for actor-specific closures:
+
+```swift
+await withKnownIssue("Known issue", isolation: MainActor.shared) {
+    // runs on main actor
+}
+```
+
+### Float Tolerance
+
+Swift Testing has no built-in float tolerance. Use Swift Numerics `isApproximatelyEqual(to:absoluteTolerance:)`:
+
+```swift
+#expect(celsius.isApproximatelyEqual(to: 0, absoluteTolerance: 0.000001))
+```
+
+Do not add Swift Numerics as a dependency without user permission.
+
+### Hidden Dependency Exposure
+
+Avoid hidden dependencies on `UserDefaults`, `URLSession`, etc. Progressive refactoring: detect the dependency, inject with a default value, then wrap in a protocol.
+
+`UserDefaults` test isolation with UUID-based suite names:
+
+```swift
+let suite = "suite-\(UUID().uuidString)"
+let userDefaults = UserDefaults(suiteName: suite)
+defer { userDefaults?.removePersistentDomain(forName: suite) }
+```
+
+### Swift 6.2+ Features
+
+**Exit tests** -- test `precondition()`/`fatalError()` paths (not possible in XCTest):
+
+```swift
+@Test func invalidDiceRollsFail() async throws {
+    await #expect(processExitsWith: .failure) {
+        let dice = Dice()
+        let _ = dice.roll(sides: 0)
+    }
+}
+```
+
+**Attachments** -- attach debug data to test results on failure:
+
+```swift
+@Test func defaultCharacterNameIsCorrect() {
+    let result = makeCharacter()
+    #expect(result.name == "Rem")
+    Attachment.record(result, named: "Character")
+}
+```
+
+Types must conform to `Attachable`. `String`, `Data`, and `Encodable` types are supported out of the box.
+
+**Test scoping traits** -- concurrency-safe shared config with `@TaskLocal`:
+
+```swift
+struct DefaultPlayerTrait: TestTrait, TestScoping {
+    func provideScope(for test: Test, testCase: Test.Case?,
+                      performing function: () async throws -> Void) async throws {
+        let player = Player(name: "Test Player")
+        try await Player.$current.withValue(player) {
+            try await function()
+        }
+    }
+}
+
+extension Trait where Self == DefaultPlayerTrait {
+    static var defaultPlayer: Self { Self() }
+}
+
+@Test(.defaultPlayer) func welcomeScreenShowsName() {
+    let result = createWelcomeScreen()
+    #expect(result.contains("Test Player"))
+}
+```
+
+**Raw identifiers** (Swift 6.2+) -- natural-language test names without a separate display string:
+
+```swift
+@Test
+func `Strip HTML tags from string`() {
+    // test code
+}
+```
+
+Only suggest raw identifiers if the project already uses them or the user opts in.
+
+---
+
+## 2. XCTest Essentials
+
+Still required for UI tests and used in most existing codebases. IceCubesApp, firefox-ios, Signal-iOS, NetNewsWire, wikipedia-ios all use XCTest extensively.
+
+### Basic Structure
+
+```swift
+import XCTest
+@testable import MyFeature
+
+@MainActor
+final class EditorStoreTests: XCTestCase {
+    override func setUp() async throws {
+        // Per-test setup; async variant available
+    }
+
+    override func tearDown() async throws {
+        // Cleanup
+    }
+
+    func testConfigureSetsInitialText() {
+        let store = EditorStore(mode: .new(text: "Hello", visibility: .pub))
+        store.configure(client: MockClient())
+        XCTAssertEqual(store.statusText.string, "Hello")
+    }
+}
+```
+
+### Common Assertions
+
+```swift
+XCTAssertEqual(actual, expected)
+XCTAssertTrue(condition)
+XCTAssertFalse(condition)
+XCTAssertNil(optional)
+XCTAssertNotNil(optional)
+XCTAssertThrowsError(try expression())
+let unwrapped = try XCTUnwrap(optional)  // Fails test if nil
+```
+
+### Expectations for Async Work
+
+```swift
+func testShareExtensionLoadsText() async {
+    let expectation = XCTestExpectation(description: "Wait for share text")
+    Task {
+        for _ in 0..<20 {
+            let text = await MainActor.run { store.statusText.string }
+            if text == expectedText {
+                expectation.fulfill()
+                return
+            }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+    }
+    await fulfillment(of: [expectation], timeout: 3.0)
+}
+```
+
+---
+
+## 3. Testing @Observable Models
+
+### Direct State Mutation Testing
+
+IceCubesApp pattern -- construct the model, store, or view model, call methods, assert state changes:
+
+```swift
+@MainActor
+@Suite("Editor Store")
+struct EditorStoreTests {
+    @Test
+    func configureSetsTextAndVisibility() {
+        let store = StatusEditor.EditorStore(mode: .new(text: "Hello", visibility: .priv))
+        store.configureIfNeeded(client: MockClient(), currentAccount: nil, theme: .shared)
+        #expect(store.statusText.string == "Hello")
+        #expect(store.visibility == .priv)
+    }
+
+    @Test
+    func configureRunsOnce() {
+        let store = StatusEditor.EditorStore(mode: .new(text: "Hello", visibility: .pub))
+        store.configureIfNeeded(client: MockClient(), currentAccount: nil, theme: .shared)
+        store.statusText = NSMutableAttributedString(string: "Changed")
+        store.configureIfNeeded(client: MockClient(), currentAccount: nil, theme: .shared)
+        #expect(store.statusText.string == "Changed")  // Not reset
+    }
+}
+```
+
+### Testing Actor-Backed Datasources
+
+IceCubesApp tests datasource operations through the actor boundary:
+
+```swift
+@Test
+func streamEventRemovesStatus() async throws {
+    let subject = makeSubject()
+    let status = Status.placeholder()
+    await subject.datasource.append(status)
+    var count = await subject.datasource.count()
+    #expect(count == 1)
+    await subject.handleEvent(event: StreamEventDelete(status: status.id))
+    count = await subject.datasource.count()
+    #expect(count == 0)
+}
+```
+
+### Testing State Reducers
+
+firefox-ios pattern -- pure reducer state testing:
+
+```swift
+@MainActor
+func testReceivedThemeManagerValues() {
+    let initialState = ThemeSettingsState(windowUUID: .testDefault)
+    let reducer = ThemeSettingsState.reducer
+
+    let newState = ThemeSettingsState(
+        windowUUID: .testDefault,
+        useSystemAppearance: true,
+        manualThemeSelected: .dark,
+        userBrightnessThreshold: 0.7
+    )
+    let action = ThemeSettingsMiddlewareAction(
+        themeSettingsState: newState,
+        windowUUID: .testDefault,
+        actionType: .receivedThemeManagerValues
+    )
+
+    let result = reducer(initialState, action)
+    XCTAssertTrue(result.useSystemAppearance)
+    XCTAssertEqual(result.manualThemeSelected, .dark)
+}
+```
+
+---
+
+## 4. Async Test Patterns
+
+### Native async/await Tests
+
+```swift
+@Test
+func fetchTimeline() async throws {
+    let viewModel = TimelineViewModel()
+    await viewModel.fetchNewestStatuses(pullToRefresh: false)
+    let items = await viewModel.datasource.getFilteredItems()
+    #expect(items.isEmpty == false)
+}
+```
+
+### ActorIsolated for Capturing Side Effects
+
+> **Note:** `ActorIsolated` is from the [pointfreeco/swift-dependencies](https://github.com/pointfreeco/swift-dependencies) package (used by TCA), not a standard Apple API.
+
+isowords pattern -- thread-safe capture of values set by closures:
+
+```swift
+let didRegisterForRemoteNotifications = ActorIsolated(false)
+
+// In dependency setup:
+dependencies.remoteNotifications.register = {
+    await didRegisterForRemoteNotifications.setValue(true)
+}
+
+// After action:
+await didRegisterForRemoteNotifications.withValue { XCTAssert($0) }
+```
+
+### Polling-Based Wait Helpers
+
+CodeEdit pattern -- wait for async conditions without blocking:
+
+```swift
+await waitForExpectation(timeout: .seconds(10)) {
+    self.taskManager.activeTasks[task.id]?.status == .finished
+} onTimeout: {
+    Issue.record("Status never changed to finished.")
+}
+```
+
+### withMainSerialExecutor
+
+isowords pattern -- deterministic ordering for complex async flows:
+
+```swift
+@MainActor
+func testNewGame() async throws {
+    try await withMainSerialExecutor {
+        let store = TestStore(initialState: AppReducer.State()) {
+            AppReducer()
+        } withDependencies: { /* ... */ }
+
+        await store.send(.home(.task))
+        await store.receive(\.home.authenticationResponse)
+        // Deterministic ordering guaranteed
+    }
+}
+```
+
+---
+
+## 5. Protocol-Based Mocking
+
+### Protocol + Mock Implementation
+
+IceCubesApp pattern -- define protocol for client, mock all methods:
+
+```swift
+// Protocol (in production code)
+protocol TimelineStatusFetching: Sendable {
+    func fetchFirstPage(client: Client?, timeline: TimelineFilter) async throws -> [Status]
+    func fetchNextPage(client: Client?, timeline: TimelineFilter, lastId: String, offset: Int) async throws -> [Status]
+}
+
+// Mock (in test code)
+actor MockTimelineStatusFetcher: TimelineStatusFetching {
+    private let firstPage: [Status]
+    private let nextPages: [[Status]]
+    private var nextPageCalls: Int = 0
+
+    init(firstPage: [Status], nextPages: [[Status]]) {
+        self.firstPage = firstPage
+        self.nextPages = nextPages
+    }
+
+    func fetchFirstPage(client: Client?, timeline: TimelineFilter) async throws -> [Status] {
+        firstPage
+    }
+
+    func fetchNextPage(client: Client?, timeline: TimelineFilter, lastId: String, offset: Int) async throws -> [Status] {
+        defer { nextPageCalls += 1 }
+        guard nextPageCalls < nextPages.count else { return [] }
+        return nextPages[nextPageCalls]
+    }
+
+    func nextPageCallCount() -> Int { nextPageCalls }
+}
+```
+
+### Multi-Protocol Mock
+
+IceCubesApp pattern -- one mock conforms to multiple client protocols:
+
+```swift
+@MainActor
+private final class MockEditorClient:
+    StatusEditor.AutocompleteService.Client,
+    StatusEditor.MediaUploadService.Client,
+    StatusEditor.PostingService.Client
+{
+    struct DummyError: Error {}
+    func searchHashtags(query: String) async throws -> [Tag] { [] }
+    func searchAccounts(query: String) async throws -> [Account] { [] }
+    func uploadMedia(data: Data, mimeType: String, progressHandler: @escaping @Sendable (Double) -> Void) async throws -> MediaAttachment? { nil }
+    func postStatus(data: StatusData) async throws -> Status { throw DummyError() }
+}
+```
+
+### Tracking Mock with Invocation Counts
+
+firefox-ios pattern -- booleans and counters for verifying calls:
+
+```swift
+class MockNotificationManager: NotificationManagerProtocol {
+    var requestAuthorizationCalled = false
+    var shouldGrantPermission = true
+    var scheduledNotifications = 0
+
+    func requestAuthorization(completion: @escaping @Sendable (Bool, Error?) -> Void) {
+        requestAuthorizationCalled = true
+        completion(shouldGrantPermission, nil)
+    }
+
+    var removeAllPendingNotificationsWasCalled = false
+    func removeAllPendingNotifications() {
+        removeAllPendingNotificationsWasCalled = true
+        scheduledNotifications = 0
+    }
+}
+```
+
+### Simulating Mock (wikipedia-ios)
+
+Mock wraps real system type and simulates state transitions:
+
+```swift
+class MockCLLocationManager {
+    var isUpdatingLocation = false
+    var isUpdatingHeading = false
+    private var simulatedAuthStatus: CLAuthorizationStatus = .notDetermined
+
+    func simulate(authorizationStatus: CLAuthorizationStatus) {
+        simulatedAuthStatus = authorizationStatus
+        delegate?.locationManagerDidChangeAuthorization(self)
+    }
+
+    func simulateUpdate(location: CLLocation) {
+        delegate?.locationManager?(self, didUpdateLocations: [location])
+    }
+}
+```
+
+### Closure-Based Dependency Mocking (TCA / isowords)
+
+For apps using TCA, dependencies are mocked inline via closures:
+
+```swift
+let store = TestStore(initialState: Settings.State()) {
+    Settings()
+} withDependencies: {
+    $0.apiClient.currentPlayer = { .some(.mock) }
+    $0.userNotifications.getNotificationSettings = {
+        .init(authorizationStatus: .notDetermined)
+    }
+    $0.userNotifications.requestAuthorization = { _ in true }
+    $0.remoteNotifications.register = {
+        await didRegisterForRemoteNotifications.setValue(true)
+    }
+    $0.audioPlayer.setGlobalVolumeForMusic = {
+        await setMusicVolume.setValue($0)
+    }
+}
+```
+
+---
+
+## 6. Snapshot Testing
+
+Uses [swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) (Point-Free). Found in isowords and CodeEdit.
+
+### iOS View Snapshots (isowords)
+
+```swift
+import SnapshotTesting
+import XCTest
+
+class SettingsViewTests: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try XCTSkipIf(!Styleguide.registerFonts())
+        // isRecording = true  // Uncomment to record new baselines
+    }
+
+    func testDefaultSettings() {
+        assertSnapshot(
+            matching: SettingsView(
+                store: .init(initialState: .init()) { }
+            ),
+            as: .image(
+                perceptualPrecision: 0.98,
+                layout: .device(config: .iPhoneXsMax)
+            )
+        )
+    }
+}
+```
+
+### macOS View Snapshots (CodeEdit)
+
+```swift
+func testHelpButtonLight() throws {
+    let view = HelpButton(action: {})
+    let hosting = NSHostingView(rootView: view)
+    hosting.frame = CGRect(origin: .zero, size: .init(width: 40, height: 40))
+    hosting.appearance = .init(named: .aqua)
+    assertSnapshot(matching: hosting, as: .image(size: .init(width: 40, height: 40)))
+}
+
+func testHelpButtonDark() throws {
+    let view = HelpButton(action: {})
+    let hosting = NSHostingView(rootView: view)
+    hosting.appearance = .init(named: .darkAqua)
+    hosting.frame = CGRect(origin: .zero, size: .init(width: 40, height: 40))
+    assertSnapshot(matching: hosting, as: .image)
+}
+```
+
+### Key Practices
+
+- **perceptualPrecision**: `0.98` tolerates minor rendering differences across runs
+- **Recording mode**: set `isRecording = true` to create/update baselines, then comment out
+- **Font registration**: register custom fonts before snapshot tests or skip if unavailable
+- **Snapshot directory**: `__Snapshots__/` created alongside test files automatically
+- **Layout modes**: `.device(config:)` for full-screen, `.fixed(width:height:)` for components
+
+---
+
+## 7. UI Testing with XCUIApplication
+
+### Launch and Configuration
+
+```swift
+final class UrlBarTests: XCTestCase {
+    var app: XCUIApplication!
+
+    override func setUp() {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments += ["-ApplePersistenceIgnoreState", "YES"]
+        app.launch()
+    }
+}
+```
+
+### Querying Elements by Accessibility Identifier
+
+firefox-ios and wikipedia-ios pattern:
+
+```swift
+// Tap by accessibility identifier
+app.textFields[AccessibilityIdentifiers.Browser.AddressToolbar.searchTextField].tap()
+app.buttons[AccessibilityIdentifiers.Browser.UrlBar.cancelButton].tap()
+
+// Assert element state
+let url = app.textFields["searchTextField"]
+XCTAssertEqual(url.value as? String, "Search or enter address")
+
+// Check keyboard focus
+XCTAssertTrue(urlBar.value(forKey: "hasKeyboardFocus") as? Bool ?? false)
+```
+
+### Wait Helpers
+
+```swift
+// Wait for element to exist
+func waitAndTap(_ element: XCUIElement, timeout: TimeInterval = 5.0) {
+    XCTAssertTrue(element.waitForExistence(timeout: timeout))
+    element.tap()
+}
+
+// Wait for value
+func waitForValue(_ element: XCUIElement, value: String, timeout: TimeInterval = 5.0) {
+    let predicate = NSPredicate(format: "value CONTAINS[c] %@", value)
+    let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
+    XCTWaiter().wait(for: [expectation], timeout: timeout)
+}
+```
+
+### Screenshots as Test Attachments
+
+wikipedia-ios pattern:
+
+```swift
+let attachment = XCTAttachment(screenshot: app.screenshot())
+attachment.name = "Source Editor Initial"
+add(attachment)
+```
+
+### Custom Query Helpers
+
+CodeEdit pattern -- centralize element queries in an enum:
+
+```swift
+enum Query {
+    static func getWindow(_ app: XCUIApplication) -> XCUIElement {
+        app.windows.element(matching: .window, identifier: "workspace")
+    }
+
+    enum Window {
+        static func getProjectNavigator(_ window: XCUIElement) -> XCUIElement {
+            window.descendants(matching: .any).matching(identifier: "ProjectNavigator").element
+        }
+    }
+}
+
+// Usage:
+let window = Query.getWindow(application)
+let navigator = Query.Window.getProjectNavigator(window)
+```
+
+---
+
+## 8. Preview-Based Testing
+
+Use `#Preview` as a lightweight validation layer. Not a substitute for unit tests, but catches visual regressions during development.
+
+### Key States to Cover
+
+```swift
+#Preview("Loading") {
+    FeedView(viewModel: .init(state: .loading))
+}
+
+#Preview("Loaded") {
+    FeedView(viewModel: .init(state: .loaded(items: .mock)))
+}
+
+#Preview("Empty") {
+    FeedView(viewModel: .init(state: .empty))
+}
+
+#Preview("Error") {
+    FeedView(viewModel: .init(state: .error(AppError.networkUnavailable)))
+}
+```
+
+### Mock Environment for Previews
+
+```swift
+#Preview {
+    NavigationStack {
+        AccountView()
+    }
+    .environment(MockAccountService())
+}
+```
+
+### When to Pair with Snapshot Tests
+
+- Previews for interactive iteration during development
+- Snapshot tests in CI to catch regressions automatically
+- Both should cover: loading, loaded, empty, error states
+
+---
+
+## 9. Scenario-Based State Machine Testing
+
+For stateful systems that process events over time (gesture recognizers, multi-step workflows, input handling state machines), use a declarative scenario pattern:
+
+```swift
+struct ScenarioStep {
+    let time: TimeInterval
+    let input: InputEvent
+    let expectedOutput: Output?
+    let expectedState: State?
+}
+
+func runScenario(config: Config, steps: [ScenarioStep]) {
+    var processor = Processor(config: config)
+    for step in steps.sorted(by: { $0.time < $1.time }) {
+        // Control time via dependency injection
+        withDependencies {
+            $0.date.now = Date(timeIntervalSince1970: step.time)
+        } operation: {
+            let output = processor.process(step.input)
+            if let expected = step.expectedOutput {
+                #expect(output == expected, "\(step.time)s: expected \(expected), got \(String(describing: output))")
+            } else {
+                #expect(output == nil, "\(step.time)s: expected no output, got \(String(describing: output))")
+            }
+            if let expectedState = step.expectedState {
+                #expect(processor.state == expectedState, "\(step.time)s: wrong state")
+            }
+        }
+    }
+}
+```
+
+Each test becomes a readable sequence of events:
+
+```swift
+@Test
+func longPress_startsAndCompletes() {
+    runScenario(
+        config: .init(threshold: 0.5),
+        steps: [
+            ScenarioStep(time: 0.0, input: .touchDown, expectedOutput: .began),
+            ScenarioStep(time: 0.5, input: .holdCheck, expectedOutput: .recognized),
+        ]
+    )
+}
+```
+
+Key design decisions:
+- Steps are **time-stamped** (absolute), not sequential delays — avoids flaky timing
+- Time is controlled via **dependency injection**, not `Task.sleep`
+- Each step declares **expected output AND expected state** (both optional)
+- Failure messages include the **timestamp** for easy debugging
+
+Use this pattern for any stateful system with >3 interacting dimensions (timing, input type, prior state).
