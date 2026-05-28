@@ -121,9 +121,16 @@ DEST      = platform=iOS Simulator,name=$(SIM_NAME)
 
 ARCHIVE_PATH = build/MyApp.xcarchive
 EXPORT_PATH  = build/export
+IPA_PATH     = $(EXPORT_PATH)/MyApp.ipa
 
-.PHONY: setup run build test generate clean lint lint-fix format format-check bump archive tag \
-        release\:patch release\:minor release\:major _bump_patch _bump_minor _bump_major _release
+## App Store Connect IDs for TestFlight upload.
+## Find APP_ID: asc apps list --output table
+## Find GROUP_ID: asc testflight groups list --app <APP_ID> --internal --output table
+ASC_APP_ID ?=
+ASC_TESTFLIGHT_GROUP ?=
+
+.PHONY: setup run build test generate clean lint lint-fix format format-check bump archive export upload-testflight tag \
+        release\:patch release\:minor release\:major _bump_patch _bump_minor _bump_major _release _commit_version
 
 # ── Setup ─────────────────────────────────────────────────────────────
 
@@ -224,9 +231,15 @@ endef
 
 ## IMPORTANT: Every release MUST bump the marketing version. Use one of these three.
 ## Do NOT create a plain `make release` target that skips version bumping.
-release\:patch: _bump_patch _release
-release\:minor: _bump_minor _release
-release\:major: _bump_major _release
+release\:patch:
+	@$(MAKE) _bump_patch
+	@$(MAKE) _release
+release\:minor:
+	@$(MAKE) _bump_minor
+	@$(MAKE) _release
+release\:major:
+	@$(MAKE) _bump_major
+	@$(MAKE) _release
 
 _bump_patch:
 	$(call bump_version,PATCH=$$((PATCH + 1)))
@@ -248,47 +261,45 @@ archive: bump generate
 		-allowProvisioningUpdates \
 		archive
 
-## Export and upload to App Store Connect (TestFlight)
-## Requires APPLE_ID and APPLE_PASSWORD env vars.
-## Create a .env.apple file (NOT committed to git) with:
-##   APPLE_ID=your@email.com
-##   APPLE_PASSWORD=app-specific-password
-## The APPLE_PASSWORD should be an app-specific password generated at
-## https://appleid.apple.com/account/manage — NOT your Apple ID password.
-## The .env.apple file can live in the repo root or a shared location.
-## Set ENV_APPLE to override the default path.
-##
-## There is NO plain `make release` target — always use release:patch,
-## release:minor, or release:major so the marketing version is bumped.
-## Every release must bump the version.
-ENV_APPLE ?= .env.apple
-## App Store Connect IDs for auto-distribution to internal TestFlight group.
-## Set these after creating the app and internal group in ASC.
-## Find APP_ID: asc apps list --output table
-## Find GROUP_ID: asc testflight groups list --app <APP_ID> --internal --output table
-ASC_APP_ID   ?=
-ASC_GROUP_ID ?=
-_release: archive
-	set -a && . $(ENV_APPLE) && set +a && \
+## Export an IPA using ios/ExportOptions.plist
+export: archive
 	xcodebuild -exportArchive \
 		-archivePath $(ARCHIVE_PATH) \
 		-exportPath $(EXPORT_PATH) \
 		-exportOptionsPlist ios/ExportOptions.plist \
-		-allowProvisioningUpdates && \
-	xcrun altool --upload-app \
-		-f $(EXPORT_PATH)/MyApp.ipa \
-		-t ios \
-		-u "$$APPLE_ID" \
-		-p "$$APPLE_PASSWORD"
-ifneq ($(ASC_APP_ID),)
-ifneq ($(ASC_GROUP_ID),)
-	@echo "⏳ Waiting for build to process..."
-	asc builds wait --app $(ASC_APP_ID) --newest
-	@echo "📲 Distributing to internal TestFlight group..."
-	@BUILD_ID=$$(asc builds latest --app $(ASC_APP_ID) --output json | grep '"id"' | head -1 | sed 's/.*"id": *"\([^"]*\)".*/\1/') && \
-	asc builds add-groups --build "$$BUILD_ID" --group $(ASC_GROUP_ID)
-endif
-endif
+		-allowProvisioningUpdates
+
+## Upload the exported IPA to internal TestFlight via asc.
+## Requires `asc auth login` (or a configured asc profile) plus ASC_APP_ID and ASC_TESTFLIGHT_GROUP.
+## Do NOT add altool, APPLE_PASSWORD, or .env.apple fallbacks.
+upload-testflight: export
+	@command -v asc >/dev/null 2>&1 || { \
+		echo "❌ asc CLI is required for release uploads. Install/configure asc, then run 'asc auth login'." >&2; \
+		exit 1; \
+	}
+	@test -n "$(ASC_APP_ID)" || { \
+		echo "❌ ASC_APP_ID is not set. Find it with: asc apps list --output table" >&2; \
+		exit 1; \
+	}
+	@test -n "$(ASC_TESTFLIGHT_GROUP)" || { \
+		echo "❌ ASC_TESTFLIGHT_GROUP is not set. Find it with: asc testflight groups list --app <APP_ID> --internal --output table" >&2; \
+		exit 1; \
+	}
+	asc publish testflight \
+		--app "$(ASC_APP_ID)" \
+		--ipa "$(IPA_PATH)" \
+		--group "$(ASC_TESTFLIGHT_GROUP)" \
+		--wait
+
+## Release uploads first, then commits the version/build bump only after upload succeeds.
+_release: upload-testflight
+	@$(MAKE) _commit_version
+
+_commit_version:
+	@VERSION=$$(grep 'MARKETING_VERSION' ios/project.yml | head -1 | sed 's/.*"\(.*\)"/\1/'); \
+	BUILD=$$(grep 'CURRENT_PROJECT_VERSION' ios/project.yml | head -1 | sed 's/[^0-9]//g'); \
+	git add ios/project.yml && \
+	git commit -m "chore: release v$$VERSION (build $$BUILD)"
 
 ## Tag current commit with the marketing version
 tag:
@@ -303,6 +314,12 @@ clean:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) clean
 	rm -rf ~/Library/Developer/Xcode/DerivedData/MyApp-*
 ```
+
+Release workflow standard:
+- `asc publish testflight` is the only upload/distribution path for new apps.
+- Do not scaffold `.env.apple`, `APPLE_PASSWORD`, or `xcrun altool -p` fallbacks.
+- Keep version/build bumping in the Makefile, but commit the bump only after the upload succeeds.
+- `ASC_TESTFLIGHT_GROUP` must be an internal TestFlight group ID or name.
 
 ---
 
@@ -876,7 +893,7 @@ init() {
 
 ### Upload fails with "Export Compliance" / encryption error
 
-**Symptom:** `xcrun altool --upload-app` fails with "This bundle is invalid. The key UIRequiredDeviceCapabilities..." or the build shows as "Missing Compliance" in App Store Connect and can't be distributed to TestFlight.
+**Symptom:** `asc publish testflight` / App Store Connect upload fails with an export compliance message, or the build shows as "Missing Compliance" in App Store Connect and can't be distributed to TestFlight.
 
 **Cause:** The app doesn't declare its encryption usage. Without `ITSAppUsesNonExemptEncryption`, Apple requires a manual compliance declaration for every build before it can be tested.
 
@@ -917,7 +934,7 @@ This tells Apple the app doesn't use non-exempt encryption (standard HTTPS is ex
 **Fix:**
 1. Add `ITSAppUsesNonExemptEncryption: false` as above
 2. Ensure an internal TestFlight group exists with testers added (see §12)
-3. Set `ASC_APP_ID` and `ASC_GROUP_ID` in the Makefile so builds auto-distribute to the internal group
+3. Set `ASC_APP_ID` and `ASC_TESTFLIGHT_GROUP` in the Makefile so builds upload and distribute to the internal group through `asc publish testflight`
 
 ### `UIRequiredDeviceCapabilities` rejection on upload
 
@@ -929,7 +946,7 @@ This tells Apple the app doesn't use non-exempt encryption (standard HTTPS is ex
 
 ### Version not bumping — uploads fail with "bundle version must be higher"
 
-**Symptom:** `xcrun altool --upload-app` fails with "The bundle version must be higher than the previously uploaded version" even after running `make bump`.
+**Symptom:** App Store Connect upload fails with "The bundle version must be higher than the previously uploaded version" even after running `make bump`.
 
 **Cause:** A physical `Info.plist` (referenced via `info: path:` in `project.yml`) has hardcoded `CFBundleShortVersionString` and `CFBundleVersion` values like `1.0` / `1`. These override `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` build settings — `make bump` updates `project.yml` but the plist wins.
 
@@ -948,13 +965,13 @@ This tells Apple the app doesn't use non-exempt encryption (standard HTTPS is ex
 
 ## 12. TestFlight Internal Group Setup
 
-After the first release, the agent should help the user set up an internal TestFlight group for auto-distribution. Internal groups are **per-app** in App Store Connect — they don't carry over from other apps.
+When setting up release infrastructure, the agent should help the user set up an internal TestFlight group and wire it into the Makefile's `asc publish testflight` flow. Internal groups are **per-app** in App Store Connect — they don't carry over from other apps.
 
 ### Agent behavior
 
 After the first successful upload to App Store Connect (or when setting up release infrastructure), **ask the user**:
 
-> "Would you like to set up an internal TestFlight group so builds auto-distribute to your team? I'll need to know which email addresses to add as testers."
+> "Would you like to set up an internal TestFlight group so `make release:*` distributes builds to your team? I'll need to know which email addresses to add as testers."
 
 Then walk through these steps:
 
@@ -978,23 +995,17 @@ Then walk through these steps:
    asc testflight groups add-testers --id <GROUP_ID> --email "person@example.com"
    ```
 
-5. **Enable automatic distribution** for the internal group in App Store Connect:
-   - Go to **TestFlight** → click the internal group (e.g. "Team") → **Settings** tab
-   - Under **Build Distribution**, change from "Manual" to **"Automatic"** for Xcode builds
-   - This ensures every new build is automatically distributed to the internal group without manual action
-   - **Do NOT enable automatic distribution for external groups** — external groups require manual assignment and beta review
-
-   Note: The ASC web UI may not always show a toggle for this. As a fallback, the Makefile auto-distribute (step 6) handles it via the API.
-
-6. **Set the Makefile variables** so future builds auto-distribute to the internal group only:
+5. **Set the Makefile variables** so future releases upload with `asc` and distribute to the internal group only:
    ```makefile
-   ASC_APP_ID   ?= 1234567890
-   ASC_GROUP_ID ?= xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+   ASC_APP_ID ?= 1234567890
+   ASC_TESTFLIGHT_GROUP ?= xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
    ```
+
+6. **Verify the release path is asc-only.** The Makefile must not include `.env.apple`, `APPLE_PASSWORD`, or `xcrun altool -p` fallbacks. If `asc` is missing or unauthenticated, fail with instructions to run `asc auth login` rather than falling back to Apple ID password upload.
 
 ### Important
 
-- **Always enable automatic distribution for internal groups.** This is per-app and must be set for each new app.
-- **Never enable automatic distribution for external groups.** External groups require manual build assignment and beta review.
-- The `ASC_GROUP_ID` in the Makefile must point to an **internal** group only.
+- Use `asc publish testflight` as the standard upload/distribution path for new apps.
+- Do not add Apple ID password, `.env.apple`, or `altool -p` release fallbacks.
+- The `ASC_TESTFLIGHT_GROUP` in the Makefile must point to an **internal** group only.
 - Internal group testers must already be members of the App Store Connect team with the Developer, Admin, or App Manager role.
