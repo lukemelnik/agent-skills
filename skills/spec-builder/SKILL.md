@@ -14,7 +14,9 @@ Before starting, read:
 - `../planterview/SKILL.md` for discovery, interview, and stress-test behavior.
 - `../spec-review/SKILL.md` for independent review before publishing.
 
-`spec-builder` owns the live working document and the cleanup/finalization process. `spec` owns the final spec format. `planterview` owns the questioning style. `spec-review` owns the independent review rubric.
+Read `../prototype/SKILL.md` only if a planning decision is too uncertain to resolve by discussion and the user confirms they want a prototype spike.
+
+`spec-builder` owns the live working document and the cleanup/finalization process. `spec` owns the final spec format. `planterview` owns the questioning style. `spec-review` owns the independent review rubric. `prototype` owns throwaway spike mechanics.
 
 ## Input
 
@@ -85,6 +87,19 @@ Before asking the first question:
 - Answer codebase-discoverable questions yourself.
 
 Then validate the draft with the user and walk the decision tree one consequential question at a time.
+
+### Optional prototype spike
+
+If a decision remains guessy after discussion — especially state transitions, data modeling, UI information architecture, algorithms, or interaction feel — pause and ask whether to run a prototype spike.
+
+Before prototyping, state:
+- the exact question the prototype would answer
+- the recommended prototype branch: state/logic, data model, or UI
+- likely artifact location
+- how it would run
+- what decision would be recorded back into the spec
+
+Do not create prototype code without explicit user confirmation. If the user agrees, read `../prototype/SKILL.md`, build the smallest useful prototype, then update the working doc with the answer and cleanup/fold-in plan.
 
 ## Phase 2: Completeness check
 

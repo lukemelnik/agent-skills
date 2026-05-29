@@ -12,7 +12,7 @@ Patterns for building CLIs that work well for both humans and AI agents. Languag
 1. **Structured by default, pretty for humans** — JSON is the canonical output; human formatting is the presentation layer
 2. **Stderr for metadata, stdout for data** — keep channels clean and parseable
 3. **Explicit safety** — `--dry-run` on all mutations, `--force` for destructive actions
-4. **Self-describing** — the CLI itself is the documentation source
+4. **Self-documenting by contract** — the CLI itself must be enough for a capable agent to discover every workflow without reading an external skill, AGENTS.md, README, or source code
 
 ---
 
@@ -181,7 +181,7 @@ mycli deploy staging --yes     # Skip prompt (for scripts/agents)
 
 ### Command Introspection
 
-Provide a machine-readable command that dumps the full command tree with metadata:
+Provide a machine-readable command that dumps the full command tree with metadata. Treat this as the canonical interface contract for agents, not an optional convenience:
 
 ```bash
 mycli commands                    # Full tree as JSON
@@ -193,8 +193,14 @@ Each command entry should include:
 - `name`, `description`, `arguments`, `options`
 - `examples` — real invocations
 - `agentNotes` — instructions specific to agent usage (e.g., "always GET before UPDATE to avoid overwriting array fields")
+- safety metadata in descriptions/notes for destructive, full-replacement, upload, publish, deploy, or other high-risk workflows
 
 This replaces parsing `--help` text — agents get structured metadata directly.
+
+Self-documentation bar:
+- A fresh agent should be able to run the CLI, discover commands, identify required flags, understand enum values, preview writes, and avoid destructive mistakes using only CLI help/introspection output.
+- External skills, AGENTS.md, README files, or source code may reinforce behavior, but must not be required to use the CLI correctly.
+- If a command has hidden semantics (full replacement, soft vs hard delete, generated credentials, storage upload steps, resolver fallbacks), encode them in command help, examples, agent notes, and structured errors.
 
 ### Agent Notes
 
@@ -209,9 +215,9 @@ Embed agent-specific guidance in command metadata:
 
 These notes encode domain knowledge that prevents common agent mistakes.
 
-### Skill Files / AGENTS.md
+### Supplemental Agent Guides
 
-Ship a markdown file with agent usage patterns:
+A markdown guide or skill may summarize agent usage patterns, but it is supplemental only. Never make it the only place a workflow, destructive behavior, enum list, or replacement semantic is documented:
 
 ```markdown
 # Agent Guide
@@ -299,4 +305,4 @@ When building a new CLI or adding agent-friendliness to an existing one:
 8. [ ] `--fields` for output limiting
 9. [ ] `--quiet` for suppressing stderr
 10. [ ] Agent notes in command metadata
-11. [ ] AGENTS.md or skill file shipped with the tool
+11. [ ] Supplemental AGENTS.md/skill/README exists if helpful, but CLI help and machine-readable command metadata are sufficient on their own

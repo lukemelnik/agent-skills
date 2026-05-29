@@ -1,6 +1,13 @@
 ---
 name: ui-design
-description: Human-facing UI/UX design for web, iOS, macOS, desktop, mobile, marketing, onboarding, forms, dashboards, and product surfaces. Use when designing, implementing, reviewing, polishing, or hardening visible interfaces: layout, hierarchy, typography, color, motion, interaction states, accessibility, responsive behavior, empty/loading/error states, UX copy, design-system discovery, and AI-slop anti-patterns. Not for API design, database design, backend architecture, or non-UI system design.
+description: >-
+  Human-facing UI/UX design for web, iOS, macOS, desktop, mobile, marketing,
+  onboarding, forms, dashboards, and product surfaces. Use when designing,
+  implementing, reviewing, polishing, or hardening visible interfaces: layout,
+  hierarchy, typography, color, motion, interaction states, accessibility,
+  responsive behavior, empty/loading/error states, UX copy, design-system
+  discovery, and AI-slop anti-patterns. Not for API design, database design,
+  backend architecture, or non-UI system design.
 ---
 
 # UI Design

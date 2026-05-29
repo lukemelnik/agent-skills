@@ -130,7 +130,7 @@ ASC_APP_ID ?=
 ASC_TESTFLIGHT_GROUP ?=
 
 .PHONY: setup run build test generate clean lint lint-fix format format-check bump archive export upload-testflight tag \
-        release\:patch release\:minor release\:major _bump_patch _bump_minor _bump_major _release _commit_version
+        release\:patch release\:minor release\:major _bump_patch _bump_minor _bump_major _release_with_rollback _release _commit_version
 
 # ── Setup ─────────────────────────────────────────────────────────────
 
@@ -232,14 +232,11 @@ endef
 ## IMPORTANT: Every release MUST bump the marketing version. Use one of these three.
 ## Do NOT create a plain `make release` target that skips version bumping.
 release\:patch:
-	@$(MAKE) _bump_patch
-	@$(MAKE) _release
+	@$(MAKE) _release_with_rollback BUMP_TARGET=_bump_patch
 release\:minor:
-	@$(MAKE) _bump_minor
-	@$(MAKE) _release
+	@$(MAKE) _release_with_rollback BUMP_TARGET=_bump_minor
 release\:major:
-	@$(MAKE) _bump_major
-	@$(MAKE) _release
+	@$(MAKE) _release_with_rollback BUMP_TARGET=_bump_major
 
 _bump_patch:
 	$(call bump_version,PATCH=$$((PATCH + 1)))
@@ -291,7 +288,29 @@ upload-testflight: export
 		--group "$(ASC_TESTFLIGHT_GROUP)" \
 		--wait
 
-## Release uploads first, then commits the version/build bump only after upload succeeds.
+## Release uploads first, then commits only after upload succeeds.
+## If archive, export, or upload fails, restore the original version/build.
+_release_with_rollback:
+	@ORIGINAL_VERSION=$$(grep 'MARKETING_VERSION' ios/project.yml | head -1 | sed 's/.*"\(.*\)"/\1/'); \
+	ORIGINAL_BUILD=$$(grep 'CURRENT_PROJECT_VERSION' ios/project.yml | head -1 | sed 's/[^0-9]//g'); \
+	restore_version() { \
+		CURRENT_VERSION=$$(grep 'MARKETING_VERSION' ios/project.yml | head -1 | sed 's/.*"\(.*\)"/\1/'); \
+		CURRENT_BUILD=$$(grep 'CURRENT_PROJECT_VERSION' ios/project.yml | head -1 | sed 's/[^0-9]//g'); \
+		sed -i '' "s/MARKETING_VERSION: \"$$CURRENT_VERSION\"/MARKETING_VERSION: \"$$ORIGINAL_VERSION\"/" ios/project.yml; \
+		sed -i '' "s/CURRENT_PROJECT_VERSION: \"$$CURRENT_BUILD\"/CURRENT_PROJECT_VERSION: \"$$ORIGINAL_BUILD\"/" ios/project.yml; \
+		echo "Restored version/build to $$ORIGINAL_VERSION ($$ORIGINAL_BUILD)"; \
+	}; \
+	if ! $(MAKE) $(BUMP_TARGET); then \
+		restore_version; \
+		exit 1; \
+	fi; \
+	if ! $(MAKE) upload-testflight; then \
+		restore_version; \
+		exit 1; \
+	fi; \
+	$(MAKE) _commit_version
+
+## Upload first, then commit the version/build bump only after upload succeeds.
 _release: upload-testflight
 	@$(MAKE) _commit_version
 
@@ -318,7 +337,7 @@ clean:
 Release workflow standard:
 - `asc publish testflight` is the only upload/distribution path for new apps.
 - Do not scaffold `.env.apple`, `APPLE_PASSWORD`, or `xcrun altool -p` fallbacks.
-- Keep version/build bumping in the Makefile, but commit the bump only after the upload succeeds.
+- Keep version/build bumping in the Makefile, commit the bump only after upload succeeds, and roll back `ios/project.yml` if archive/export/upload fails.
 - `ASC_TESTFLIGHT_GROUP` must be an internal TestFlight group ID or name.
 
 ---

@@ -34,6 +34,10 @@ validators: {
 
 The safeParse wrapper pattern loses per-field error mapping. TanStack Form handles Zod schemas natively and maps errors to the correct fields automatically. If you're getting type errors with the validator, fix the defaultValues or schema - NOT the validator.
 
+## Placeholders
+
+Do not use placeholders in form inputs. Keep empty fields empty, use `FieldLabel` for the field name, and put examples or helper copy in `FieldDescription` or adjacent text.
+
 ## Basic Form Setup
 
 **IMPORTANT:** Always define `defaultValues` as a separate typed object before passing to useForm. This gives better type control and makes the form easier to understand.
