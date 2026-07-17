@@ -798,6 +798,8 @@ final class UrlBarTests: XCTestCase {
 
 ### Querying Elements by Accessibility Identifier
 
+Prefer stable accessibility identifiers over coordinates for UI tests. Add identifiers to controls tests need to target, especially repeated labels, icon-only buttons, ambiguous menus, or elements whose visible copy may change. Keep identifiers semantic and stable; they supplement accessibility labels, not replace them.
+
 firefox-ios and wikipedia-ios pattern:
 
 ```swift

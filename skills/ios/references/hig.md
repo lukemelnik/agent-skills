@@ -318,6 +318,16 @@ Button(action: addToCart) {
 // Incorrect — VoiceOver reads "cart.badge.plus"
 ```
 
+Labels explain intent; identifiers provide stable test hooks. Add `.accessibilityIdentifier(...)` to interactive elements that XCUITest, simulator automation, or future agent verification will target, especially repeated controls or icon-only/ambiguous controls. Identifiers do not replace labels.
+
+```swift
+Button(action: deleteSong) {
+    Image(systemName: "trash")
+}
+.accessibilityLabel("Delete song")
+.accessibilityIdentifier("song-detail-delete-button")
+```
+
 ### 5.2 — Logical VoiceOver Order
 
 Use `.accessibilitySortPriority()` when visual layout doesn't match reading order.

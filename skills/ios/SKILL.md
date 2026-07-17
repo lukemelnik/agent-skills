@@ -38,7 +38,8 @@ Use adjacent skills when the task is narrower than this general iOS skill:
 - Do not add third-party frameworks unless the user explicitly requests or approves them.
 - Use semantic system styles or app design tokens (fonts, colors, materials) — avoid ad hoc hardcoded visual values.
 - Make loading, empty, error, and success states explicit.
-- Every interactive element: 44pt minimum, accessible, keyboard-navigable.
+- Every interactive element: 44pt minimum, accessible, keyboard-navigable, and clearly labeled for assistive tech.
+- Treat the accessibility tree as part of the app contract: add stable accessibility identifiers for controls that tests or automation need to target, especially repeated, icon-only, or ambiguous controls.
 
 ### Deployment Target
 
