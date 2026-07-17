@@ -1,110 +1,59 @@
 ---
 name: spec-review
-description: Critically review an implementation spec for format compliance, missing requirements, weak proof obligations, unclear tasks, hidden risks, bad assumptions, and implementation readiness. Use before publishing a spec or when asked to review a spec.
+description: Critically review a dependency-aware implementation spec for graph safety, format compliance, proof quality, hidden risks, assumptions, and implementation readiness. Use before publishing or when asked to review a spec.
 ---
 
 # Spec Review
 
-Review a spec as a skeptical implementation-readiness reviewer. Do not implement the spec.
+Review skeptically; do not implement. Read `../spec/SKILL.md` first and treat it as canonical.
 
-## Dependencies
+## Independent reviewer prompt
 
-Before reviewing, read `../spec/SKILL.md`. Treat it as the canonical standard for final spec structure, task/proof format, and publishing expectations.
-
-## Use as a subagent rubric
-
-When another skill delegates to a review agent, send exactly one reviewer this task:
+Delegate to exactly one reviewer when possible:
 
 ```text
-Use the spec-review skill to critically review this implementation spec. Do not implement it.
-
-Inputs:
-- Spec draft/path/issue: <provide the draft text, file path, or GitHub issue number>
-- Relevant context: <briefly summarize user intent, constraints, and any known code paths>
-
-Before reviewing, read ../spec/SKILL.md and treat it as the canonical standard.
-
-Review for format compliance, implementation readiness, hidden risks, bad assumptions, unresolved questions, contradictions, weak proof obligations, missing gates, and scope creep.
-
-Return findings only. Group by Critical, Warning, and Note. For each finding include:
-- Section/task
-- Problem
-- Why it matters
-- Suggested edit
-
-End with: Ready for implementation? yes/no, with a one-sentence reason.
+Use the spec-review skill to review this spec; do not implement it.
+Inputs: <draft/path/issue> and <brief intent/context>.
+Read ../spec/SKILL.md first. Return actionable findings grouped Critical, Warning, Note, then "Ready for implementation? yes/no".
 ```
 
-If no subagent tool is available, perform the same review yourself and explicitly say it was not independent.
+If delegation is unavailable, apply the same rubric and disclose that review was not independent.
 
-## Review rubric
+## Rubric
 
-### Format and completeness
+### Canonical shape
 
-Check that the spec has the canonical shape from `spec` where applicable:
-- Goal
-- Non-Goals
-- Context
-- Constraints / Invariants
-- Decisions & Trade-offs
-- Ruled Out
-- Prior Art / Blessed Patterns
-- Architecture
-- Relevant Files
-- Tasks
-- Risks & Rollback
-- Verification
+Check applicable Goal, Non-Goals, Context, Constraints / Invariants, Decisions & Trade-offs, Ruled Out, Prior Art, Architecture, Relevant Files, Tasks, Risks & Rollback, and Verification. Missing optional sections are acceptable only when irrelevant.
 
-Missing optional sections are acceptable only when they are genuinely irrelevant. Missing Goal, Constraints for risky work, Tasks, or Verification should usually be a finding.
+### Task graph
 
-### Task quality
+Reject implementation readiness when any task lacks:
+- stable ID and explicit `Depends on`
+- repository-relative write boundary
+- produced/consumed contracts or shared integration points
+- ownership declaration for shared/generated/registration work
+- risk, primary proof boundary, runnable required proof, and verifiable done conditions
 
-Every task must be implementation-ready:
-- organized under a sprint heading
-- outcome-oriented, not vague area ownership
-- includes `Risk: low | medium | high`
-- includes `Primary proof boundary: none | unit | integration | e2e`
-- includes concrete `Required proof`
-- includes `Done when` checkboxes with verifiable completion indicators
-- has dependencies ordered sensibly
+Also reject:
+- missing or cyclic dependencies
+- dependency-ready tasks with overlapping write boundaries
+- unstable or implicit contracts consumed by parallel work
+- shared/generated/registration files without exactly one owner
+- missing final integration or wiring ownership
+- proof that cannot run until an undeclared successor
+- tasks that cannot reach a coherent boundary independently and were not combined or declared as one serial lane
 
-Flag tasks that are too broad, too small to be meaningful, missing proof, or unclear about completion.
+Sprints may group human milestones, but textual or sprint order must not override dependency readiness. Do not require redundant parallel-task lists.
 
 ### Proof and gates
 
-Check that proof obligations match risk:
-- Critical behavior has a credible proof boundary.
-- UI behavior includes appropriate smoke/E2E/manual verification expectations when needed.
-- Backend/data behavior has unit or integration proof where practical.
-- Mechanical tasks explicitly say no behavior proof is required.
-- Overall `Verification` covers the actual user outcome, not just internal implementation details.
-- Repo gates or final validation expectations are explicit enough for an implementing agent.
+Ensure proof matches risk and tests observable behavior at the stated boundary. Require UI smoke/E2E/manual verification when appropriate, realistic backend/data proof where practical, explicit mechanical-proof exemptions, project-specific gates, and final acceptance criteria covering the user outcome.
 
-### Scope and assumptions
+### Scope, assumptions, and risk
 
-Look for:
-- scope creep beyond Non-Goals
-- decisions that conflict with tasks or verification
-- assumptions not backed by codebase evidence
-- missing product decisions
-- ambiguous ownership between platforms or layers
-- unclear rollout or rollback story
-- new dependencies or architecture shifts that are not called out
+Find contradictions, scope creep, unsupported assumptions, missing product decisions, ambiguous layer ownership, undeclared dependencies or architecture shifts, and weak rollout/rollback. Probe auth, privacy, security, data integrity, transactions, idempotency, retries, concurrency, performance, migration, observability, and partial failure when relevant.
 
-### Risk review
-
-Probe for missing or weak treatment of:
-- auth and authorization
-- data integrity, transactions, idempotency, retries, partial failures
-- concurrency and ordering issues
-- performance at realistic scale
-- migration and existing data concerns
-- privacy, security, logging, secrets, and user data exposure
-- observability, support, and operational rollback
-
-## Output format
-
-Use this format:
+## Output
 
 ```markdown
 Spec review: <N critical, M warnings, K notes>
@@ -115,16 +64,12 @@ Critical
   - Suggested edit: ...
 
 Warning
-- **[Section/task]** Problem: ...
-  - Why it matters: ...
-  - Suggested edit: ...
+- ...
 
 Note
-- **[Section/task]** Problem: ...
-  - Why it matters: ...
-  - Suggested edit: ...
+- ...
 
-Ready for implementation? <yes/no> — <one-sentence reason>
+Ready for implementation? <yes/no> — <reason>
 ```
 
-Keep findings actionable. Do not rewrite the whole spec unless asked; suggest targeted edits.
+Keep findings targeted; do not rewrite the spec unless asked.
