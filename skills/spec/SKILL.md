@@ -43,7 +43,7 @@ Inspect relevant code, tests, project guidance, similar features, and—when use
 - `path` — [pattern to reuse]
 
 ## Architecture
-[Solution shape, data flow, stable contracts, shared integration points]
+[Solution shape, stable contracts, and shared integration points. For non-trivial cross-module behavior, include a compact current → proposed execution flow; at important boundaries, name input/output types and effect/failure ownership. List type fields only for new or changed shared contracts.]
 
 ## Relevant Files
 - `path` — [why relevant]
@@ -91,7 +91,7 @@ Inspect relevant code, tests, project guidance, similar features, and—when use
 
 ## Quality rules
 
-- Write breadcrumbs, not implementation code; say what and why, not step-by-step how.
+- Write breadcrumbs, not implementation code; say what and why, not step-by-step how. Keep execution flows to important boundaries, not helper functions.
 - Keep acceptance criteria objective and one canonical proof boundary per behavior.
 - Preserve project-specific gates and required UI verification in `Verification`.
 - Flag dependencies, migrations, architecture shifts, rollout, permissions, data integrity, concurrency, and failure handling when relevant.
