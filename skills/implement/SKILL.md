@@ -67,3 +67,5 @@ Advance dependents only after their contract barrier is verified. Repeat until n
 Walk every Verification criterion, mark only confirmed checkboxes, and ensure material changes are recorded. Push the non-default branch and invoke the canonical PR skill, passing the spec path or issue number (`Closes #N` for issues).
 
 Report the PR URL, implemented outcome, material spec changes, verification/gates, and any honest manual verification or blockers. Never claim verification that did not run.
+
+After the branch is clean, pushed, and the PR exists, call the `launch_review` tool as the final workflow action when that tool is available. The launcher owns opening a fresh review pane in the current worktree; do not improvise tmux commands in the skill. If the tool is unavailable or refuses because the branch is not ready, report that review was not launched.
