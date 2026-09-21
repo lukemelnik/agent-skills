@@ -14,6 +14,7 @@ Use Grove as the worktree authority. It provisions the checkout together with de
 - Prefer `--json` and non-interactive commands for agent workflows.
 - Provision without changing the user's tmux focus by default. Open or enter a workspace only when explicitly requested.
 - Let `grove create` resolve or create the branch; do not pre-create it with Git. It uses an existing local branch, tracks an existing remote branch, or creates a new branch from `origin/main` by default.
+- Never pass `--from` unless the user explicitly names a different base ref.
 - If `grove` is unavailable or `.grove.yml` is missing, report that instead of silently falling back to another worktree mechanism. Initialize Grove only when asked.
 
 ## Create an agent worktree
@@ -25,6 +26,14 @@ grove create <branch> --no-open --json
 ```
 
 Read the returned worktree path and use it as the working directory for subsequent commands. Use `--from <ref>` when the user specifies a different base branch.
+
+For a newly created branch using the default base, verify the checkout before editing:
+
+```bash
+git log --oneline origin/main..HEAD
+```
+
+The output must be empty. If it is not, stop and report the unexpected base instead of continuing.
 
 To rediscover an existing worktree and its assigned ports:
 

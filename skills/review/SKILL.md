@@ -121,6 +121,13 @@ For spec review, include the `ReviewSpec` compliance statuses without re-evaluat
 
 Do not edit code, commit, push, or create review artifacts.
 
+Choose the presentation from the session context:
+
+- In the Codex desktop app, use concise GitHub-flavored Markdown and emit one
+  `::code-comment` directive per actionable, line-specific finding. Keep the
+  summary self-contained because inline comments supplement rather than replace it.
+- Otherwise, use the terminal-friendly boxed finding format below.
+
 Use:
 
 ```md
@@ -129,13 +136,13 @@ Review result: <no findings | N findings>
 Scope: <current branch/range and PR>
 
 Critical
-<boxed findings or None>
+<findings in the environment-appropriate format, or None>
 
 Important
-<boxed findings or None>
+<findings in the environment-appropriate format, or None>
 
 Minor
-<boxed findings or None>
+<findings in the environment-appropriate format, or None>
 
 Spec compliance
 - <criterion>: MET/PARTIAL/MISSING/DEVIATED — <evidence>
@@ -150,7 +157,20 @@ Gates
 - Not run — review is read-only; cite existing PR claims only
 ```
 
-Finding block:
+Codex desktop finding:
+
+```md
+### R1 · Important · correctness · confidence 95
+
+[`apps/path/file.ts:123`](/absolute/path/apps/path/file.ts:123)
+
+- **Problem:** Specific introduced failure.
+- **Context:** Reachable flow, state/invariant, and downstream dependency.
+- **Impact:** Concrete user, data, security, or operational consequence.
+- **Fix:** Short concrete correction.
+```
+
+Terminal finding block:
 
 ```text
 ╭────────────────────────────────────────────────────────────────────────────╮
@@ -168,4 +188,4 @@ Finding block:
 ╰─────────┴──────────────────────────────────────────────────────────────────╯
 ```
 
-Keep lines suitable for terminal display. Add an Evidence row only when it prevents ambiguity. If there are no findings, state that plainly and identify the reviewed scope and any blocked role.
+Keep boxed finding lines suitable for terminal display. Add an Evidence field or row only when it prevents ambiguity. If there are no findings, state that plainly and identify the reviewed scope and any blocked role.
