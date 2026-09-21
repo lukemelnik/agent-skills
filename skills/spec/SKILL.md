@@ -1,142 +1,106 @@
 ---
 name: spec
-description: Create a structured GitHub Issue spec for agent-driven implementation. Use when planning implementation work before /implement or /implement-tdd.
+description: Create a structured GitHub Issue spec for dependency-aware agent implementation. Use when planning implementation work before /implement or /implement-tdd.
 ---
 
 # Create Spec
 
-Create a spec optimized for `/implement` and `/implement-tdd` to execute. This skill owns the canonical final spec structure, task/proof format, and publishing rules. Default to publishing the final spec as a GitHub Issue. Only write a local `specs/*.md` file when the user explicitly asks for a local spec.
+Create a declarative, implementation-ready spec. This skill owns the canonical final structure and publishing rules. Publish as a GitHub Issue by default; write `specs/*.md` only when explicitly requested.
 
-> This work may deploy to real users. Think defensively. When uncertain, ask.
+> This work may deploy to real users. Think defensively. Ask about genuine product decisions; answer codebase questions yourself.
 
 **Input:** $ARGUMENTS
 
-## Step 1: Research
+## Research
 
-Before writing, gather enough context to make the spec actionable:
-- Find relevant existing code patterns and files that will be touched.
-- Look for similar features to reference.
-- Check project docs/guides when relevant.
-- For non-trivial work, check git history for related bugs/fixes and common failure modes.
-- Answer codebase-discoverable questions yourself; use the user for product intent and tradeoffs.
+Inspect relevant code, tests, project guidance, similar features, and—when useful—history. Identify contracts, generated/registration files, integration points, failure modes, and project-specific gates before drafting.
 
-## Step 2: Draft the spec
-
-Draft in conversation using this canonical implementation-ready structure:
+## Canonical format
 
 ```markdown
 # [Feature Name]
 
 ## Goal
-[1-2 sentences. What outcome are we producing?]
+[Outcome]
 
 ## Non-Goals
-- [Explicitly out of scope]
+- [Explicit exclusion]
 
 ## Context
-**What:** [1-2 sentences]
-**Why:** [1-2 sentences]
+**What:** ...
+**Why:** ...
 
 ## Constraints / Invariants
-- [Non-negotiable technical, product, safety, compatibility, or dependency boundaries]
+- [Non-negotiable boundary]
 
 ## Decisions & Trade-offs
-- [Decision] — [rationale, especially when alternatives were considered]
+- [Decision] — [rationale]
 
 ## Ruled Out
-- [Rejected approach] — [why rejected]
+- [Rejected approach] — [reason]
 
 ## Prior Art / Blessed Patterns
-- `path/to/file.ts` — [what pattern to follow or reuse]
+- `path` — [pattern to reuse]
 
 ## Architecture
-[Solution shape, data flow, schemas, key patterns]
+[Solution shape, stable contracts, and shared integration points. For non-trivial cross-module behavior, include a compact current → proposed execution flow; at important boundaries, name input/output types and effect/failure ownership. List type fields only for new or changed shared contracts.]
 
 ## Relevant Files
-- `path/to/file.ts` — [why relevant: what to read, what to modify]
+- `path` — [why relevant]
 
 ## Tasks
 
-### Sprint 1: [Theme]
+### Sprint 1: [Human milestone]
 
-#### Task 1: [Name]
-[What needs to happen and why, not step-by-step how]
+#### Task TASK-ID: [Name]
+[Outcome and why]
 
+**Depends on:** [TASK-ID, ... | none]
+**Write boundary:** [`repo/relative/path/**`, ...]
+**Produces:** [contract or integration point | none]
+**Consumes:** [contract or integration point | none]
+**Shared/generated ownership:** [owned files/integration step | none]
 **Risk:** [low | medium | high]
 **Primary proof boundary:** [none | unit | integration | e2e]
 
 **Required proof:**
-- [Behavior that must be demonstrated, or "Mechanical change; no behavior proof required"]
+- [Runnable behavior proof, or "Mechanical change; no behavior proof required"]
 
 **Done when:**
-- [ ] [Specific, verifiable outcome]
-
-#### Task 2: [Name]
-...
+- [ ] [Specific verifiable outcome]
 
 ## Risks & Rollback
-- **Risk:** [what could go wrong]
-- **Rollout:** [how to deploy safely]
-- **Rollback:** [how to undo]
+- **Risk:** ...
+- **Rollout:** ...
+- **Rollback:** ...
 
 ## Verification
-- [ ] [Specific, testable acceptance criterion]
+- [ ] [User outcome or repository acceptance criterion]
 ```
 
-### Spec principles
+## Task graph rules
 
-- **Breadcrumbs, not blueprints.** Reference files and patterns, never include code blocks for implementation.
-- **Say what, not how.** Describe outcomes, constraints, and proof obligations.
-- **Always use sprints.** Small work can live entirely inside `Sprint 1`.
-- **Preserve the why.** Decisions & Trade-offs and Ruled Out prevent re-litigation later.
-- **Prefer one canonical proof boundary per behavior.** Duplicate deep coverage only when transport-specific behavior matters.
-- **Acceptance criteria must be objectively verifiable.** "Works correctly" is not a criterion.
-- **Flag dependency additions explicitly.** Treat new external dependencies as requiring user approval.
+- Give every task a stable ID and explicit `Depends on`, including `none`.
+- Dependency readiness—not textual or sprint order—controls execution. Sprints are optional human milestones, not orchestration barriers.
+- Choose repository-relative write boundaries narrow enough to reveal safe concurrency. Dependency-ready tasks must not overlap boundaries.
+- Declare produced/consumed contracts and shared integration points. Stabilize shared contracts before dependent work.
+- Assign exactly one owner for every shared, generated, registration, and final integration file. Other tasks consume that owner's result rather than editing the same surface.
+- Combine tasks that cannot independently reach a coherent, provable boundary, or model them as one explicit serial dependency lane.
+- Ensure each task's primary proof can run when the task becomes ready. If proof requires a successor, combine the work or declare that successor dependency and integration ownership.
+- Do not add redundant `Can run in parallel with` lists; readiness follows from dependencies, contracts, and boundaries.
 
-## Step 3: Stress-test the design
+## Quality rules
 
-After drafting, critically examine the spec before presenting it. Match depth to risk.
+- Write breadcrumbs, not implementation code; say what and why, not step-by-step how. Keep execution flows to important boundaries, not helper functions.
+- Keep acceptance criteria objective and one canonical proof boundary per behavior.
+- Preserve project-specific gates and required UI verification in `Verification`.
+- Flag dependencies, migrations, architecture shifts, rollout, permissions, data integrity, concurrency, and failure handling when relevant.
+- Require user approval for new external dependencies.
 
-Always consider:
-- Edge cases: empty states, null values, boundary conditions, concurrent access.
-- Error scenarios: network errors, invalid input, partial failures.
-- Auth/permissions: who can do this and what happens if someone who should not tries.
+Stress-test the draft, incorporate resolved risks, then use `../spec-review/SKILL.md` for independent review. Apply mechanical fixes; discuss scope, product, dependency, constraint, or architecture changes.
 
-For substantial work, also examine:
-- Architecture tradeoffs and hidden coupling.
-- Data integrity, transactions, idempotency, crash recovery, and cleanup.
-- Performance at scale: N+1 queries, unbounded lists, missing indexes.
-- Security surface: new inputs, privilege escalation paths, data exposure.
-- Migration path: existing data, downtime, backwards compatibility.
-- Dependency surface: whether existing code/libraries are enough.
+## Publish
 
-Incorporate resolved risks into Constraints, Tasks, Risks & Rollback, or Verification. If a genuine design question remains, raise it with a recommendation.
+Create the `spec` label if needed and publish with `gh issue create --body-file`; avoid shell-quoting large Markdown. For explicitly requested local output, write `specs/YYYY-MM-DD-<slug>.md` instead.
 
-## Step 4: Present and discuss
-
-Present the draft and any real design concerns. Be proportional: a small fix may need one note; a payment or auth flow may need a real tradeoff discussion.
-
-If the user wants to move on, finalize without unnecessary iteration.
-
-## Step 5: Independent spec review
-
-Before publishing, use `../spec-review/SKILL.md` to review the draft.
-
-Prefer delegating exactly one subagent with the `spec-review` rubric so the review is independent. If no subagent tool is available, run the rubric yourself and say it was not independent.
-
-Apply straightforward fixes directly. Discuss findings that change scope, constraints, product decisions, dependencies, or architecture before changing the spec.
-
-## Step 6: Publish
-
-Update based on feedback and review findings, then publish as a GitHub Issue by default:
-
-```bash
-gh label create spec --description "Structured implementation spec" --color "0052CC" 2>/dev/null || true
-gh issue create --title "[Feature Name]" --body-file /tmp/spec-body.md --label "spec"
-```
-
-Use a temp file for the body instead of shell-quoting large markdown.
-
-If the user explicitly asked for a local spec, write `specs/YYYY-MM-DD-<slug>.md` instead and do not create a GitHub Issue.
-
-Report the issue URL or local spec path, then tell the user they can run `/implement <issue-number>` or `/implement-tdd <issue-number>` to begin.
+Report the URL/path and suggest `/implement <issue-or-path>` or `/implement-tdd <issue-or-path>`.
