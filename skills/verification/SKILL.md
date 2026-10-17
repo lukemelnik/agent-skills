@@ -15,7 +15,7 @@ Treat environment readiness as part of verification. A build or unit test is not
    - Identify the exact branch, worktree, build, server, simulator, binary, and data target involved.
    - Reuse or start the documented instance only when runtime proof is needed.
    - Confirm readiness, required services, authentication, fixtures, and seed data.
-   - Perform documented non-destructive setup when allowed. Ask before resets, deletion, production access, or other destructive preparation.
+   - Perform documented setup under the project's task-specific or standing permission, including dependency restoration, private-worktree server startup, and disposable test-data resets when explicitly covered. Verify ownership and the exact target first; do not ask again for already-authorized operations. Ask before production access or destructive preparation outside that permission, including shared or unverified data targets.
    - An unavailable app is normally a setup problem to resolve, not a reason to skip verification when a documented launch path exists.
 3. **Drive the real surface.** Enter through the public UI, CLI, API, or library interface and perform the relevant user action. Do not substitute internal state mutation for the journey being proved.
 4. **Observe the result.** Capture the action and resulting state. Check persisted or external side effects through a second read when they matter.
