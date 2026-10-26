@@ -43,6 +43,14 @@ grove list --json
 
 Do not use interactive `grove list` in an agent workflow.
 
+## T3 Code chat handoff
+
+For an explicit request to continue in a new T3 chat on a Grove worktree, read [references/t3-handoff.md](references/t3-handoff.md). The `/gw` Pi prompt template is the shortcut in Pi-backed T3 chats. Create with Grove, launch a T3 chat bound to the existing checkout, verify readiness, and settle the source chat only after success.
+
+Install the bundled `assets/gw.md` prompt as `~/.pi/agent/prompts/gw.md` (prefer a symlink) to expose `/gw [task]`. A prompt added during an active session may require resource reload or a fresh session before command discovery updates.
+
+Do not infer permission to launch a new chat or settle the source from an ordinary worktree creation request. Outside T3, keep using the normal Grove workflow; this handoff has no Codex adapter.
+
 ## Open or enter a workspace
 
 When the user asks to open the full tmux workspace:
@@ -92,6 +100,7 @@ Run the actual clean only when the user requested cleanup and the candidates are
 ## Intent mapping
 
 - “Create/start/launch a worktree for this task” → `grove create <branch> --no-open --json`
+- “Continue this task in a new T3 chat on a Grove worktree” / `/gw` invocation → read `references/t3-handoff.md`
 - “Open the workspace for this branch” → `grove open <branch>`
 - “Where is the worktree / which ports does it use?” → `grove list --json` or `grove status --json`
 - “Remove this worktree” → preview, then `grove delete`

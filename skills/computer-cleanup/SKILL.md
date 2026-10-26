@@ -1,9 +1,9 @@
 ---
-name: songkeeper-disk-cleanup
-description: Inspect and safely reclaim Songkeeper iOS build storage on macOS using known temporary-build, XcodeBuildMCP, DerivedData, and simulator locations. Use for low disk space, slow development caused by storage pressure, a requested cleanup, verified task completion, or worktree retirement. Prune proven retired-worktree simulators while preserving current devices, active work, warm build caches, and release artifacts.
+name: computer-cleanup
+description: Inspect and safely reclaim macOS storage, including Songkeeper iOS build artifacts in known temporary-build, XcodeBuildMCP, DerivedData, and simulator locations. Use for low disk space, slow development caused by storage pressure, a requested computer cleanup, verified task completion, or worktree retirement. Prune proven retired-worktree simulators while preserving current devices, active work, warm build caches, and release artifacts.
 ---
 
-# Songkeeper Disk Cleanup
+# Computer Cleanup
 
 ## Lifecycle policy
 

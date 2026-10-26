@@ -68,6 +68,44 @@ Definition of done:
 - Keep composition/root wiring centralized.
 - Avoid direct singleton access in feature code; prefer scene-owned services injected from the root.
 
+### Protocol Customization Points
+
+Declare a method as a protocol **requirement** when conformers must customize it through generic or protocol-typed callers. A default implementation can live in an extension, but an extension-only method is not a protocol customization point.
+
+```swift
+protocol StatusProviding {
+    func statusText() -> String  // Requirement: conformers can customize this.
+}
+
+extension StatusProviding {
+    func statusText() -> String { "Unknown" }
+}
+
+struct ReadyStatus: StatusProviding {
+    func statusText() -> String { "Ready" }
+}
+
+func label<T: StatusProviding>(for status: T) -> String {
+    status.statusText()
+}
+
+// label(for: ReadyStatus()) == "Ready"
+// Remove the protocol requirement and the generic call uses "Unknown".
+```
+
+Test customization through the same abstraction the application uses, not only by calling a concrete instance directly. This avoids mocks or services appearing correct in isolation but using the extension's implementation after injection. This example concerns protocol dispatch; subclass overrides and inherited conformances require separate analysis.
+
+### Ownership and Object Lifetime
+
+- Make the long-lived owner explicit: scene, feature, subscription, delegate coordinator, or resource manager. A weak reference observes an object; it does not keep it alive for an operation.
+- Do not assume a local strong reference survives until the closing brace. Optimized code may release it after its last use. Investigate last-use lifetime when a delegate or weakly observed object disappears only in optimized builds.
+- Prefer fixing ownership or restructuring a reference cycle over scattering weak captures. Use weak references where non-ownership is intentional, not as a universal fix.
+- Use `withExtendedLifetime` for a narrowly defined synchronous operation that genuinely needs a strong owner kept alive. It does not keep an escaping callback or asynchronous operation alive after the closure returns; those need an explicit owner or cancellation lifecycle.
+- Make order-sensitive shutdown, cancellation, and async cleanup explicit. Keep ordinary resource release in `deinit` where appropriate, but do not make user-visible completion depend on an assumed deallocation time.
+- Reproduce lifetime failures in the relevant optimized build, not only Debug. Check retain cycles and premature release as different failure modes.
+
+These craft checks are informed by Emil Kowalski's [Swift guidance](https://github.com/emilkowalski/skills/blob/2d228630ba1446365f614a108cb8252f1feda202/skills/write-swift/SKILL.md); apply the project's toolchain and actual ownership contracts rather than importing unrelated language-version defaults.
+
 ### Scene-Owned @Environment-Based Dependency Injection
 
 Use SwiftUI's environment to propagate scene-owned `@Observable` services throughout the view hierarchy. Own mutable dependencies at the app/scene root so previews, tests, and multi-window iPad state stay isolated.

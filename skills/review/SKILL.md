@@ -1,27 +1,56 @@
 ---
 name: review
-description: Review the current checked-out branch or its PR with parallel, role-specialized read-only subagents for security, correctness, robustness, wiring, repository patterns, and conditional spec compliance. Use for full branch review, PR review, focused review aspects, or the final review launched after implementation.
+description: Review an explicitly selected GitHub PR independently of the current checkout, or review the current branch, with parallel, role-specialized read-only subagents. Use for PR review, full branch review, focused review aspects, or the final review launched after implementation.
 ---
 
 # Review
 
-Run one parent review over the current checkout. The parent resolves scope, launches focused reviewers, aggregates findings, and checks PR-description accuracy. Specialized subagents inspect only their assigned concern.
+Run one parent review over the requested PR or branch. The parent resolves scope, launches focused reviewers, aggregates findings, and checks PR-description accuracy. Specialized subagents inspect only their assigned concern.
 
 ## Input
 
 `$ARGUMENTS` may include:
 
 - empty — review the current branch against the default branch
-- `pr 123`, `#123`, or `123` — current branch PR; reject a different PR
+- `pr 123`, `#123`, `123`, or a GitHub PR URL — review that PR, regardless of the current checkout
 - `last N commits` — review only that range on the current branch
 - `security | correctness | robustness | wiring | patterns | spec | full` — select roles; default `full`
 - `issue 456` or `spec 456` — explicit implementation spec
 
-If a number could be the current branch PR, treat it as the PR. Otherwise ask one focused clarification.
+A bare number means a PR number. `issue` and `spec` select an implementation specification; they do not select a PR. An explicit PR takes precedence over the current branch.
 
 ## 1. Resolve scope once
 
-Use small sequential commands:
+Choose the requested mode before applying checkout restrictions. Never switch the user's branch or alter their working files for a review.
+
+### Explicit PR
+
+Resolve the PR in the current repository, or use the repository identified by its URL. Fetch its context once:
+
+```bash
+gh pr view "$PR_NUMBER" --json number,title,body,url,headRefName,baseRefName,headRefOid,baseRefOid,closingIssuesReferences
+```
+
+Freeze `PR_HEAD_SHA` and `PR_BASE_SHA` from that response. Fetch those commits into the repository's object database without checking out either branch:
+
+```bash
+git fetch --no-tags origin "$PR_HEAD_SHA" "$PR_BASE_SHA"
+git cat-file -e "$PR_HEAD_SHA^{commit}"
+git cat-file -e "$PR_BASE_SHA^{commit}"
+BASE="$(git merge-base "$PR_BASE_SHA" "$PR_HEAD_SHA")"
+RANGE="$BASE..$PR_HEAD_SHA"
+```
+
+- Compare against the PR's actual target branch, which may differ from the default branch. The merge-base range represents changes introduced by the PR.
+- Fetch from the PR's base repository. If its URL identifies another repository, resolve a suitable local repository or use a temporary bare repository; do not compare unrelated histories or create a working checkout.
+- If fetching by SHA is unavailable, fetch the PR head and base branch into dedicated review refs, then verify they contain the frozen commits. Do not overwrite local branches. If a concurrent update prevents obtaining the snapshot, resolve fresh PR metadata and retry once; report the limitation if it persists.
+- Being on `main`, detached HEAD, another branch, or a dirty worktree does not block this mode. Reviewers must use `git diff "$RANGE"` and `git show "$PR_HEAD_SHA:path"` for source, tests, and applicable repository instructions; checkout files may belong to another revision.
+- Use immutable SHAs throughout the review. Do not replace the selected head with local `HEAD` or a moving remote ref. State which snapshot was reviewed.
+- If the selected range is empty, report that there is no PR diff to review.
+
+### Current branch or commit range
+
+When no PR is explicitly supplied, use small sequential commands:
 
 ```bash
 REPO_ROOT="$(git rev-parse --show-toplevel)"
@@ -29,19 +58,27 @@ cd "$REPO_ROOT"
 DEFAULT_BRANCH="$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null || git remote show origin | sed -n '/HEAD branch/s/.*: //p' || echo main)"
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 CURRENT_PR_NUMBER="$(gh pr view --json number --jq '.number' 2>/dev/null || true)"
-BASE="$(git merge-base HEAD "origin/$DEFAULT_BRANCH")"
-RANGE="$BASE..HEAD"
+REVIEW_HEAD="$(git rev-parse HEAD)"
+BASE="$(git merge-base "$REVIEW_HEAD" "origin/$DEFAULT_BRANCH")"
+RANGE="$BASE..$REVIEW_HEAD"
 git status --short
 ```
 
-Rules:
+Rules for this mode:
 
-- Review only the current checkout. Never switch branches or create a worktree.
+- Review the current branch without switching branches or creating a worktree.
 - Reject detached HEAD and the default branch unless the user explicitly requested a working-tree review.
 - If the worktree is dirty, stop before launching reviewers. Explain that committed branch review may omit or mix changes and ask whether to finish/commit, review the working tree, or continue with committed diff.
-- A supplied PR must match `CURRENT_PR_NUMBER` and `CURRENT_BRANCH`.
-- For `last N commits`, use `HEAD~N..HEAD`; otherwise use `RANGE`.
+- For `last N commits`, use `$REVIEW_HEAD~N..$REVIEW_HEAD`; otherwise use `RANGE`.
 - If the selected range is empty, report that there is no branch diff to review.
+
+Fetch current-branch PR context once when available. Do not require a PR for branch review:
+
+```bash
+gh pr view "$CURRENT_PR_NUMBER" --json number,title,body,url,headRefName,baseRefName,closingIssuesReferences
+```
+
+### Shared scope
 
 Inspect only the scope summary before fan-out:
 
@@ -50,18 +87,13 @@ git diff --stat "$RANGE"
 git diff --name-only "$RANGE"
 ```
 
-Fetch current PR context once when available:
-
-```bash
-gh pr view "$CURRENT_PR_NUMBER" --json number,title,body,url,headRefName,baseRefName,closingIssuesReferences
-```
-
 Resolve a spec from an explicit argument first. Otherwise inspect closing issues and use one labeled `spec` when present. Do not infer a spec from an unrelated issue number.
 
 Create one compact shared scope string containing:
 
-- exact range and current branch/default branch
-- current PR number, if any
+- repository path, exact immutable range, and selected head/base branches
+- selected PR number and URL, if any
+- whether source must be read from the fetched PR snapshot rather than checkout files
 - explicit spec issue/path only when resolved
 - instruction to report only introduced issues
 
@@ -80,13 +112,17 @@ Default `full` roles:
 
 For a role filter, launch only that role. `spec` requires a concrete spec and launches only `ReviewSpec`.
 
-Launch all selected agents in one assistant message with separate `Agent` calls, `run_in_background: true`, `inherit_context: false`, and `isolated: true`. Each prompt should contain only the shared scope string and, for `ReviewSpec`, the exact spec reference. Do not repeat category checklists: the selected custom agent definition owns its focused prompt.
+Use the available specialized-agent API with fresh context (`fork_turns: "none"` in Codex, or `inherit_context: false` where supported). Launch selected roles concurrently up to the available agent limit, starting remaining roles as slots become free. These reviewers are read-only and can share the object database; isolation must not switch branches or create working checkouts. Each prompt should contain only the shared scope string and, for `ReviewSpec`, the exact spec reference. Do not repeat category checklists: the selected custom agent definition owns its focused prompt.
+
+If a configured role is unavailable through the runtime, use a generic read-only subagent with that role's configured prompt as its contract. If the contract is also unavailable, report the role as blocked.
 
 Example task prompt:
 
 ```text
-Review scope: current branch feature/x against origin/main, range abc123..HEAD.
-Current branch PR: #123.
+Review scope: /path/to/repository, PR #123, branch feature/x against main,
+range <merge-base-sha>..<head-sha>, PR URL https://github.com/owner/repo/pull/123.
+Read source and applicable instructions with git show <head-sha>:<path>;
+the current checkout is not the reviewed revision.
 Report only issues introduced in this range.
 Follow your specialized agent contract and return its exact structured output.
 ```
@@ -126,6 +162,8 @@ Choose the presentation from the session context:
 - In the Codex desktop app, use concise GitHub-flavored Markdown and emit one
   `::code-comment` directive per actionable, line-specific finding. Keep the
   summary self-contained because inline comments supplement rather than replace it.
+  For a fetched PR snapshot, link findings to verified lines in the PR diff rather
+  than unrelated files in the current checkout.
 - Otherwise, use the terminal-friendly boxed finding format below.
 
 Use:
@@ -133,7 +171,7 @@ Use:
 ```md
 Review result: <no findings | N findings>
 
-Scope: <current branch/range and PR>
+Scope: <selected branch or PR, immutable range, and target branch>
 
 Critical
 <findings in the environment-appropriate format, or None>
