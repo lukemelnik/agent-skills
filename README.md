@@ -12,13 +12,9 @@ cd ~/agent-skills
 ./setup.sh
 ```
 
-The setup script symlinks each skill into `~/.claude/skills/` (Claude Code), `~/.agents/skills/` (Codex), and `~/.pi/agent/skills/` (Pi). Use `--force` to replace existing symlinks.
+The public-only setup script symlinks each skill into `~/.claude/skills/` (Claude Code), `~/.agents/skills/` (Codex), and `~/.pi/agent/skills/` (Pi). Use `--force` to replace existing symlinks.
 
 Changes are live immediately â€” symlinks are transparent. Edit skills in the repo, commit and push to sync across machines.
-
-### Private skills
-
-Keep personal or non-public skills in a separate checkout at `~/agent-skills-private/skills/<skill-name>/`. `setup.sh` links that private root automatically when it exists. To use a different private location, set `AGENT_SKILLS_PRIVATE_DIR=/path/to/private-root` before running setup.
 
 ### After setup
 
@@ -29,7 +25,6 @@ If migrating from `~/.claude/commands/`, you can remove the old command files â€
 - Reusable agent skills in `skills/`
 - Cross-agent setup via `setup.sh`
 - Optional Claude Code config examples in `config/`
-- A private-skill convention that keeps personal workflows outside the public repo
 
 ## Config
 
