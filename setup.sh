@@ -2,7 +2,6 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PRIVATE_DIR="${AGENT_SKILLS_PRIVATE_DIR:-$HOME/agent-skills-private}"
 FORCE=false
 
 TARGETS=(
@@ -12,9 +11,6 @@ TARGETS=(
 )
 
 SKILL_ROOTS=("$SCRIPT_DIR/skills")
-if [ -d "$PRIVATE_DIR/skills" ]; then
-  SKILL_ROOTS+=("$PRIVATE_DIR/skills")
-fi
 
 for arg in "$@"; do
   case "$arg" in
@@ -63,11 +59,11 @@ for target_dir in "${TARGETS[@]}"; do
 
   echo "$target_dir/"
 
-  # Remove stale symlinks before linking, so moved private skills can relink cleanly.
+  # Remove stale symlinks before linking, within the public skill root.
   for link in "$target_dir"/*; do
     [ -L "$link" ] || continue
     link_target=$(readlink "$link")
-    for skill_root in "$SCRIPT_DIR/skills" "$PRIVATE_DIR/skills"; do
+    for skill_root in "$SCRIPT_DIR/skills"; do
       case "$link_target" in
         "$skill_root"/*)
           if [ ! -e "$link" ]; then
