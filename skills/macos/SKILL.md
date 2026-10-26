@@ -10,6 +10,7 @@ description: Build native macOS apps with SwiftUI and AppKit. Covers app archite
 Choose the narrowest skill that matches the request:
 
 - **General macOS architecture, UI, navigation, capabilities, persistence, or HIG questions**: stay in this `macos` skill and load the relevant reference.
+- **Protocol customization or object-lifetime bug**: load `references/architecture.md` for dispatch through abstractions, explicit ownership, and optimized-build diagnosis.
 - **Build, launch, logs, shell-first debugging, or Codex Run button setup**: use `build-run-debug`.
 - **Pure `Package.swift` workflow**: use `swiftpm-macos`.
 - **SwiftUI/AppKit boundary work**: use `appkit-interop`.
@@ -45,7 +46,7 @@ Prefer the focused skill when the user request is clearly narrower than broad ma
 
 Read when setting up a new macOS app, choosing state management patterns, structuring modules/packages, implementing dependency injection, adopting Swift 6 concurrency, or deciding between AppKit vs SwiftUI vs hybrid.
 
-Covers: app lifecycle (@main + NSApplicationDelegate, async shutdown), state management (@Observable scene models, scoped environment state, @AppStorage workaround, optimistic updates, thread-safe state), DI (environment-based composition roots, typed dependencies), module structure (SPM packages vs feature folders), Swift 6 concurrency (MainActor isolation, OSAllocatedUnfairLock, actors, C library bridging queues), logging (category-based os.Logger, privacy annotations), pure decision engines (extracting complex branching into testable structs), service layer (Endpoint enum pattern), AppKit vs SwiftUI decision guide.
+Covers: app lifecycle (@main + NSApplicationDelegate, async shutdown, ownership and optimized object lifetimes), protocol customization-point dispatch, state management (@Observable scene models, scoped environment state, @AppStorage workaround, optimistic updates, thread-safe state), DI (environment-based composition roots, typed dependencies), module structure (SPM packages vs feature folders), Swift 6 concurrency (MainActor isolation, OSAllocatedUnfairLock, actors, C library bridging queues), logging (category-based os.Logger, privacy annotations), pure decision engines (extracting complex branching into testable structs), service layer (Endpoint enum pattern), AppKit vs SwiftUI decision guide.
 
 ### `references/navigation.md`
 

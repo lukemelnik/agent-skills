@@ -65,6 +65,21 @@ If the trace is inconclusive, ask for minimal repro steps and rerun profiling on
 - **Other Long Updates**: geometry/text/layout and other SwiftUI work.
 - **Hitches**: frame misses where UI wasn't ready in time.
 
+## Swift Algorithm and Profile Clues
+
+Check algorithmic work before tuning dispatch, storage, or concurrency. Reproduce one representative operation in an optimized build, inspect its call stacks and allocations, then compare the same workload after a change. These signals suggest hypotheses, not a diagnosis by symbol name alone:
+
+- **Repeated linear collection operations:** removing individual elements from an `Array` in a loop can repeatedly shift its suffix and become quadratic. When semantics match, use `removeAll(where:)` or construct the result in one pass. Check complexity for the actual collection type rather than assuming slices, arrays, and strings behave alike.
+- **Many intermediate arrays:** eager `map`/`filter` chains may allocate at each stage. In a measured hot path, compare a lazy pipeline or a single-pass implementation, preserving ordering and side effects. Do not trade readable ordinary code for speculative micro-optimization.
+- **`memcpy` / `memmove` / `platform_memmove`:** inspect copied sizes and call sites for accidental buffer copies or repeated collection rebuilding; legitimate image and I/O work can produce the same frames.
+- **Heavy `swift_retain` / `swift_release`:** inspect allocation churn, reference-rich value copying, and closure lifetimes. Confirm the owning call path before changing value/reference semantics.
+- **Heavy `swift_beginAccess`:** inspect frequently accessed mutable storage and overlapping access patterns. Treat it as an exclusivity-check clue, not permission to disable safety checks.
+- **Allocation spikes:** correlate Allocations with the exact operation and object types. Distinguish transient buffers, temporary formatting objects, and retained objects; they need different fixes.
+
+Add a focused performance test or repeatable reproduction when useful. Record workload, build/device, latency or allocation evidence, and any memory/clarity trade-off. The same Swift-level checks apply to native macOS hot paths; SwiftUI view invalidation still needs its own trace evidence.
+
+Adapted as diagnostic hypotheses from Emil Kowalski's [Swift performance guidance](https://github.com/emilkowalski/skills/blob/2d228630ba1446365f614a108cb8252f1feda202/skills/write-swift/SKILL.md), not as guaranteed explanations or unverified speedup claims.
+
 ## Structural Identity and View Diffing
 
 ### Ternary over if/else for modifier toggling

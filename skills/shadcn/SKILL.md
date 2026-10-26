@@ -5,6 +5,10 @@ description: shadcn/ui component and styling patterns. Use when building UI comp
 
 # shadcn/ui Patterns
 
+## Optional Library References
+
+- **Sonner setup, loading/update lifecycles, styling, theme, or troubleshooting:** read [references/sonner.md](references/sonner.md) only when the project uses Sonner or the user requests it. Reuse the existing shadcn integration; do not introduce or migrate toast libraries automatically.
+
 ## Always Use shadcn Components First
 
 Before creating custom UI, check if a shadcn component exists in `apps/web/src/components/ui/`. These components are:

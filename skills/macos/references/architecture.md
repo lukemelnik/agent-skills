@@ -54,6 +54,15 @@ func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.Termin
 }
 ```
 
+### Ownership and Optimized Lifetimes
+
+Make the owner of each window controller, delegate coordinator, observer, and long-running operation explicit. A weak delegate reference does not keep its delegate alive, and a local strong reference is not guaranteed to survive until the closing brace: optimized code may release it after its last use.
+
+- Distinguish retain cycles from premature release; indiscriminate weak captures can introduce the latter while hiding the former.
+- Use `withExtendedLifetime` only for a synchronous operation whose owner must remain alive through that closure. Escaping callbacks and asynchronous operations need explicit ownership/cancellation beyond it.
+- Make order-sensitive shutdown, observer removal, and async cleanup explicit. Let `deinit` perform appropriate resource release, but do not rely on its timing to signal user-visible completion.
+- Reproduce suspected lifetime failures in an optimized build and inspect the actual ownership graph.
+
 ### SwiftUI + AppKit Window Split
 
 SwiftUI owns simple scenes (settings, about). AppKit handles complex window creation with custom toolbars or split views via `NSWindow` + `NSHostingView`.
@@ -192,6 +201,12 @@ If you genuinely need runtime registration for plugins or tests, keep that regis
 ### Scoped State
 
 Per-window or per-document state: pass through init or `.environment()` + `@Environment(Type.self)`.
+
+### Protocol Customization Points
+
+When a service must customize behavior through a generic or protocol-typed caller, declare that method as a protocol requirement. An extension may supply its default implementation. A same-named method that exists only in an extension is statically selected through the protocol abstraction and is not a customization point; a concrete call may therefore look correct while the injected service uses the default. Test through the application's actual abstraction, and analyze subclass/inherited-conformance cases separately.
+
+The protocol and lifetime checks here are informed by Emil Kowalski's [Swift guidance](https://github.com/emilkowalski/skills/blob/2d228630ba1446365f614a108cb8252f1feda202/skills/write-swift/SKILL.md), without adopting its unrelated language-version defaults.
 
 ---
 

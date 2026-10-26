@@ -40,6 +40,8 @@ Load only the references that match the work:
 - Reviewing/auditing UI: `discovery.md` + `review.md` + `antipatterns.md`.
 - Final polish: `discovery.md` + `polish.md` + `antipatterns.md`.
 - Production hardening: `discovery.md` + `hardening.md`.
+- Breaking UI, worst-case data, schema-limit content, or adversarial layout testing: [stress-testing.md](references/stress-testing.md).
+- Mobile web/PWA viewport, safe-area, keyboard, touch, or browser-chrome bugs (not native apps): [mobile-web.md](references/mobile-web.md).
 - Copy, labels, errors, empty states, or language cleanup: `copy.md`.
 - AI-looking design or recurring model tells: `antipatterns.md` and, for language, `copy.md`.
 

@@ -4,6 +4,8 @@ Hardening makes a UI survive real users, real data, real networks, and real devi
 
 ## Stress inputs
 
+For a concrete field-to-source mapping, realistic input catalog, and permission-aware reproduction workflow, use [adversarial stress testing](stress-testing.md). Audits stay read-only unless edits are authorized; distinguish visual observations from inference.
+
 Test or reason through:
 
 - Very long names, titles, email addresses, file names, URLs, and notes.
@@ -75,6 +77,8 @@ Avoid decorative empties that do not help the user move.
 - Color is not the only carrier of status.
 
 ## Responsive and device resilience
+
+For browser/PWA viewport, safe-area, keyboard, and gesture details, use [mobile web hardening](mobile-web.md), not native-app guidance.
 
 - Use content-driven breakpoints, not only device presets.
 - Detect input capability where relevant: pointer, hover, coarse pointer.

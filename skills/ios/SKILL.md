@@ -12,6 +12,7 @@ Choose the narrowest path that matches the request:
 - **New screen or feature**: start with `references/architecture.md`, then `references/components.md`.
 - **Refactor a large SwiftUI view**: start with `references/architecture.md`, then `references/code-review.md` and `references/components.md`.
 - **Code review or quality audit**: start with `references/code-review.md`, then load only the relevant topical references.
+- **Protocol customization or object-lifetime bug**: start with `references/architecture.md` for dispatch through abstractions and ownership in optimized builds.
 - **Performance issue or janky scrolling**: start with `references/performance.md`.
 - **Instruments `.trace` file analysis**: start with `references/performance.md`, then use `ios-debugger` if simulator/device reproduction is needed.
 - **App Intents, Siri, Spotlight, widgets, or Action Button**: start with `references/app-intents.md`.
@@ -62,7 +63,7 @@ Covers: directory layout, XcodeGen `project.yml` template, full Makefile (build,
 
 Read when scaffolding features, refactoring structure, setting up DI, managing state, writing tests, or reviewing PR quality.
 
-Covers: project structure, @Observable architecture, dependency injection, structured concurrency, state management, navigation, logging (category-based os.Logger, privacy annotations), error handling, pure decision engines (extracting complex branching into testable structs), performance, testing.
+Covers: project structure, @Observable architecture, dependency injection, protocol customization-point dispatch, ownership and optimized object lifetimes, structured concurrency, state management, navigation, logging (category-based os.Logger, privacy annotations), error handling, pure decision engines (extracting complex branching into testable structs), performance, testing.
 
 ### `references/hig.md`
 
@@ -138,7 +139,7 @@ Read when reviewing PRs, auditing existing code, or writing new SwiftUI code. Co
 
 Read when diagnosing slow rendering, janky scrolling, high CPU/memory usage, excessive view updates, or layout thrash in SwiftUI apps.
 
-Covers: audit workflow (code-first review, Instruments profiling, SwiftUI timeline lanes), analyzing shared `.trace` bundles, common code smells with before/after fixes (formatters in body, unstable identity, conditional view swapping, broad observable dependencies, image decoding), hang diagnosis, remediation patterns.
+Covers: audit workflow (code-first review, Instruments profiling, SwiftUI timeline lanes), analyzing shared `.trace` bundles, Swift algorithmic complexity and allocation/copy/runtime-frame clues, common code smells with before/after fixes (formatters in body, unstable identity, conditional view swapping, broad observable dependencies, image decoding), hang diagnosis, remediation patterns.
 
 ### `references/components.md`
 
