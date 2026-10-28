@@ -96,11 +96,15 @@ Inspect relevant code, tests, project guidance, similar features, and—when use
 - Preserve project-specific gates and required UI verification in `Verification`.
 - Flag dependencies, migrations, architecture shifts, rollout, permissions, data integrity, concurrency, and failure handling when relevant.
 - Require user approval for new external dependencies.
+- Confirm every path in Relevant Files and write boundaries exists and is tracked (`git ls-files`, `git check-ignore`). Generated or ignored artifacts get a regeneration step, not an owner.
+- Back every claim about current behavior ("X is ungated today", "Y always has a link") with the code that shows it.
+- When a spec builds on another unmerged spec, name it in `Context` as `Depends on spec: #N (must be merged first)`.
+- For user-facing UI, cite the project's design contract (for example `DESIGN.md`) and embed the user-approved prototype. The prototype is binding for layout, hierarchy, density, and copy; implementations swap in real components and tokens but do not restructure it. Never label it "reference only" or let spec text silently override it; if text and prototype disagree, resolve that before publishing. Also state the layout in words (containers or none, row structure, what expands where). `Verification` must require rendering the prototype and comparing final screenshots side by side with it.
 
 Stress-test the draft, incorporate resolved risks, then use `../spec-review/SKILL.md` for independent review. Apply mechanical fixes; discuss scope, product, dependency, constraint, or architecture changes.
 
 ## Publish
 
-Create the `spec` label if needed and publish with `gh issue create --body-file`; avoid shell-quoting large Markdown. For explicitly requested local output, write `specs/YYYY-MM-DD-<slug>.md` instead.
+Create the `spec` label if needed and publish with `gh issue create --body-file`; avoid shell-quoting large Markdown. Embed prototype HTML in a collapsed `<details>` code block and keep the issue body under GitHub's 65,536-character limit. For explicitly requested local output, write `specs/YYYY-MM-DD-<slug>.md` instead.
 
 Report the URL/path and suggest `/implement <issue-or-path>` or `/implement-tdd <issue-or-path>`.

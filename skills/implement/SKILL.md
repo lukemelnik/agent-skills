@@ -16,8 +16,9 @@ Execute a spec from plan to PR. The parent owns product judgment, spec truthfuln
 1. Read the entire file, or fetch an open issue with `gh issue view`. Read every Relevant File and named prior-art/test helper.
 2. Validate the task graph: stable IDs, dependencies, write boundaries, contracts, proof, ownership, and done conditions. For legacy specs, derive this graph explicitly before dispatch; stop on unsafe ambiguity.
 3. Check project instructions and required gates/UI verification.
-4. Reuse the current feature branch or create one when on the default branch. Never push the default branch.
-5. Never install dependencies, alter scope/constraints/decisions, or make a major architecture change without user approval.
+4. If the spec depends on another spec, confirm that spec's PR is merged and rebase onto it before starting; otherwise stop and report the blocker.
+5. Reuse the current feature branch or create one when on the default branch. Never push the default branch.
+6. Never install dependencies, alter scope/constraints/decisions, or make a major architecture change without user approval.
 
 ## Dependency-wave loop
 
@@ -32,6 +33,8 @@ Do not stack a new dependency wave on an unverified contract barrier. Tasks that
 ### 2. Dispatch implementation
 
 For two or more safe ready tasks, call `implementation_wave` once with the already dependency-ready wave. For each task provide its ID, description, goal, repository-relative write boundaries, context, proof/stop conditions when useful, and verification mode `deferred`.
+
+For user-facing UI tasks, render the spec's prototype to an image first and give each worker the image path, the project design contract (for example `DESIGN.md`), and the layout rules in words; point workers at the prototype, not at another platform's implementation, as the visual source.
 
 If the tool is unavailable, launch equivalent background Code agents in the same turn. For one task, use one bounded Code agent or implement directly.
 
@@ -49,7 +52,7 @@ Update task/issue checkboxes only when the aggregate diff makes them true. Recor
 
 ### 4. Verify with fresh eyes
 
-Run targeted contract/wave proof, preserving all project-specific UI verification. Launch fresh Verify agents after implementation fan-in; they must inspect/run the relevant focused proof without trusting writer reports.
+Run targeted contract/wave proof, preserving all project-specific UI verification. For UI changes, compare final screenshots side by side with the rendered prototype; layout drift fails verification even when behavior passes. Launch fresh Verify agents after implementation fan-in; they must inspect/run the relevant focused proof without trusting writer reports.
 
 Cluster failures by non-overlapping ownership. Dispatch focused repair agents with the symptom, evidence, boundary, and expected proof, then rerun only failed checks plus affected contract proof. After two repair attempts for the same symptom, stop blind retries and require root-cause diagnosis before more edits.
 
@@ -59,13 +62,15 @@ Advance dependents only after their contract barrier is verified. Repeat until n
 
 - Replace blanket per-sprint full gates with targeted task, contract, and wave proof.
 - Run the repository's complete required gates once after all waves and integration are green. Preserve project-specific requirements, including `pnpm check` before commits and required web/iOS UI verification.
-- Commit only at meaningful integrated green boundaries, never per worker. Follow the repository commit skill/policy.
+- Commit only at meaningful integrated green boundaries, never per worker. Workers never stage files; the parent stages explicit paths for each commit and checks `git diff --cached --stat` before committing. Follow the repository commit skill/policy.
 - If final gates fail, use the same fresh verification, ownership clustering, repair, and diagnosis rules; rerun failed checks before the final suite as needed.
 
 ## Finish
 
 Walk every Verification criterion, mark only confirmed checkboxes, and ensure material changes are recorded. Push the non-default branch and invoke the canonical PR skill, passing the spec path or issue number (`Closes #N` for issues).
 
-Report the PR URL, implemented outcome, material spec changes, verification/gates, and any honest manual verification or blockers. Never claim verification that did not run.
+Report the PR URL, implemented outcome, material spec changes, verification/gates, and any honest manual verification or blockers. Never claim verification that did not run. For UI changes, include final screenshots of every changed screen (web and/or iOS) in the report.
+
+Before finishing, stop dev servers and shut down simulators this task started unless the user is still using them.
 
 After the branch is clean, pushed, and the PR exists, call the `launch_review` tool as the final workflow action when that tool is available. The launcher owns opening a fresh review pane in the current worktree; do not improvise tmux commands in the skill. If the tool is unavailable or refuses because the branch is not ready, report that review was not launched.
