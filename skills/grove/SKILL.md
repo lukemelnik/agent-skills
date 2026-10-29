@@ -1,18 +1,18 @@
 ---
 name: grove
-description: Manage Git worktrees with the Grove CLI instead of an agent's built-in worktree feature or raw git worktree commands. Use when asked to create, launch, provision, open, enter, list, inspect, delete, or clean worktrees; when starting isolated branch work; or when working in a repository that has a .grove.yml.
+description: Manage Git worktrees with the Grove CLI instead of an agent's built-in worktree feature or raw git worktree commands. Use when asked to create, launch, provision, list, inspect, delete, or clean worktrees; when starting isolated branch work; or when working in a repository that has a .grove.yml.
 ---
 
 # Grove Worktrees
 
-Use Grove as the worktree authority. It provisions the checkout together with deterministic ports, configured environment-file links, hooks, and optional tmux workspace layout.
+Use Grove as the worktree authority. It provisions the checkout together with deterministic ports, configured environment-file links, and hooks.
 
 ## Core rules
 
 - In a Grove-configured repository, use `grove` instead of built-in agent worktree tooling or direct `git worktree` commands.
 - Run commands from the repository root unless checking the current worktree with `grove status`.
 - Prefer `--json` and non-interactive commands for agent workflows.
-- Provision without changing the user's tmux focus by default. Open or enter a workspace only when explicitly requested.
+- Always provision with `--no-open`; do not open or enter Grove workspaces.
 - Let `grove create` resolve or create the branch; do not pre-create it with Git. It uses an existing local branch, tracks an existing remote branch, or creates a new branch from `origin/main` by default.
 - Never pass `--from` unless the user explicitly names a different base ref.
 - If `grove` is unavailable or `.grove.yml` is missing, report that instead of silently falling back to another worktree mechanism. Initialize Grove only when asked.
@@ -51,20 +51,6 @@ Install the bundled `assets/gw.md` prompt as `~/.pi/agent/prompts/gw.md` (prefer
 
 Do not infer permission to launch a new chat or settle the source from an ordinary worktree creation request. Outside T3, keep using the normal Grove workflow; this handoff has no Codex adapter.
 
-## Open or enter a workspace
-
-When the user asks to open the full tmux workspace:
-
-```bash
-grove open <branch>
-```
-
-Use `grove open <branch> --new-window` only when they request an additional workspace window. For a new worktree that should open immediately, `grove create <branch>` creates it and opens its configured workspace.
-
-Use `grove enter <branch>` only when the user explicitly wants the current pane moved into that worktree. Agents should normally use the JSON path as their command working directory instead.
-
-Optional tmux panes are skipped by default. Include all with `--all`, or named panes with `--with <name>`, only when requested.
-
 ## Inspect the current checkout
 
 From inside a Grove worktree, run:
@@ -77,7 +63,7 @@ This reports its branch, path, and assigned ports.
 
 ## Configure a repository
 
-If asked to add Grove support, use `grove init` for a basic configuration and `grove schema` for the complete `.grove.yml` reference. Do not guess nested tmux layout syntax or inspect environment-file contents. Prefer known file paths and let Grove create the configured links.
+If asked to add Grove support, use `grove init` for a basic configuration and `grove schema` for the complete `.grove.yml` reference. Do not guess nested layout syntax or inspect environment-file contents. Prefer known file paths and let Grove create the configured links.
 
 ## Delete safely
 
@@ -101,7 +87,6 @@ Run the actual clean only when the user requested cleanup and the candidates are
 
 - “Create/start/launch a worktree for this task” → `grove create <branch> --no-open --json`
 - “Continue this task in a new T3 chat on a Grove worktree” / `/gw` invocation → read `references/t3-handoff.md`
-- “Open the workspace for this branch” → `grove open <branch>`
 - “Where is the worktree / which ports does it use?” → `grove list --json` or `grove status --json`
 - “Remove this worktree” → preview, then `grove delete`
 - “Clean merged or stale worktrees” → `grove clean --dry-run --json`, review, then clean

@@ -72,5 +72,3 @@ Walk every Verification criterion, mark only confirmed checkboxes, and ensure ma
 Report the PR URL, implemented outcome, material spec changes, verification/gates, and any honest manual verification or blockers. Never claim verification that did not run. For UI changes, include final screenshots of every changed screen (web and/or iOS) in the report.
 
 Before finishing, stop dev servers and shut down simulators this task started unless the user is still using them.
-
-After the branch is clean, pushed, and the PR exists, call the `launch_review` tool as the final workflow action when that tool is available. The launcher owns opening a fresh review pane in the current worktree; do not improvise tmux commands in the skill. If the tool is unavailable or refuses because the branch is not ready, report that review was not launched.

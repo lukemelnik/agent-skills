@@ -18,7 +18,7 @@ Read `../prototype/SKILL.md` only for a user-approved uncertainty spike. Do not 
 
 ## Setup
 
-Create `${TMPDIR:-/tmp}/spec-builder/YYYY-MM-DD-<slug>.md`, unless the user explicitly requests `specs/YYYY-MM-DD-<slug>.md`. Open it in a tmux split when available and invite `>` blockquote annotations.
+Create `${TMPDIR:-/tmp}/spec-builder/YYYY-MM-DD-<slug>.md`, unless the user explicitly requests `specs/YYYY-MM-DD-<slug>.md`. Share its path with the user and invite `>` blockquote annotations.
 
 Use the canonical sections from `spec` plus these working-only sections:
 

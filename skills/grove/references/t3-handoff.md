@@ -13,7 +13,7 @@ Use this workflow only for an explicit request to continue work in a new T3 chat
 
 ## Create and launch
 
-1. Run `grove create <branch> --no-open --json` from the main workspace root. Add `--from <ref>` only for a user-specified base. Do not open tmux, start dev servers, or use native T3 worktree creation.
+1. Run `grove create <branch> --no-open --json` from the main workspace root. Add `--from <ref>` only for a user-specified base. Do not open a Grove workspace, start dev servers, or use native T3 worktree creation.
 2. Retain the successful JSON result's absolute path and branch. For a newly created default-base branch, run `git log --oneline origin/main..HEAD` in the worktree and require empty output. Stop on provisioning errors or an unexpected base; keep the source chat active and leave any partial worktree intact.
 3. Prepare a self-contained handoff message containing:
    - The user's task, acceptance criteria, agreed decisions, constraints, and unresolved questions.
