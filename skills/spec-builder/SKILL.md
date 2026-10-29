@@ -1,6 +1,6 @@
 ---
 name: spec-builder
-description: Build an implementation-ready dependency-aware spec through an interactive live document. Use for collaborative feature planning with open questions before /implement or /implement-tdd.
+description: Build an implementation-ready dependency-aware spec through an interactive live document. Use for collaborative feature planning with open questions before /implement.
 ---
 
 # Spec Builder

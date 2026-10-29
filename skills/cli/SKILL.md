@@ -64,7 +64,7 @@ fmt.Fprintln(cmd.ErrOrStderr(), "Fetching worktrees...")
 When in JSON mode, errors go to stderr as structured JSON. Always include an error code for programmatic handling.
 
 ```json
-{"error": {"code": "NOT_FOUND", "message": "no worktree for branch \"feat/auth\"", "suggestedFix": "run `grove create feat/auth`"}}
+{"error": {"code": "NOT_FOUND", "message": "no project named \"billing\"", "suggestedFix": "run `mytool projects list` to see available names"}}
 ```
 
 Fields:

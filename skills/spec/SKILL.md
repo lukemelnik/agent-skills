@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Create a structured GitHub Issue spec for dependency-aware agent implementation. Use when planning implementation work before /implement or /implement-tdd.
+description: Create a structured GitHub Issue spec for dependency-aware agent implementation. Use when planning implementation work before /implement.
 ---
 
 # Create Spec
@@ -107,4 +107,4 @@ Stress-test the draft, incorporate resolved risks, then use `../spec-review/SKIL
 
 Create the `spec` label if needed and publish with `gh issue create --body-file`; avoid shell-quoting large Markdown. Embed prototype HTML in a collapsed `<details>` code block and keep the issue body under GitHub's 65,536-character limit. For explicitly requested local output, write `specs/YYYY-MM-DD-<slug>.md` instead.
 
-Report the URL/path and suggest `/implement <issue-or-path>` or `/implement-tdd <issue-or-path>`.
+Report the URL/path and suggest `/implement <issue-or-path>`.
