@@ -87,7 +87,7 @@ git diff --stat "$RANGE"
 git diff --name-only "$RANGE"
 ```
 
-Resolve a spec from an explicit argument first. Otherwise inspect closing issues and use one labeled `spec` when present. Do not infer a spec from an unrelated issue number.
+Resolve a spec from an explicit argument first. Otherwise inspect closing issues and use one labeled `spec` when present. Without a PR, use the issue whose number starts the branch name (for example `456-billing-retry` → issue 456) when it exists. Do not infer a spec from an unrelated issue number.
 
 Create one compact shared scope string containing:
 
@@ -136,20 +136,17 @@ Use each completed agent report as the handoff. Do not replay its searches. If a
 Combine findings from every completed role:
 
 1. Discard pre-existing issues outside the selected range.
-2. Discard findings below confidence 75, except potentially critical 50–74 findings that explicitly require human judgment.
+2. Discard findings below confidence 75, except 50–74 findings with impact score 8+ that explicitly require human judgment.
 3. Discard compiler/linter trivia without deeper impact.
-4. Deduplicate findings describing the same failure path.
-5. Preserve the clearest context/evidence when roles overlap.
-6. Sort `critical`, `important`, then `minor`.
-7. Assign stable IDs `R1`, `R2`, ... globally.
+4. Deduplicate findings describing the same failure path, preserving the clearest context/evidence when roles overlap.
+5. Re-score adversarially. Check that each trigger is realistic and reachable, and lower likelihood or impact scores that reviewers inflated. Spot-check only the cited code needed to decide.
+6. Compute `score = likelihood × impact score` and classify:
+   - `fix` — score 20+, or impact score 8+ regardless of likelihood. A repository instruction may set a different score threshold.
+   - `issue` — a `fix` finding that cannot reasonably be fixed on this branch: the fix exceeds the branch's scope or needs a product or design decision.
+   - `dropped` — everything else. Report only the count; do not file or fix these.
+7. Sort `fix` then `issue`, each by impact score then score, and assign stable IDs `R1`, `R2`, ... globally.
 
-Severity:
-
-- `critical` — auth/security breach, data loss/corruption, or broken primary flow
-- `important` — likely behavioral bug, missing wiring, significant robustness gap, or explicit repository-rule violation
-- `minor` — low-risk but concrete edge case or maintainability problem worth fixing
-
-The parent owns final judgment and presentation, not fresh broad investigation. Every retained finding must explain the reachable flow, where the code sits in it, the invariant that fails, and the concrete impact.
+The parent owns final judgment and presentation, not fresh broad investigation. Every retained finding must explain the realistic trigger, the reachable flow, where the code sits in it, the invariant that fails, and the concrete impact.
 
 For spec review, include the `ReviewSpec` compliance statuses without re-evaluating every criterion. Reconcile only contradictions with the actual diff or approved PR/spec deviations.
 
@@ -173,20 +170,20 @@ Review result: <no findings | N findings>
 
 Scope: <selected branch or PR, immutable range, and target branch>
 
-Critical
+Fix
 <findings in the environment-appropriate format, or None>
 
-Important
+Issue candidates
 <findings in the environment-appropriate format, or None>
 
-Minor
-<findings in the environment-appropriate format, or None>
+Dropped
+- <N findings below the fix threshold>
 
 Spec compliance
 - <criterion>: MET/PARTIAL/MISSING/DEVIATED — <evidence>
 
 PR description accuracy
-- <accurate | inaccurate | not checked> — <details only when useful>
+- <accurate | inaccurate | not checked | no PR> — <details only when useful>
 
 Reviewer status
 - <only blocked/failed roles; omit when all completed>
@@ -198,10 +195,11 @@ Gates
 Codex desktop finding:
 
 ```md
-### R1 · Important · correctness · confidence 95
+### R1 · Fix · correctness · L4 × I7 = 28 · confidence 95
 
 [`apps/path/file.ts:123`](/absolute/path/apps/path/file.ts:123)
 
+- **Trigger:** Concrete realistic input, action, or state.
 - **Problem:** Specific introduced failure.
 - **Context:** Reachable flow, state/invariant, and downstream dependency.
 - **Impact:** Concrete user, data, security, or operational consequence.
@@ -212,10 +210,12 @@ Terminal finding block:
 
 ```text
 ╭────────────────────────────────────────────────────────────────────────────╮
-│ R1 · Important · correctness · confidence 95                               │
+│ R1 · Fix · correctness · L4 × I7 = 28 · confidence 95                      │
 │ Short title                                                                 │
 │ apps/path/file.ts:123                                                       │
 ├─────────┬──────────────────────────────────────────────────────────────────┤
+│ Trigger │ Concrete realistic input, action, or state                       │
+├─────────┼──────────────────────────────────────────────────────────────────┤
 │ Problem │ Specific introduced failure                                      │
 ├─────────┼──────────────────────────────────────────────────────────────────┤
 │ Context │ Reachable flow, state/invariant, and downstream dependency        │
