@@ -5,7 +5,7 @@ description: Create a structured GitHub Issue spec for dependency-aware agent im
 
 # Create Spec
 
-Create a declarative, implementation-ready spec. This skill owns the canonical final structure and publishing rules. Publish as a GitHub Issue by default; write `specs/*.md` only when explicitly requested.
+This skill owns the canonical final structure and publishing rules. Publish as a GitHub Issue by default; write `specs/*.md` only when explicitly requested.
 
 > This work may deploy to real users. Think defensively. Ask about genuine product decisions; answer codebase questions yourself.
 
@@ -13,7 +13,7 @@ Create a declarative, implementation-ready spec. This skill owns the canonical f
 
 ## Research
 
-Inspect relevant code, tests, project guidance, similar features, and—when useful—history. Identify contracts, generated/registration files, integration points, failure modes, and project-specific gates before drafting.
+Before drafting, identify contracts, generated/registration files, integration points, failure modes, and project-specific gates.
 
 ## Canonical format
 
@@ -91,10 +91,9 @@ Inspect relevant code, tests, project guidance, similar features, and—when use
 
 ## Quality rules
 
-- Write breadcrumbs, not implementation code; say what and why, not step-by-step how. Keep execution flows to important boundaries, not helper functions.
-- Keep acceptance criteria objective and one canonical proof boundary per behavior.
+- Write breadcrumbs, not implementation code. Keep execution flows to important boundaries.
+- One canonical proof boundary per behavior.
 - Preserve project-specific gates and required UI verification in `Verification`.
-- Flag dependencies, migrations, architecture shifts, rollout, permissions, data integrity, concurrency, and failure handling when relevant.
 - Require user approval for new external dependencies.
 - Confirm every path in Relevant Files and write boundaries exists and is tracked (`git ls-files`, `git check-ignore`). Generated or ignored artifacts get a regeneration step, not an owner.
 - Back every claim about current behavior ("X is ungated today", "Y always has a link") with the code that shows it.

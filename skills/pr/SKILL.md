@@ -5,9 +5,7 @@ description: Generate a structured PR body that encodes engineering judgment, th
 
 # Create Pull Request
 
-Generate a PR body that encodes the *why*, not just the *what*. Reviewers and future readers should understand intent, constraints, and trade-offs without archaeology.
-
-> **Why this exists.** The diff answers "what changed." The PR body should answer "what did we mean, what constraints shaped this, and how do we know it's correct?" In the agent era, where code is cheap and judgment is scarce, the PR body becomes the primary artifact that encodes engineering judgment for review, onboarding, and future-you.
+Generate a PR body that encodes the *why*, constraints, and verification, not just the *what*.
 
 **Input:** $ARGUMENTS — optional. Can be:
 - **A spec file path** (e.g., `specs/2026-04-07-webhook-reliability.md`)
@@ -49,13 +47,11 @@ Read the spec end to end. Treat it as intent and provenance, not the source of t
 
 The PR body must describe the work actually present in the diff. Do not claim unfinished spec tasks are complete. If the implementation intentionally diverged from the spec, make that clear in the relevant section or the context manifest.
 
-Note: specs from `/spec` (issue mode) may use slightly different section names (e.g., `Scope: In/Out` instead of `Non-Goals`). Adapt to whatever structure the spec uses — the principles are the same.
-
 Skip to Step 3.
 
 ## Step 2b: No-spec mode
 
-If there's no spec (hotfix, small change, `/cpr`, etc.), infer the PR body from the branch name, commits, and diff. Do not block automated finish-and-PR flows by asking discovery questions.
+If there's no spec (hotfix, small change, or automated finish flow), infer the PR body from the branch name, commits, and diff. Do not block automated finish-and-PR flows by asking discovery questions.
 
 Ask the user 3-5 focused questions only when essential information cannot be inferred and the user did not ask for an automated PR creation flow:
 
@@ -69,22 +65,12 @@ Use answers when provided; otherwise right-size the body from the available evid
 
 ## Step 3: Read git history
 
-Get the commits and changed files on this branch, then inspect enough of the actual diff to understand behavior:
+Inspect the commits and diff against the merge-base with the default branch enough to understand behavior.
 
-```bash
-DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null || git remote show origin | sed -n '/HEAD branch/s/.*: //p' || echo main)
-BASE=$(git merge-base HEAD "origin/$DEFAULT_BRANCH")
-git log "$BASE"..HEAD --pretty=format:"%h %s"
-git diff "$BASE"...HEAD --stat
-git diff "$BASE"...HEAD --name-only
-git diff "$BASE"...HEAD
-```
-
-This is the source of truth for the "What Changed" walkthrough and for keeping the PR body up to date.
 
 ## Step 4: Generate the PR body
 
-Use this three-layer format. The structure mirrors the blog post insight: executive intent (30s), reviewer guidance (3-7 min), provenance (collapsed, only if needed).
+Use this three-layer format: intent, reviewer guidance, collapsed provenance.
 
 ```markdown
 ## Goal
@@ -137,14 +123,12 @@ Use this three-layer format. The structure mirrors the blog post insight: execut
 
 Automatically flag changes to sensitive areas:
 
-- **Authentication / authorization** — login, sessions, permissions, role checks
-- **Payment / billing** — Stripe, subscriptions, pricing logic
-- **Database migrations** — anything in `migrations/` or `manual-migrations/`
-- **Database schemas** — `schema.ts` or schema files
-- **Public API endpoints** — tRPC routers, REST handlers, webhook handlers
-- **Security-sensitive paths** — webhooks, file uploads, user input validation, signed URLs
-- **Notifications / emails** — `services/notifications`, email templates
-- **User data deletion or export** — GDPR-adjacent paths
+- Authentication / authorization
+- Payments / billing
+- Database migrations and schemas
+- Public API endpoints, webhooks, file uploads, input validation, signed URLs
+- Notifications / emails
+- User data deletion or export
 
 If the diff touches any of these, surface them explicitly so reviewers know to look closely.
 
@@ -185,12 +169,7 @@ The PR title should be concise and conventional. If a spec exists, use the spec'
 
 ## Rules
 
-1. **Use the diff as source of truth** — the PR body must match the actual branch contents.
-2. **Use the spec as context when one exists** — reference it for intent, decisions, and constraints, but don't claim spec work shipped unless the diff shows it.
-3. **Preserve the "why".** Decisions & Trade-offs are the most valuable content for reviewers.
-4. **No code blocks in walkthrough** — file references and short prose only.
-5. **Right-size.** Small PRs don't need every section. Drop empty ones.
-6. **Auto-detect, don't ask** — only fall back to questions when detection genuinely fails and this is not an automated finish-and-PR flow.
-7. **Create/update without approval** — don't ask for confirmation after generating the PR body. Only pause for missing required information or unsafe preflight failures.
-8. **Avoid duplicate PRs** — update an existing PR for the branch instead of creating another one.
-9. **Never push to the default branch.** This skill creates PRs against the repo default branch, never merges.
+1. The diff is the source of truth: don't claim spec work shipped unless the diff shows it.
+2. No code blocks in the walkthrough; file references and short prose only.
+3. Auto-detect, don't ask, except when detection genuinely fails and this is not an automated flow.
+4. Never push to the default branch; this skill opens PRs, never merges.

@@ -1,6 +1,6 @@
 ---
 name: youtube-video-analysis
-description: Analyze YouTube videos from YouTube-generated auto captions using yt-dlp. Use when asked to grab or analyze a YouTube transcript, decide whether a long video is worth watching, extract key claims or action items, identify novel information versus likely-known material, summarize a video, or chat with Claude about a YouTube video. Prefer auto captions and do not use creator/user-provided subtitle tracks unless the user explicitly asks.
+description: Analyze YouTube videos from YouTube-generated auto captions using yt-dlp. Use when asked to grab or analyze a YouTube transcript, decide whether a long video is worth watching, extract key claims or action items, identify novel information versus likely-known material, summarize a video, or discuss a video. Prefer auto captions and do not use creator/user-provided subtitle tracks unless the user explicitly asks.
 ---
 
 # YouTube Video Analysis
@@ -29,39 +29,13 @@ The script writes the raw VTT and cleaned TXT to a new temp directory by default
 
 3. Build a discovery outline before answering. Sweep the whole transcript, chunking by line ranges for long videos. Do not answer from only the intro, outro, or the first few high-level themes.
 
-4. While outlining, capture both topics and probe-worthy hooks:
-   - surprising, counterintuitive, or myth-busting claims
-   - concrete details such as numbers, named concepts, steps, timelines, examples, comparisons, and measured outcomes
-   - claims that depend on context, conditions, assumptions, or definitions
-   - limitations, caveats, unresolved questions, and places where evidence or explanation is thin
-   - practical tests, decision rules, or behavior changes the user could apply
-   - brief but material mentions that a user would not know to ask about from a generic summary
-   - places where the language is hype-y, underspecified, exaggerated, or weaker than the headline implies
+4. While outlining, capture topics plus probe-worthy hooks: surprising claims, concrete numbers and examples, caveats and thin evidence, hype weaker than the headline implies, and brief material mentions a generic summary would miss.
 
 5. Produce a usefulness-focused analysis, not just a generic summary. Preserve the transcript's uncertainty language and avoid upgrading tentative claims into firm conclusions.
 
 ## Default analysis shape
 
-Adapt to the user's request, but for broad requests like "key takeaways," "is this worth watching," or "summarize this," include a compact map before compressing:
-
-- `Topic map:` 8-15 bullets covering the full video in order; include line ranges or timestamps when useful. Include minor but material topics, not only the central thesis.
-- `Probe-worthy takeaways:` The claims, caveats, numbers, or side topics most worth digging into, with a short why-it-matters phrase.
-- `Bottom line:` Is this worth watching for this user? Why or why not?
-- `Core thesis:` The main argument in 1-3 sentences.
-- `Important points:` The highest-signal claims, methods, frameworks, or recommendations.
-- `Novelty check:` What seems non-obvious versus likely familiar/common knowledge.
-- `Actionable takeaways:` Concrete things the user could do.
-- `Skip/watch guide:` Sections or topics worth watching, skimming, or skipping when identifiable.
-- `Questions to discuss:` Follow-up angles the user might reasonably want to probe, especially ones not obvious from the headline.
-
-## What "interesting" means
-
-Treat a takeaway as interesting when it is likely to change what the user would ask next. Prioritize:
-- hidden subtopics that are easy to miss in a compressed summary
-- claims with specific practical implications, consequences, or risks
-- distinctions that materially change the meaning of a claim, such as context, assumptions, definitions, scope, or timescale
-- claims where the support is strong enough to matter or weak enough that the caveat matters
-- tensions between the title, speaker claim, provided evidence, examples, and practical recommendation
+Adapt to the request. For broad requests ("is this worth watching", "summarize"), give roughly: a topic map of the full video in order (with timestamps or line ranges), a bottom line on whether it is worth watching, the core thesis and highest-signal points, what is novel versus familiar, actionable takeaways, and probe-worthy follow-ups.
 
 ## Follow-up questions and criticism
 

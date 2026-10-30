@@ -1,21 +1,15 @@
 ---
 name: performance
-description: Investigate and improve measured latency, throughput, CPU, memory, rendering, startup, query, or resource-usage problems. Use for profiling, performance regressions, optimization, benchmarking, and iterative metric improvement.
+description: Measure and improve a specific latency, throughput, CPU, memory, startup, or query-time problem. Use for profiling, performance regressions, and benchmark-driven optimization, not general code cleanup.
 ---
 
 # Performance
 
-Optimize against measurements, not intuition.
+- Name the metric, representative workload, environment, and correctness constraints. Load `verification` when runtime setup matters.
+- Capture a baseline on the real workload with enough samples to expose noise; record units and conditions.
+- Profile (trace, query plan, metrics) before editing, and change what the profile supports.
+- One coherent change per iteration, rerun the same workload, keep only meaningful wins, and revert neutral or negative attempts.
+- Check correctness and regressions in memory, responsiveness, and maintainability.
+- Never claim a win from a different workload or a benchmark-only shortcut.
 
-## Workflow
-
-1. **Define the target.** Name the metric, representative workload, environment, desired outcome, and correctness constraints.
-2. **Establish a valid run.** Load the `verification` skill when runtime setup matters. Confirm the measured artifact and data are representative.
-3. **Capture a baseline.** Use repeatable commands and enough samples to expose noise. Record units and relevant conditions.
-4. **Profile before editing.** Use the platform's trace, profiler, query plan, metrics, or instrumentation to locate where time or resources go.
-5. **Rank hypotheses.** Prefer the change most strongly supported by the profile.
-6. **Run controlled iterations.** Make one coherent performance change, repeat the same workload, and compare with the baseline. Keep only meaningful wins; revert neutral or negative attempts.
-7. **Check tradeoffs.** Verify correctness and watch for regressions in memory, responsiveness, throughput, resource use, and maintainability.
-8. **Confirm the result.** Re-run the final benchmark and matching user-facing path where applicable.
-
-Report before and after values, sample conditions, variance, profile evidence, retained changes, rejected attempts, and remaining bottlenecks. Do not claim a win from a different workload or benchmark-only shortcut.
+Report before/after values, variance, profile evidence, retained and rejected changes, and remaining bottlenecks.

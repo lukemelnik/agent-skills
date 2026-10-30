@@ -1,88 +1,38 @@
 ---
 name: agent-setup
-description: "Set up a repository for AI coding agents. Use when asked to set up a repo for agents, initialize agent config, or prepare a project for Claude/Pi."
+description: "Set up a repository for AI coding agents (AGENTS.md, project skills directory, compatibility links)."
 ---
 
 # Agent Setup
 
-Initialize a repository with the standard agent skill and config structure.
-
 ## What to Create
 
-### 1. `.agents/skills/` directory
+1. `mkdir -p .agents/skills` — canonical location for project-local skills. Create it empty; ask what skills the user wants rather than creating any.
+2. `AGENTS.md` — canonical agent instructions. Ask whether to include project context (tech stack, conventions, key commands).
 
-This is the canonical location for project-local skills. Create it even if empty — it's the place to add project-specific skills later.
+   ```markdown
+   # AGENTS.md
 
-```bash
-mkdir -p .agents/skills
-```
+   This file provides guidance to AI coding agents working in this repository.
 
-### 2. `.claude/skills` symlink
+   Project-specific skills are in the `.agents/skills/` directory.
+   ```
 
-Claude Code reads skills from `.claude/skills/`. Symlink it to the canonical location so both Claude and Pi see the same skills.
+3. Compatibility links. Some agent tools read other paths; add compatibility symlinks only for the tools this project's users actually use (ask if unknown), e.g. `CLAUDE.md -> AGENTS.md` and `.claude/skills -> ../.agents/skills`, and gitignore any per-user local settings files those tools create.
 
-```bash
-mkdir -p .claude
-ln -sf ../.agents/skills .claude/skills
-```
+   ```bash
+   ln -sf AGENTS.md CLAUDE.md
+   mkdir -p .claude && ln -sf ../.agents/skills .claude/skills
+   ```
 
-### 3. `AGENTS.md`
+Commit `AGENTS.md`, `.agents/skills/`, and the symlinks. Do not create per-user settings files.
 
-The main agent instructions file. Create it with a header and pointer to skills. Ask the user if they want to include any project-specific context (tech stack, conventions, key commands).
+## Existing files
 
-```markdown
-# AGENTS.md
-
-This file provides guidance to AI coding agents working in this repository.
-
-Project-specific skills are in the `.agents/skills/` directory.
-```
-
-### 4. `CLAUDE.md` symlink
-
-Claude Code reads `CLAUDE.md`. Symlink it so there's one source of truth.
-
-```bash
-ln -sf AGENTS.md CLAUDE.md
-```
-
-### 5. `.gitignore` entries
-
-Add these if not already present:
-
-```
-.claude/settings.local.json
-```
-
-The `settings.local.json` file contains user-specific permissions and shouldn't be committed. The skills symlink and `AGENTS.md` **should** be committed.
-
-## What NOT to Do
-
-- Don't create skills automatically — just the empty directory. Ask the user what skills they need.
-- Don't create `.claude/settings.local.json` — that's user-specific and gets created by Claude Code itself.
-- Don't overwrite an existing `AGENTS.md` or `CLAUDE.md` without asking. If `CLAUDE.md` exists as a regular file, offer to migrate its contents into `AGENTS.md` and replace it with a symlink.
+Never overwrite an existing `AGENTS.md` or tool-specific instructions file without asking. If one exists as a regular file (e.g. `CLAUDE.md`), offer to move its contents into `AGENTS.md` and replace it with a symlink; confirm nothing was lost.
 
 ## Verification
 
-After setup, confirm the structure:
-
 ```bash
-ls -la CLAUDE.md AGENTS.md .claude/skills .agents/skills/
+ls -la AGENTS.md .agents/skills/ <any symlinks created>
 ```
-
-Expected output:
-```
-CLAUDE.md -> AGENTS.md
-AGENTS.md (regular file)
-.claude/skills -> ../.agents/skills
-.agents/skills/ (directory)
-```
-
-## Migration
-
-If the repo already has a `CLAUDE.md` with content:
-
-1. Copy its contents into a new `AGENTS.md`
-2. Remove the old `CLAUDE.md`
-3. Create the symlink: `ln -sf AGENTS.md CLAUDE.md`
-4. Confirm with the user that nothing was lost

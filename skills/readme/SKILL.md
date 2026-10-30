@@ -52,47 +52,9 @@ Rules:
 - Don't list every feature — list the ones that matter most
 - Don't start every bullet with "Supports" or "Provides"
 
-### 4. Install
+### 4. Remaining sections
 
-Shortest path to running the tool. Prefer one command. Put alternative install methods in a collapsible details block or secondary code block if needed.
-
-### 5. Quick Start
-
-Sequential commands showing the core workflow end-to-end. Use comments to explain what each command does. This should take someone from zero to productive.
-
-### 6. Configuration (if applicable)
-
-Start with the minimal config, then show the full config. Use a reference table for fields:
-
-```markdown
-| Field | Default | Description |
-|-------|---------|-------------|
-```
-
-### 7. Commands / API Reference
-
-One subsection per command or endpoint. Each gets:
-- One-line description
-- Usage example
-- Flags table (if more than 2 flags)
-
-Don't over-document obvious things. If the `--help` output is clear enough, keep the README brief and let the CLI speak.
-
-### 8. How It Works (if non-obvious)
-
-Explain the interesting internals — algorithms, resolution order, architecture decisions. Only include this if users need to understand the mechanics to use the tool effectively.
-
-### 9. Examples
-
-Real-world config snippets or usage patterns. Label each example with the use case it covers. 3-4 examples is the sweet spot.
-
-### 10. Requirements
-
-Bulleted list. Put optional dependencies last with "(optional — used for X)" suffix.
-
-### 11. License
-
-One word or one line. MIT, Apache-2.0, etc.
+Include only what the project needs, in roughly this order: Install (shortest path, one command), Quick Start (end-to-end workflow with comments), Configuration (minimal then full; field table), Commands/API (one-line description plus example per command; let clear `--help` speak), How It Works (only if non-obvious), Examples (3-4, each labeled by use case), Requirements (optional deps last), License (one line).
 
 ---
 
@@ -131,7 +93,7 @@ One word or one line. MIT, Apache-2.0, etc.
 ## Process
 
 1. **Read the codebase first.** Understand what the project does, its commands/API, config format, and any interesting internals. Don't guess.
-2. **Check for existing docs.** Look for CLAUDE.md, existing README, doc comments, `--help` output. Build on what exists.
+2. **Check for existing docs.** Look for project agent instructions (AGENTS.md or equivalent), existing README, doc comments, `--help` output. Build on what exists.
 3. **Draft the README** following the structure above. Include only sections the project needs.
 4. **Review for length.** If the README is over 400 lines, look for sections to trim or move to separate doc files. A README should be comprehensive but not exhaustive.
 5. **Check all code examples** are accurate — commands, flags, config keys, output formats should match the actual implementation.

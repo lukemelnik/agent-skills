@@ -33,21 +33,19 @@ Do not stack a new dependency wave on an unverified contract barrier. Tasks that
 
 ### 2. Dispatch implementation
 
-For two or more safe ready tasks, call `implementation_wave` once with the already dependency-ready wave. For each task provide its ID, description, goal, repository-relative write boundaries, context, proof/stop conditions when useful, and verification mode `deferred`.
+For two or more safe ready tasks, launch one bounded Code agent per task concurrently. Each gets the task ID, goal, repository-relative write boundary, context, proof/stop conditions, and verification mode `deferred`. For one task, use one Code agent or implement directly.
 
 For user-facing UI tasks, render the spec's prototype to an image first and give each worker the image path, the project design contract (for example `DESIGN.md`), and the layout rules in words; point workers at the prototype, not at another platform's implementation, as the visual source.
 
-If the tool is unavailable, launch equivalent background Code agents in the same turn. For one task, use one bounded Code agent or implement directly.
-
-Workers own production code and tests only. With deferred verification they do not run gates. They do not update the spec/issue, shared contracts outside their boundary, commits, PRs, or product decisions. Do not duplicate extension mechanics in prompts.
+Workers own production code and tests only. With deferred verification they do not run gates. They do not update the spec/issue, shared contracts outside their boundary, commits, PRs, or product decisions.
 
 ### 3. Fan in and inspect adversarially
 
 Wait for every writer in the wave to stop. Then the parent:
-- inspect actual aggregate status and diff, not worker summaries
-- verify boundaries, contracts, tests, wiring assumptions, error paths, and done conditions
-- look for cross-task contradictions, missing registration, generated drift, unsafe assertions, and hidden scope changes
-- have the declared integration owner—or parent—perform shared wiring and generators after writers stop
+- inspects actual aggregate status and diff, not worker summaries
+- verifies boundaries, contracts, tests, wiring assumptions, error paths, and done conditions
+- looks for cross-task contradictions, missing registration, generated drift, unsafe assertions, and hidden scope changes
+- has the declared integration owner (or the parent) perform shared wiring and generators after writers stop
 
 Update task/issue checkboxes only when the aggregate diff makes them true. Record material approved changes; keep product and scope decisions with the parent/user.
 
@@ -62,7 +60,7 @@ Advance dependents only after their contract barrier is verified. Repeat until n
 ## Gates and commits
 
 - Replace blanket per-sprint full gates with targeted task, contract, and wave proof.
-- Run the repository's complete required gates once after all waves and integration are green. Preserve project-specific requirements, including `pnpm check` before commits and required web/iOS UI verification.
+- Run the repository's complete required gates once after all waves and integration are green. Preserve project-specific requirements, including required pre-commit gates and web/iOS UI verification.
 - Commit only at meaningful integrated green boundaries, never per worker. Workers never stage files; the parent stages explicit paths for each commit and checks `git diff --cached --stat` before committing. Follow the repository commit skill/policy.
 - After each commit, back up the feature branch with a normal `git push -u origin <branch>`. Do not rebase until Finish, so backup pushes never need force.
 - If final gates fail, use the same fresh verification, ownership clustering, repair, and diagnosis rules; rerun failed checks before the final suite as needed.

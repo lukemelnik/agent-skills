@@ -1,6 +1,6 @@
 ---
 name: review
-description: Review an explicitly selected GitHub PR independently of the current checkout, or review the current branch, with parallel, role-specialized read-only subagents. Use for PR review, full branch review, focused review aspects, or the final review launched after implementation.
+description: Review an explicitly selected GitHub PR independently of the current checkout, or review the current branch, with parallel, role-specialized read-only subagents. Use for PR review, full branch review, focused review aspects.
 ---
 
 # Review
@@ -31,7 +31,7 @@ Resolve the PR in the current repository, or use the repository identified by it
 gh pr view "$PR_NUMBER" --json number,title,body,url,headRefName,baseRefName,headRefOid,baseRefOid,closingIssuesReferences
 ```
 
-Freeze `PR_HEAD_SHA` and `PR_BASE_SHA` from that response. Fetch those commits into the repository's object database without checking out either branch:
+Freeze `PR_HEAD_SHA` and `PR_BASE_SHA` from that response and use these immutable SHAs throughout; never substitute local `HEAD` or a moving remote ref. Fetch those commits into the repository's object database without checking out either branch:
 
 ```bash
 git fetch --no-tags origin "$PR_HEAD_SHA" "$PR_BASE_SHA"
@@ -44,8 +44,8 @@ RANGE="$BASE..$PR_HEAD_SHA"
 - Compare against the PR's actual target branch, which may differ from the default branch. The merge-base range represents changes introduced by the PR.
 - Fetch from the PR's base repository. If its URL identifies another repository, resolve a suitable local repository or use a temporary bare repository; do not compare unrelated histories or create a working checkout.
 - If fetching by SHA is unavailable, fetch the PR head and base branch into dedicated review refs, then verify they contain the frozen commits. Do not overwrite local branches. If a concurrent update prevents obtaining the snapshot, resolve fresh PR metadata and retry once; report the limitation if it persists.
-- Being on `main`, detached HEAD, another branch, or a dirty worktree does not block this mode. Reviewers must use `git diff "$RANGE"` and `git show "$PR_HEAD_SHA:path"` for source, tests, and applicable repository instructions; checkout files may belong to another revision.
-- Use immutable SHAs throughout the review. Do not replace the selected head with local `HEAD` or a moving remote ref. State which snapshot was reviewed.
+- Being on `main`, detached HEAD, another branch, or a dirty worktree does not block this mode. Reviewers must use `git diff "$RANGE"` and `git show "$PR_HEAD_SHA:path"` for source, tests, and instructions.
+- State which snapshot was reviewed.
 - If the selected range is empty, report that there is no PR diff to review.
 
 ### Current branch or commit range
@@ -112,7 +112,7 @@ Default `full` roles:
 
 For a role filter, launch only that role. `spec` requires a concrete spec and launches only `ReviewSpec`.
 
-Use the available specialized-agent API with fresh context (`fork_turns: "none"` in Codex, or `inherit_context: false` where supported). Launch selected roles concurrently up to the available agent limit, starting remaining roles as slots become free. These reviewers are read-only and can share the object database; isolation must not switch branches or create working checkouts. Each prompt should contain only the shared scope string and, for `ReviewSpec`, the exact spec reference. Do not repeat category checklists: the selected custom agent definition owns its focused prompt.
+Launch specialized subagents with fresh context (no inherited conversation history). Launch selected roles concurrently up to the available agent limit, starting remaining roles as slots become free. These reviewers are read-only and can share the object database; isolation must not switch branches or create working checkouts. Each prompt should contain only the shared scope string and, for `ReviewSpec`, the exact spec reference. Do not repeat category checklists: the selected custom agent definition owns its focused prompt.
 
 If a configured role is unavailable through the runtime, use a generic read-only subagent with that role's configured prompt as its contract. If the contract is also unavailable, report the role as blocked.
 
@@ -154,15 +154,6 @@ For spec review, include the `ReviewSpec` compliance statuses without re-evaluat
 
 Do not edit code, commit, push, or create review artifacts.
 
-Choose the presentation from the session context:
-
-- In the Codex desktop app, use concise GitHub-flavored Markdown and emit one
-  `::code-comment` directive per actionable, line-specific finding. Keep the
-  summary self-contained because inline comments supplement rather than replace it.
-  For a fetched PR snapshot, link findings to verified lines in the PR diff rather
-  than unrelated files in the current checkout.
-- Otherwise, use the terminal-friendly boxed finding format below.
-
 Use:
 
 ```md
@@ -171,10 +162,10 @@ Review result: <no findings | N findings>
 Scope: <selected branch or PR, immutable range, and target branch>
 
 Fix
-<findings in the environment-appropriate format, or None>
+<findings in the format below, or None>
 
 Issue candidates
-<findings in the environment-appropriate format, or None>
+<findings in the format below, or None>
 
 Dropped
 - <N findings below the fix threshold>
@@ -192,21 +183,7 @@ Gates
 - Not run — review is read-only; cite existing PR claims only
 ```
 
-Codex desktop finding:
-
-```md
-### R1 · Fix · correctness · L4 × I7 = 28 · confidence 95
-
-[`apps/path/file.ts:123`](/absolute/path/apps/path/file.ts:123)
-
-- **Trigger:** Concrete realistic input, action, or state.
-- **Problem:** Specific introduced failure.
-- **Context:** Reachable flow, state/invariant, and downstream dependency.
-- **Impact:** Concrete user, data, security, or operational consequence.
-- **Fix:** Short concrete correction.
-```
-
-Terminal finding block:
+Finding format:
 
 ```text
 ╭────────────────────────────────────────────────────────────────────────────╮
@@ -226,4 +203,4 @@ Terminal finding block:
 ╰─────────┴──────────────────────────────────────────────────────────────────╯
 ```
 
-Keep boxed finding lines suitable for terminal display. Add an Evidence field or row only when it prevents ambiguity. If there are no findings, state that plainly and identify the reviewed scope and any blocked role.
+Add an Evidence field or row only when it prevents ambiguity. If there are no findings, state that plainly and identify the reviewed scope and any blocked role.

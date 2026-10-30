@@ -5,123 +5,34 @@ description: Check GitHub Actions for failures, create a fix plan, and resolve a
 
 # Check CI
 
-Investigate GitHub Actions failures, create a plan to fix them, and execute after user confirmation.
+Investigate failing GitHub Actions runs (`gh run list --status failure`, `gh run view <id> --log-failed`), present a fix plan, and execute only after user confirmation.
 
-## Step 1: Get CI Status
+## Plan (stop here for confirmation)
 
-Check recent workflow runs:
-```bash
-gh run list --limit 10
-```
-
-Find the failing run:
-```bash
-gh run list --status failure --limit 5
-```
-
-## Step 2: Get Failure Details
-
-View the failed run logs:
-```bash
-gh run view <run-id> --log-failed
-```
-
-Or for more detail:
-```bash
-gh run view <run-id> --log
-```
-
-## Step 3: Analyze Failures
-
-Identify the type of failure:
-
-### Common CI Failures
-
-**Type Errors**
-- TypeScript compilation failures
-- Missing type definitions
-
-**Lint Errors**
-- ESLint/Biome violations
-- Formatting issues
-
-**Test Failures**
-- Unit test assertions failing
-- Integration test timeouts
-
-**Build Failures**
-- Missing dependencies
-- Import errors
-- Bundle size issues
-
-**Environment Issues**
-- Missing env variables
-- Database connection failures
-- Service unavailable
-
-## Step 4: Create Fix Plan
-
-**⚠️ STOP HERE - Do not proceed without user confirmation**
-
-Present a clear plan:
+Do not change anything before the user approves:
 
 ```
 ## CI Failure Analysis
-
 **Failed Job:** [job name]
-**Error Type:** [type/lint/test/build/env]
-
 ### Root Cause
-[Explain what's causing the failure]
-
+[what is causing the failure]
 ### Proposed Fix
-1. [First step]
-2. [Second step]
-3. [Third step]
-
+1. [step]
 ### Files to Modify
-- `path/to/file.ts` - [what change]
-- `path/to/other.ts` - [what change]
-
-### Risk Assessment
+- `path` - [change]
+### Risk
 - [Low/Medium/High] - [why]
-
 ### Verification
-After fix, will run:
-- `pnpm check`
-- `pnpm test` (if test failure)
+- [the repository's required local gates, plus targeted tests]
 - Push and verify CI passes
 
 **Proceed with this fix plan?**
 ```
 
-## Step 5: Execute Fix (After Confirmation)
+## Execute (after confirmation)
 
-Only after user confirms:
+1. Make the planned changes and run the local verification from the plan, using the repository's package manager and gates.
+2. Commit with a message referencing the CI fix, push, and monitor with `gh run watch`.
+3. If CI still fails, analyze the new errors, present a new plan, and confirm again.
 
-1. Make the planned changes
-2. Run local verification:
-   ```bash
-   pnpm check
-   pnpm test  # if applicable
-   ```
-3. Commit with clear message referencing CI fix
-4. Push changes
-5. Monitor CI:
-   ```bash
-   gh run watch
-   ```
-
-## Step 6: Report Results
-
-After CI completes:
-- ✅ If passing: Report success
-- ❌ If still failing: Analyze new errors, create new plan, confirm again
-
-## Important Rules
-
-1. **Always create a plan first** - Never jump straight to fixing
-2. **Wait for confirmation** - User must approve before changes
-3. **Don't hide problems** - If the fix seems wrong, say so
-4. **One issue at a time** - Fix the first failure, then reassess
-5. **Document what you learn** - Note any patterns for future reference
+Fix one failure at a time, then reassess. If a proposed fix seems wrong or only masks the problem, say so.

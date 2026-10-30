@@ -3,19 +3,17 @@ name: commit
 description: "Read this skill before making git commits"
 ---
 
-Create a git commit for the current changes using a concise Conventional Commits-style subject.
+Commit the current changes with a concise Conventional Commits-style subject.
 
 ## Format
 
 `<type>(<scope>): <summary>`
 
-- `type` REQUIRED. Use `feat` for new features, `fix` for bug fixes. Other common types: `docs`, `refactor`, `chore`, `test`, `perf`.
-- `scope` OPTIONAL. Short noun in parentheses for the affected area (e.g., `api`, `parser`, `ui`).
-- `summary` REQUIRED. Short, imperative, <= 72 chars, no trailing period.
+- `scope` optional; `summary` imperative, <= 72 chars, no trailing period.
 
 ## Notes
 
-- Body is OPTIONAL. If needed, add a blank line after the subject and write short paragraphs.
+- Body optional: short paragraphs after a blank line.
 - Do NOT include breaking-change markers or footers.
 - Do NOT add sign-offs (no `Signed-off-by`).
 - Only commit; do NOT push.
@@ -27,9 +25,6 @@ Create a git commit for the current changes using a concise Conventional Commits
 
 ## Steps
 
-1. Infer from the prompt if the user provided specific file paths/globs and/or additional instructions.
-2. Review `git status` and `git diff` to understand the current changes (limit to argument-specified files if provided).
-3. (Optional) Run `git log -n 50 --pretty=format:%s` to see commonly used scopes.
-4. If there are ambiguous extra files, ask the user for clarification before committing.
-5. Stage only the intended files (all changes if no files specified).
-6. Run `git commit -m "<subject>"` (and `-m "<body>"` if needed).
+1. Review `git status` and `git diff` (limited to argument-specified files if provided).
+2. If there are ambiguous extra files, ask the user before committing.
+3. Stage only the intended files (all changes if none specified) and commit.

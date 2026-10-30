@@ -21,29 +21,12 @@ If delegation is unavailable, apply the same rubric and disclose that review was
 
 ## Rubric
 
-### Canonical shape
+### Canonical shape and task graph
 
-Check applicable Goal, Non-Goals, Context, Constraints / Invariants, Decisions & Trade-offs, Ruled Out, Prior Art, Architecture, Relevant Files, Tasks, Risks & Rollback, and Verification. Missing optional sections are acceptable only when irrelevant.
-
-### Task graph
-
-Reject implementation readiness when any task lacks:
-- stable ID and explicit `Depends on`
-- repository-relative write boundary
-- produced/consumed contracts or shared integration points
-- ownership declaration for shared/generated/registration work
-- risk, primary proof boundary, runnable required proof, and verifiable done conditions
-
-Also reject:
+Check the draft against the canonical format and task graph rules in `../spec/SKILL.md`. Missing optional sections are acceptable only when irrelevant. Reject implementation readiness when any task lacks a required field or violates a graph rule there, and also reject:
 - missing or cyclic dependencies
-- dependency-ready tasks with overlapping write boundaries
 - unstable or implicit contracts consumed by parallel work
-- shared/generated/registration files without exactly one owner
 - missing final integration or wiring ownership
-- proof that cannot run until an undeclared successor
-- tasks that cannot reach a coherent boundary independently and were not combined or declared as one serial lane
-
-Sprints may group human milestones, but textual or sprint order must not override dependency readiness. Do not require redundant parallel-task lists.
 
 ### Proof and gates
 
@@ -51,7 +34,7 @@ Ensure proof matches risk and tests observable behavior at the stated boundary. 
 
 ### Scope, assumptions, and risk
 
-Find contradictions, scope creep, unsupported assumptions, missing product decisions, ambiguous layer ownership, undeclared dependencies or architecture shifts, and weak rollout/rollback. Probe auth, privacy, security, data integrity, transactions, idempotency, retries, concurrency, performance, migration, observability, and partial failure when relevant.
+Find contradictions, scope creep, unsupported assumptions, missing product decisions, ambiguous layer ownership, undeclared dependencies or architecture shifts, and weak rollout/rollback. Probe risks that apply (security, data integrity, concurrency, migration, partial failure).
 
 ## Output
 
