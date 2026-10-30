@@ -125,7 +125,6 @@ For native UI, use native previews/fixtures and Dynamic Type rather than fabrica
 - Exercise keyboard/touch paths where actions move, clip, or only appear on hover.
 - Compare normal and adversarial states; capture screenshots when authorized tooling is available.
 
-Look for squashed fixed-size media, text columns pushing actions offscreen, clipped glyphs, indistinguishable truncated identifiers, inaccessible full values, and missing fallbacks.
 Investigate causes before proposing fixes: flex/grid minimum sizes, shrink behavior, fixed heights, formatting, or incorrect escaping.
 Choose wrap, clamp, or truncation per field; critical values and comparable amounts must remain usable in full.
 Do not treat a tooltip alone as a universal touch/keyboard solution.
@@ -137,7 +136,6 @@ Separate visually observed findings from source-based inference; list states and
 Call out decisions needing approval, plus cases that held up and accepted-model exclusions.
 When fixes are requested, use existing tokens/components and retest normal, mixed, empty, one, and large scenarios.
 Prefer retaining authorized adversarial fixtures as regression coverage; keep harness controls dev-only.
-A build passing is not evidence that overflow, readability, or interaction is fixed.
 
 ## Attribution
 

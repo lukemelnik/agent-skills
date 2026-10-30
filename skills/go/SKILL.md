@@ -1,6 +1,6 @@
 ---
 name: go
-description: Go/Golang software development for robust, maintainable code. Covers idiomatic architecture, package boundaries, interfaces, errors, context/concurrency, testing, HTTP services, database/sql, standard-library pitfalls, modern Go version choices, and review checklists. Use when writing, reviewing, refactoring, debugging, or designing Go code, modules, CLIs, services, tests, goroutines, channels, or Go APIs.
+description: Go/Golang software development for robust, maintainable code. Covers idiomatic architecture, package boundaries, interfaces, errors, context/concurrency, testing, HTTP services, database/sql, standard-library pitfalls, and modern Go version choices. Use when writing, reviewing, refactoring, debugging, or designing Go code, modules, CLIs, services, tests, goroutines, channels, or Go APIs.
 ---
 
 # Go Development
@@ -24,28 +24,24 @@ Load the narrowest reference for the task:
 - `references/cli.md` — Go command structure, flags, stdin/stdout/stderr, cancellation, CLI tests.
 - `references/data-types-stdlib.md` — slices/maps/strings/time/JSON/resource pitfalls.
 - `references/modern-go.md` — version-gated modern Go features and caveats.
-- `references/review-checklist.md` — fast review pass for Go code quality.
 
 ## Defaults
 
-- Write boring Go: simple control flow, small cohesive packages, explicit dependencies, clear names, and minimal abstraction.
-- Keep the happy path left-aligned; handle errors early and return.
 - Use the standard library first. Add dependencies only when the project already uses them or the user approves.
 - Prefer synchronous APIs. Callers can add goroutines; callers cannot easily remove hidden concurrency.
-- Define interfaces where they are consumed, keep them small, and return concrete types unless a stable public abstraction is intentional.
-- Pass `context.Context` as the first argument for request-scoped or blocking work. Do not store contexts in structs.
-- Treat goroutines as resources: every goroutine needs an obvious lifetime and exit path.
-- Handle errors explicitly. Wrap with context when propagating, but do not expose implementation details accidentally.
-- Minimize exported API surface. Document exported packages, types, funcs, methods, vars, and consts.
-- Use `gofmt`/`goimports`; do not fight Go formatting.
+- Return concrete types unless a stable public abstraction is intentional.
+- Every goroutine needs an obvious lifetime and exit path.
+- Run `go test -race ./...` for concurrent code; run `go vet`, `staticcheck`, or `golangci-lint` only when available or already in the repo workflow.
 
-## Implementation workflow
+## Red flags
 
-1. Identify the target Go version, public API boundary, and existing package conventions.
-2. Design the smallest package/API surface that solves the problem; avoid new `util`, `common`, `types`, or `interfaces` packages.
-3. Implement with explicit dependencies and clear ownership of resources, contexts, goroutines, and errors.
-4. Add or update tests at the right level. Prefer table tests when logic is shared, separate test functions when behavior differs.
-5. Run `gofmt`/`go test ./...`; run `go test -race ./...` for concurrent code. Run `go vet`, `staticcheck`, or `golangci-lint` only when available or already part of the repo workflow.
+- New package named `utils`, `common`, `models`, or `interfaces`.
+- Interface with one implementation and no consumer-defined need.
+- Goroutine started in a constructor with no stop method.
+- `context.Background()` inside request flow.
+- `defer` inside an unbounded loop opening resources.
+- `http.DefaultClient` in production client code.
+- `fmt.Sprintf` building SQL with values.
 
 ## Source priority
 

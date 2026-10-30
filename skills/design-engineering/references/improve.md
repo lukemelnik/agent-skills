@@ -77,5 +77,13 @@ content, reduced motion, keyboard/focus, touch and real-device gestures. For mea
 performance fixes compare equivalent traces. Use slow playback/frame stepping for
 continuity and fresh eyes for feel; report unperformed checks honestly.
 
+## Removing motion safely
+
+- Hidden start states go with the animation: `opacity: 0` initial values, Motion `initial`, reveal classes waiting on an observer, keyframes with `animation-fill-mode: forwards`. Otherwise the element stays invisible.
+- Remove code waiting on motion: `onAnimationEnd`, `transitionend`, `onExitComplete`, duration-sized `setTimeout`. Move `onExitComplete` work to where the component closes.
+- Layout/FLIP animation may mask a jump. If removal exposes a layout shift, keep the animation and report the shift.
+- Focus moved in an animation callback must move immediately. Update tests/selectors that wait on animation classes or durations.
+- Afterwards delete orphaned keyframes, variants, empty `AnimatePresence`, `motion.*` elements with no motion props, unused imports/tokens. Propose, don't perform, removing a now-unused motion dependency.
+
 Source: adapted from [Emil Kowalski's pinned improvement material](https://github.com/emilkowalski/skills/tree/2d228630ba1446365f614a108cb8252f1feda202/skills/improve-animations).
 [License](../LICENSE-emil-kowalski.txt).

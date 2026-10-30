@@ -42,29 +42,7 @@ const routesBad: Record<string, string> = { home: "/" };
 
 ## Indexed access and arrays
 
-Use indexed access to extract related types:
-
-```ts
-type User = Awaited<ReturnType<typeof fetchUsers>>[number];
-type UserId = User["id"];
-```
-
-When `noUncheckedIndexedAccess` is enabled, array lookup returns `T | undefined`. Narrow before use:
-
-```ts
-const first = users[0];
-if (!first) return;
-return first.id;
-```
-
-If the invariant is non-empty, model it explicitly:
-
-```ts
-type NonEmptyArray<T> = [T, ...T[]];
-function head<T>(items: NonEmptyArray<T>): T {
-  return items[0];
-}
-```
+With `noUncheckedIndexedAccess`, array lookup returns `T | undefined`; narrow before use, or model non-empty arrays explicitly (`[T, ...T[]]`).
 
 ## Generics that preserve inference
 

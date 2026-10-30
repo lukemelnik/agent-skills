@@ -12,7 +12,6 @@ Design creates memory here. A safe page can be technically correct and still fai
 - Typography can carry the brand, but do not reach for the same fashionable display faces by reflex.
 - Imagery matters when the category implies it: restaurants, hotels, travel, fashion, photography, products, artists, and communities usually need real imagery or credible generated/illustrated assets.
 - Layout can be asymmetric, editorial, gridded, maximal, minimal, dense, or quiet. The failure is a default centered stack with repeated feature cards.
-- Motion can be more expressive than product UI, but it should support pacing and story, not distract from content.
 
 ## Direction before build
 
@@ -30,7 +29,6 @@ For new or ambiguous brand surfaces, answer these before coding:
 - Choose fonts from the brand voice, not from current AI-design fashion.
 - A single strong family can be better than a weak display/body pairing.
 - Use clear scale contrast for brand moments. Flat type scales read timid.
-- Keep body copy readable: appropriate line length, line-height, and contrast.
 - Reserve uppercase tracking for short labels. Repeating tiny uppercase kickers before every section often reads like scaffolding.
 
 ## Color
@@ -49,11 +47,9 @@ Do not default to purple/blue gradients, neon-on-black, or beige editorial minim
 - Cards are not the default. Use them only when items need comparison, separation, or direct action.
 - One decisive visual idea beats five decorative flourishes.
 
-## Motion and delight
+## Motion
 
-- Page-load or scroll motion can work on brand surfaces, but one well-composed moment is better than constant movement.
-- Keep motion performant, interruptible, and reduced-motion aware.
-- Delight should fit the audience. Do not add playful effects to a serious brand without reason.
+Brand surfaces can be more expressive than product UI; see `design-engineering` for motion craft.
 
 ## Common brand UI failures
 

@@ -33,27 +33,6 @@ CREATE TABLE event (
 
 CREATE TABLE event_2026_01 PARTITION OF event
   FOR VALUES FROM ('2026-01-01') TO ('2026-02-01');
-
-CREATE TABLE event_2026_02 PARTITION OF event
-  FOR VALUES FROM ('2026-02-01') TO ('2026-03-01');
-```
-
-## List Partitioning
-
-Useful for partitioning by region, tenant, or category:
-
-```sql
--- EXAMPLE
-CREATE TABLE order (
-  id BIGINT GENERATED ALWAYS AS IDENTITY,
-  region TEXT NOT NULL,
-  total NUMERIC(10,2),
-  PRIMARY KEY (id, region) -- Partition key MUST be part of PK
-) PARTITION BY LIST (region);
-
-CREATE TABLE order_us PARTITION OF order FOR VALUES IN ('us');
-CREATE TABLE order_eu PARTITION OF order FOR VALUES IN ('eu');
-CREATE TABLE order_default PARTITION OF order DEFAULT;  -- catches unmatched values
 ```
 
 ## Partition Management

@@ -22,26 +22,6 @@ Patterns for building CLIs that work well for both humans and AI agents. Languag
 
 Auto-detect whether a human or a program is consuming output. When stdout is not a TTY, default to JSON.
 
-**Go (cobra):**
-```go
-import "golang.org/x/term"
-
-var isTerminal = func(fd int) bool { return term.IsTerminal(fd) }
-
-func shouldOutputJSON(cmd *cobra.Command) bool {
-    if flag, _ := cmd.Flags().GetBool("json"); flag {
-        return true
-    }
-    return !isTerminal(int(os.Stdout.Fd()))
-}
-```
-
-**Node (commander):**
-```ts
-const shouldOutputJSON = (opts: { json?: boolean }) =>
-  opts.json || !process.stdout.isTTY;
-```
-
 - `--json` flag should still work explicitly for humans who want JSON in their terminal
 - `--pretty` flag for indented JSON (useful for debugging)
 
@@ -50,14 +30,6 @@ const shouldOutputJSON = (opts: { json?: boolean }) =>
 - **stdout**: Only data output (JSON objects, human-formatted results)
 - **stderr**: Status messages, progress indicators, prompts, errors in JSON mode
 - **`--quiet`**: Suppress non-essential stderr messages (for agents that don't want noise)
-
-```go
-// Data to stdout
-fmt.Fprintln(cmd.OutOrStdout(), string(jsonData))
-
-// Messages to stderr
-fmt.Fprintln(cmd.ErrOrStderr(), "Fetching worktrees...")
-```
 
 ### Structured Errors
 
@@ -73,7 +45,6 @@ Fields:
 - `suggestedFix` — optional remediation hint (agents and humans both benefit)
 - `candidates` — optional list of similar matches when input is ambiguous
 
-Always exit with non-zero code on error regardless of output format.
 
 ### Field Selection
 
@@ -99,23 +70,7 @@ mycli songs list --ids-only | xargs -I{} mycli songs get {}
 
 ### Validation
 
-Validate all inputs at system boundaries with contextual error messages:
-
-```go
-func parseID(s string) (int, error) {
-    id, err := strconv.Atoi(s)
-    if err != nil || id <= 0 {
-        return 0, fmt.Errorf("invalid ID %q: must be a positive integer", s)
-    }
-    return id, nil
-}
-```
-
-Assume adversarial inputs — agents hallucinate paths like `../../.ssh`, pre-URL-encoded values, and control characters. Validate:
-- Reject control characters (below ASCII 0x20)
-- Reject path traversal (`../`)
-- Reject embedded query params in resource names
-- Sanitize or reject special characters in identifiers
+Assume adversarial inputs: agents hallucinate paths like `../../.ssh`, pre-URL-encoded values, and control characters. Reject control characters (below 0x20), path traversal (`../`), and embedded query params in resource names, with contextual error messages.
 
 ### Resolver Flags
 
@@ -155,25 +110,9 @@ mycli create feat/auth --dry-run
 
 Output what *would* happen as structured JSON. For complex operations (file uploads, multi-step workflows), include the full plan.
 
-### Force Flag
+### Force and Confirmation
 
-Destructive operations should require `--force` when there's risk of data loss:
-
-```bash
-mycli delete feat/auth          # fails if uncommitted changes
-mycli delete feat/auth --force  # proceeds anyway
-```
-
-Never silently destroy user work. Default to safe behavior.
-
-### Confirmation
-
-For irreversible operations that affect shared state (push, publish, deploy), consider requiring explicit confirmation or `--yes` to skip it:
-
-```bash
-mycli deploy staging           # "Deploy to staging? [y/N]"
-mycli deploy staging --yes     # Skip prompt (for scripts/agents)
-```
+Destructive operations fail by default when there is data-loss risk (e.g. uncommitted changes) and need `--force`. Irreversible shared-state operations (push, publish, deploy) may prompt, with `--yes` to skip for scripts/agents.
 
 ---
 
@@ -217,29 +156,7 @@ These notes encode domain knowledge that prevents common agent mistakes.
 
 ### Supplemental Agent Guides
 
-A markdown guide or skill may summarize agent usage patterns, but it is supplemental only. Never make it the only place a workflow, destructive behavior, enum list, or replacement semantic is documented:
-
-```markdown
-# Agent Guide
-
-## Quick Start
-Always run `mycli commands` first for structured command discovery.
-
-## Patterns
-- Use `--dry-run` for all write operations
-- Use `--fields` on GET to limit response size
-- Prefer resolver flags over raw IDs
-```
-
----
-
-## Pagination
-
-For list endpoints returning many results:
-
-- `--limit <n>` — maximum items
-- `--offset <n>` — skip items
-- Consider NDJSON (`--ndjson`) for streaming large result sets (one JSON object per line)
+An AGENTS.md or skill may summarize usage patterns, but is supplemental only; never the sole place for a workflow, destructive behavior, enum list, or replacement semantic.
 
 ---
 
@@ -252,57 +169,10 @@ For list endpoints returning many results:
 
 ---
 
-## Command Structure
-
-### Naming
-- Use noun-verb or noun-subcommand patterns: `mycli worktrees list`, `mycli songs update`
-- Keep names short and predictable
-- Use consistent verbs: `list`, `get`, `create`, `update`, `delete`
-
-### Global Flags
-Standard flags every CLI should consider:
-
-| Flag | Purpose |
-|------|---------|
-| `--json` | Force JSON output (even in TTY) |
-| `--pretty` | Pretty-print JSON |
-| `--quiet` | Suppress stderr messages |
-| `--dry-run` | Preview mutations |
-| `--fields` | Limit output fields |
-| `--ids-only` | Return only IDs |
-| `--yes` | Skip confirmation prompts |
-| `--output <format>` | Alternative: explicit format selection |
-
-### Exit Codes
-
-- `0` — success
-- `1` — general error
-- `2` — usage/argument error (optional but useful)
-
----
-
-## Testing
-
-- Mock external dependencies (APIs, databases, system commands) for unit tests
-- Test JSON output structure explicitly — agents depend on stable schemas
-- Test error output structure — verify error codes and message format
-- Test TTY vs non-TTY behavior if implemented
-- Make the `isTerminal` check overridable in tests (function variable or interface)
-
----
-
 ## Implementation Checklist
 
-When building a new CLI or adding agent-friendliness to an existing one:
-
-1. [ ] `--json` flag on all output commands
-2. [ ] TTY detection for auto-JSON
-3. [ ] Structured error JSON to stderr
-4. [ ] `--dry-run` on all mutations
-5. [ ] `--force` on destructive operations
-6. [ ] Input validation with contextual error messages
-7. [ ] `commands` introspection command
-8. [ ] `--fields` for output limiting
-9. [ ] `--quiet` for suppressing stderr
-10. [ ] Agent notes in command metadata
-11. [ ] Supplemental AGENTS.md/skill/README exists if helpful, but CLI help and machine-readable command metadata are sufficient on their own
+1. [ ] JSON output (`--json`, auto-JSON when stdout is not a TTY), structured errors on stderr
+2. [ ] `--dry-run` on mutations, `--force` on destructive operations
+3. [ ] `commands` introspection with examples and agent notes
+4. [ ] `--fields` and `--ids-only` for output limiting
+5. [ ] `--quiet` for suppressing stderr

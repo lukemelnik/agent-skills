@@ -26,7 +26,6 @@ Do not polish an incomplete flow. If core states are missing or the interaction 
 
 - Type roles match the system: heading, title, body, label, caption.
 - Scale has clear hierarchy without unnecessary sizes.
-- Body copy has readable line length and line-height.
 - Labels and metadata are legible, not decorative gray dust.
 - Numbers align when scanning matters.
 - No orphaned one-word lines in key marketing copy when avoidable.
@@ -43,11 +42,10 @@ Do not polish an incomplete flow. If core states are missing or the interaction 
 ## Interaction details
 
 - Pointer hover and keyboard focus are both designed.
-- Press feedback feels immediate.
 - Loading states prevent double-submit when needed.
 - Disabled states explain themselves when the reason is not obvious.
 - Async errors preserve user input and offer recovery.
-- Motion is short, purposeful, and reduced-motion aware.
+- Motion: see `design-engineering`.
 
 ## Copy polish
 
@@ -59,9 +57,6 @@ Do not polish an incomplete flow. If core states are missing or the interaction 
 
 ## Responsive polish
 
-- Test narrow, medium, and wide layouts.
-- Check long names, large counts, and empty lists.
-- Touch targets stay usable.
 - Sticky footers/toolbars do not cover content.
 - Tables, grids, and cards reflow intentionally.
 

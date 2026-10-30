@@ -1,20 +1,16 @@
 ---
 name: ui-design
 description: >-
-  Human-facing UI/UX design for web, iOS, macOS, desktop, mobile, marketing,
-  onboarding, forms, dashboards, and product surfaces. Use when designing,
-  implementing, reviewing, polishing, or hardening visible interfaces: layout,
-  hierarchy, typography, color, motion, interaction states, accessibility,
-  responsive behavior, empty/loading/error states, UX copy, design-system
-  discovery, and AI-slop anti-patterns. Not for API design, database design,
-  backend architecture, or non-UI system design.
+  Platform-neutral UI/UX design for product and marketing surfaces. Use when
+  designing, reviewing, polishing, or hardening visible interfaces: layout,
+  hierarchy, typography, color, states, accessibility, responsive behavior, UX
+  copy, design-system discovery, and AI-slop anti-patterns. Not for API,
+  database, or backend design.
 ---
 
 # UI Design
 
-Use this skill for what humans see and touch. It is platform-neutral: pair it with `frontend-design`, `ios`, `macos`, `shadcn`, or project-specific skills for implementation details.
-
-Do not use this skill for API design, database/schema design, backend architecture, distributed-system design, or code architecture except where component/design-system structure directly affects the UI.
+Use this skill for what humans see and touch. It is platform-neutral: pair it with framework- or project-specific skills for implementation details.
 
 ## First move: discover the existing system
 
@@ -47,7 +43,6 @@ Load only the references that match the work:
 
 Adjacent skills:
 
-- `frontend-design`: web implementation adapter. Use it with this skill for React/HTML/CSS/Tailwind work.
 - `design-engineering`: web animation and interaction implementation details.
 - `ios`, `macos`, `liquid-glass`: platform-specific UI and native conventions.
 - `shadcn`: shadcn/ui component usage.
@@ -57,10 +52,7 @@ Adjacent skills:
 - Source-truth first: existing tokens, shared components, platform HIGs, and project instructions beat generic taste.
 - Do not invent a new visual system when extending an existing product. Reuse or extend the system deliberately.
 - Product UI rewards trust, consistency, state coverage, and speed. Brand UI rewards specificity, art direction, and memorable choices.
-- Every interactive element needs default, hover where applicable, focus, active, disabled, loading, error, and success behavior as relevant.
-- Every screen needs realistic loading, empty, error, overflow, and permission states when those states can occur.
 - Avoid global AI-slop patterns unless a project explicitly and convincingly overrides the rule.
-- Prefer direct, useful copy. Buttons say what happens. Errors say what happened, why, and how to recover.
 - Verify visible changes in the target UI when tooling and project policy allow it. A passing build is not visual proof.
 
 ## Response posture

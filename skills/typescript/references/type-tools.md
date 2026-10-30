@@ -2,17 +2,6 @@
 
 Use advanced types to encode invariants at public or shared boundaries. Prefer simple annotations for local implementation details.
 
-## Built-in utility types
-
-Reach for built-ins before custom helpers: `Pick`, `Omit`, `Partial`, `Required`, `Readonly`, `Record`, `Extract`, `Exclude`, `NonNullable`, `Parameters`, `ReturnType`, `ConstructorParameters`, `InstanceType`, `Awaited`.
-
-```ts
-type HandlerArgs = Parameters<typeof handleSubmit>;
-type LoadedUser = Awaited<ReturnType<typeof loadUser>>;
-```
-
-Avoid stacking utilities until the result is unreadable. Name intermediate types when it clarifies intent.
-
 ## Conditional types and `infer`
 
 Use conditional types to express type-level branching, especially for reusable public helpers:
@@ -37,22 +26,7 @@ type NumericPart<S> = S extends `${infer N extends number}` ? N : never;
 
 ## Mapped types
 
-Use mapped types to transform object shapes without duplicating keys:
-
-```ts
-type Nullable<T> = { [K in keyof T]: T[K] | null };
-type Getters<T> = { [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K] };
-```
-
-Be careful with optional and readonly modifiers. Preserve or remove them intentionally with `+?`, `-?`, `+readonly`, and `-readonly`.
-
-Remap a key to `never` to filter it from the resulting object type:
-
-```ts
-type FunctionMembers<T> = {
-  [K in keyof T as T[K] extends (...args: never[]) => unknown ? K : never]: T[K];
-};
-```
+Be careful with optional and readonly modifiers; preserve or remove them intentionally with `+?`, `-?`, `+readonly`, `-readonly`. Remap a key to `never` to filter it out.
 
 ## Template literal types
 

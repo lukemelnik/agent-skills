@@ -8,14 +8,10 @@ For a concrete field-to-source mapping, realistic input catalog, and permission-
 
 Test or reason through:
 
-- Very long names, titles, email addresses, file names, URLs, and notes.
-- Empty strings, missing optional fields, deleted related records.
-- Emoji, accents, CJK, RTL text, and mixed-direction strings.
-- Large counts, long dates, currency formats, percentages, and pluralization.
-- 0 items, 1 item, typical item count, and very large lists.
-- Slow network, offline, timeout, 401/403/404/429/500, validation errors.
-- Concurrent operations and double-click/double-submit.
-- Permission/read-only states.
+- Long names, emails, file names, URLs; missing optional fields; deleted related records.
+- Emoji, CJK, RTL, mixed-direction strings; currency, percentage, plural forms.
+- 0, 1, and very large item counts.
+- Offline, timeout, 401/403/404/429/500; double-submit; read-only states.
 
 ## Text overflow
 
@@ -35,41 +31,16 @@ Test or reason through:
 
 ## Loading and async states
 
-- Initial load: show stable structure, not a blank flash.
-- Partial load: preserve already loaded content where possible.
 - Mutations: show pending state, prevent duplicate submission where needed.
 - Optimistic updates: use only when rollback is clear and low-risk.
 - Long tasks: communicate progress or expectation.
 
-## Error and recovery states
+## Error and empty states
 
-Each recoverable error should answer:
-
-1. What happened?
-2. Why, if known?
-3. What can the user do next?
-
-Examples:
-
-- Network: retry, check connection, keep existing content visible.
-- Validation: field-level message near the field, preserve input.
-- Permission: explain access level and where to request access.
-- Not found: explain whether the item was deleted, moved, or unavailable.
-- Server error: avoid exposing internals; provide retry/support path.
-
-## Empty states
-
-An empty state should usually include:
-
-- What is empty.
-- Why it matters or what will appear here.
-- The next useful action, if one exists.
-
-Avoid decorative empties that do not help the user move.
+Errors say what happened, why if known, and the next step; keep existing content and input. Do not expose server internals. Empty states say what is empty and the next useful action; no decorative empties.
 
 ## Accessibility resilience
 
-- Keyboard path covers all actions.
 - Focus moves predictably after dialogs, sheets, route changes, and deletes.
 - Dynamic updates are announced when screen-reader users need them.
 - Reduced motion does not remove essential feedback.
@@ -80,18 +51,9 @@ Avoid decorative empties that do not help the user move.
 
 For browser/PWA viewport, safe-area, keyboard, and gesture details, use [mobile web hardening](mobile-web.md), not native-app guidance.
 
-- Use content-driven breakpoints, not only device presets.
 - Detect input capability where relevant: pointer, hover, coarse pointer.
 - Touch targets are large enough on touch devices.
 - Mobile keyboards, safe areas, and sticky bars do not block inputs/actions.
-- Wide screens do not create unreadable line lengths.
-
-## Performance resilience
-
-- Large lists use pagination, windowing, or incremental loading.
-- Images have dimensions to avoid layout shift.
-- Expensive motion/effects are bounded and disabled/reduced when needed.
-- Heavy computation does not block typing, scrolling, or button feedback.
 
 ## Hardening report
 

@@ -1,6 +1,6 @@
 ---
 name: trpc
-description: tRPC v11 patterns for type-safe API development. Use when working with tRPC routers, procedures, queries, mutations, or API calls.
+description: tRPC v11 client and server patterns, and React components that fetch data via tRPC/React Query. Use when working with tRPC procedures, queries, mutations, error handling, or component data fetching.
 ---
 
 # tRPC v11 Patterns
@@ -68,101 +68,6 @@ function InvoiceSheet() {
 - Use ternary: `condition ? { input } : skipToken`
 - Never use `enabled: false` - use skipToken for type safety
 
-## Server-Side Router Structure
-
-Routers go in `apps/api/src/domains/{domain}/{domain}-router.ts`:
-
-```typescript
-import { z } from "zod/v4";
-import { protectedProcedure, router } from "../../lib/trpc";
-import { repository } from "./repository";
-
-export const myRouter = router({
-  // Query with input
-  get: protectedProcedure
-    .input(z.object({ id: z.number() }))
-    .query(async ({ input, ctx }) => {
-      const userId = ctx.user.id;
-      return await repository.get(input.id, userId);
-    }),
-
-  // Query without input
-  list: protectedProcedure
-    .query(async ({ ctx }) => {
-      return await repository.list(ctx.user.id);
-    }),
-
-  // Mutation
-  create: protectedProcedure
-    .input(CreateSchema)
-    .mutation(async ({ input, ctx }) => {
-      return await repository.create({
-        ...input,
-        userId: ctx.user.id,
-      });
-    }),
-});
-```
-
-## Procedure Types
-
-- `publicProcedure` - No auth required
-- `protectedProcedure` - Requires authenticated user, provides `ctx.user` and `ctx.session`
-- `adminProcedure` - Requires admin role
-- `storageProtectedProcedure` - Protected + checks storage quota
-
-## Error Handling
-
-```typescript
-import { TRPCError } from "@trpc/server";
-
-throw new TRPCError({
-  code: "NOT_FOUND",
-  message: "Resource not found",
-});
-
-// With custom error codes for client handling
-throw new TRPCError({
-  code: "FORBIDDEN",
-  message: "Storage quota exceeded",
-  cause: {
-    code: "STORAGE_QUOTA_EXCEEDED",
-    metadata: { usedBytes, quotaBytes },
-  },
-});
-```
-
-## Schema Patterns
-
-Use drizzle-zod for database-derived schemas:
-
-```typescript
-import { createInsertSchema } from "drizzle-zod";
-import { myTable } from "./schema";
-
-const CreateSchema = createInsertSchema(myTable).omit({
-  id: true,
-  userId: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-const UpdateSchema = CreateSchema.partial();
-```
-
-## Router Registration
-
-Add new routers to `apps/api/src/routers/index.ts`:
-
-```typescript
-import { myRouter } from "../domains/my-domain/my-router";
-
-export const appRouter = router({
-  // ... existing routers
-  myDomain: myRouter,
-});
-```
-
 ## Error Handling with handleTRPCError
 
 **CRITICAL**: Never expose database or internal errors to clients. Use the `handleTRPCError` helper to sanitize errors.
@@ -196,10 +101,38 @@ The `handleTRPCError` function:
 - Preserves intentional `TRPCError`s (NOT_FOUND, BAD_REQUEST, etc.)
 - Strips database-specific error messages (SQL, Drizzle, Postgres errors)
 
+## Schemas
+
+Derive input schemas from the DB table; see the drizzle skill.
+
+## Components Fetch Their Own Data
+
+- A component that needs data calls `useQuery` itself; the parent does not fetch and drill server data down.
+- Props are IDs (`songId`), configuration (columns, `showActions`), callbacks (`onEdit`), and UI state only.
+- Derive types from the API, never hand-write them:
+
+```tsx
+import type { RouterOutputs } from "@/lib/trpc";
+
+type Song = RouterOutputs["songs"]["get"];
+type SongListItem = RouterOutputs["songs"]["list"][number];
+```
+
+- Duplicate fetches across components are fine; TanStack Query dedupes and caches identical requests.
+
+```tsx
+function SongCard({ songId, showActions, onEdit }: { songId: number; showActions?: boolean; onEdit?: () => void }) {
+  const trpc = useTRPC();
+  const { data: song } = useQuery({ ...trpc.songs.get.queryOptions({ id: songId }) });
+  // ...
+}
+```
+
 ## Common Mistakes to Avoid
 
 1. **Don't use `.useQuery()` directly** - Use `useQuery({ ...trpc.x.queryOptions() })`
-2. **Don't forget skipToken** - Use it for conditional queries instead of `enabled: false`
+2. **Use skipToken for conditional queries** - not `enabled: false`
 3. **Always access `ctx.user.id`** - Not `ctx.session.userId`
-4. **Use zod/v4** - Import from `zod/v4`, not `zod`
+4. **Import Zod as the repo already does** (`zod` or `zod/v4`); don't mix
 5. **Never expose raw errors** - Always use `handleTRPCError` in catch blocks
+6. **Don't prop drill server data or hand-type API responses**

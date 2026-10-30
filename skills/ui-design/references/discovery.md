@@ -6,7 +6,7 @@ Discover the design system from the repo. Do not require a separate `DESIGN.md` 
 
 Use this order when sources disagree:
 
-1. Project instructions and platform requirements (`AGENTS.md`, `CLAUDE.md`, README, HIG docs, accessibility requirements).
+1. Project instructions and platform requirements (project agent instructions (`AGENTS.md` or equivalent), README, HIG docs, accessibility requirements).
 2. Canonical tokens and theme code: Tailwind config, CSS variables, theme files, design-token JSON, asset catalogs.
 3. Shared components and component APIs.
 4. Comparable screens already shipped in the app/site.

@@ -94,3 +94,5 @@ Adapted from Emil Kowalski's animation craft and the pinned
 [upstream skills](https://github.com/emilkowalski/skills/tree/2d228630ba1446365f614a108cb8252f1feda202).
 See [LICENSE-emil-kowalski.txt](LICENSE-emil-kowalski.txt) for upstream licensing.
 Local guidance intentionally favors restraint and evidence over blanket rules.
+Removal guidance adapted from Emil Kowalski's
+[remove-animations](https://github.com/emilkowalski/skills/blob/a81dbca07f2217b7103e510c0f13f8d5b017afc9/skills/remove-animations/SKILL.md).

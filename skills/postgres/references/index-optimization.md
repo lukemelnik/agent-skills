@@ -29,20 +29,7 @@ SELECT
  ORDER BY pg_relation_size(s.indexrelid) DESC;
 ```
 
-## Indexes Per Table Guidelines
-
-- **< 5**: Normal
-- **5-10**: Monitor (Verify necessity)
-- **> 10**: Audit required (High write overhead)
-
-```sql
-SELECT relname AS table, count(*) as index_count
-FROM pg_stat_user_indexes
-GROUP BY relname
-ORDER BY count(*) DESC;
-```
-
-## Identify Unused Indexes
+## Identify Duplicate Indexes
 
 Indexes with identical definitions (after normalizing names) on the same table are duplicates:
 
@@ -60,10 +47,4 @@ HAVING count(*) > 1;
 
 **Always confirm with a human before dropping or removing any indexes identified by the queries above.** Even indexes with 0 scans may be needed for infrequent but critical queries, and stats may have been reset recently.
 
-## Per-table Index Count Guidelines
-
-| Index Count | Recommendation                              |
-| ----------- | ------------------------------------------- |
-| <5          | Normal                                      |
-| 5-10        | Review for unused/duplicates                |
-| >10         | Audit required - significant write overhead |
+More than ~10 indexes on a table warrants an audit (write overhead).
