@@ -95,7 +95,7 @@ For each `issue` finding, search existing issues first (`gh issue list --search`
 Without `auto`, stop here. Report the outcome, review results, gates, proposed issues, and what shipping will do, then wait for approval.
 
 With `auto`, stop the same way only when a risk trigger fires:
-- the diff touches payments or billing, authentication or permissions, database migrations or data deletion, secrets or environment configuration, or deploy/infrastructure files
+- the diff changes payment, billing, authentication, or permission behavior (moving a check without changing who can do what, with tests proving the same outcomes, is not a change), or touches database migrations or data deletion, secrets or environment configuration, or deploy/infrastructure files
 - the diff touches paths that repository instructions mark as requiring sign-off
 - a `fix` finding with impact score 8+ remains unresolved
 
