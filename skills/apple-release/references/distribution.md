@@ -9,21 +9,14 @@
 5. [Developer ID Distribution (macOS)](#5-developer-id-distribution-macos)
 6. [DMG and Installer Packages](#6-dmg-and-installer-packages)
 7. [Sparkle Auto-Updates (macOS)](#7-sparkle-auto-updates-macos)
-8. [Fastlane Automation](#8-fastlane-automation)
-9. [GitHub Actions CI/CD](#9-github-actions-cicd)
+8. [Fastlane match](#8-fastlane-match)
+9. [GitHub Actions CI/CD (macOS)](#9-github-actions-cicd)
 10. [App Store Connect API Key Authentication](#10-app-store-connect-api-key-authentication)
 11. [Xcode Cloud](#11-xcode-cloud)
 
 ---
 
 ## 1. App Store Connect Overview
-
-### Key Concepts
-
-- **App Record**: Created once per app in App Store Connect. Contains metadata, screenshots, pricing.
-- **Build**: An uploaded binary. Multiple builds can exist per version.
-- **Version**: A release version (e.g., 1.2.0). One version is "Prepare for Submission" at a time.
-- **Build Number**: Must be unique per version and must increment. Use `agvtool` to manage.
 
 ### Build Number Management
 
@@ -208,7 +201,7 @@ xcodebuild archive ... | xcbeautify --renderer github-actions
 
 ## 4. Notarization (macOS)
 
-Notarization is **required** for Developer ID distribution. Apple scans the binary for malware and issues a ticket.
+Required for Developer ID distribution.
 
 ### Using notarytool (Recommended)
 
@@ -483,64 +476,7 @@ func allowedChannels(for updater: SPUUpdater) -> Set<String> {
 
 ---
 
-## 8. Fastlane Automation
-
-### Key Tools
-
-| Tool | Purpose |
-|------|---------|
-| `match` | Sync certificates and profiles across team via Git repo or cloud storage |
-| `gym` / `build_app` | Build and archive |
-| `pilot` / `upload_to_testflight` | Upload to TestFlight |
-| `deliver` / `upload_to_app_store` | Upload metadata, screenshots, and binary to App Store |
-| `snapshot` | Automate screenshot capture |
-| `scan` | Run tests |
-| `cert` | Create/download certificates |
-| `sigh` | Create/download provisioning profiles |
-
-### Fastfile Example
-
-```ruby
-default_platform(:ios)
-
-platform :ios do
-  desc "Push a new build to TestFlight"
-  lane :beta do
-    setup_ci if ENV["CI"]
-
-    match(type: "appstore", readonly: is_ci)
-
-    increment_build_number(
-      build_number: latest_testflight_build_number + 1
-    )
-
-    build_app(
-      scheme: "MyApp",
-      export_method: "app-store",
-      clean: true
-    )
-
-    upload_to_testflight(
-      skip_waiting_for_build_processing: true,
-      distribute_external: false
-    )
-  end
-
-  desc "Deploy to App Store"
-  lane :release do
-    setup_ci if ENV["CI"]
-    match(type: "appstore", readonly: true)
-
-    build_app(scheme: "MyApp", export_method: "app-store")
-
-    upload_to_app_store(
-      skip_screenshots: true,
-      force: true,  # Skip HTML preview
-      precheck_include_in_app_purchases: false
-    )
-  end
-end
-```
+## 8. Fastlane match
 
 ### Fastlane Match Setup
 
@@ -561,98 +497,11 @@ fastlane match nuke distribution
 fastlane match appstore
 ```
 
-### Matchfile
-
-```ruby
-git_url("https://github.com/company/certificates")
-storage_mode("git")
-type("appstore")
-app_identifier(["com.company.myapp", "com.company.myapp.widget"])
-username("ci@company.com")
-```
-
 ---
 
 ## 9. GitHub Actions CI/CD
 
-### Complete iOS Build + TestFlight Workflow
-
-```yaml
-name: Deploy to TestFlight
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app
-
-      - name: Install certificate
-        env:
-          CERT_B64: ${{ secrets.DIST_CERT_B64 }}
-          CERT_PWD: ${{ secrets.DIST_CERT_PWD }}
-        run: |
-          CERT_P12="$RUNNER_TEMP/cert.p12"
-          KEYCHAIN_DB="$RUNNER_TEMP/build.keychain-db"
-          KEYCHAIN_PWD=$(openssl rand -base64 24)
-
-          security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_DB"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_DB"
-          security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_DB"
-
-          echo -n "$CERT_B64" | base64 --decode -o "$CERT_P12"
-          security import "$CERT_P12" -P "$CERT_PWD" -A -t cert -f pkcs12 -k "$KEYCHAIN_DB"
-          security list-keychain -d user -s "$KEYCHAIN_DB" $(security list-keychains -d user | sed s/\"//g)
-
-      - name: Install provisioning profile
-        env:
-          PROFILE_B64: ${{ secrets.PROVISION_PROFILE_B64 }}
-        run: |
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo -n "$PROFILE_B64" | base64 --decode \
-            -o ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
-
-      - name: Build archive
-        run: |
-          xcodebuild archive \
-            -scheme MyApp \
-            -archivePath "$RUNNER_TEMP/MyApp.xcarchive" \
-            -destination "generic/platform=iOS" \
-            -skipPackagePluginValidation \
-            DEVELOPMENT_TEAM="${{ secrets.TEAM_ID }}" \
-            | xcpretty
-
-      - name: Export IPA
-        run: |
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/MyApp.xcarchive" \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath "$RUNNER_TEMP/export"
-
-      - name: Upload to TestFlight
-        run: |
-          xcrun altool --upload-package "$RUNNER_TEMP/export/MyApp.ipa" \
-            --type ios \
-            --apple-id "${{ secrets.APP_APPLE_ID }}" \
-            --bundle-id "${{ secrets.BUNDLE_ID }}" \
-            --bundle-version "${{ secrets.BUILD_NUMBER }}" \
-            --bundle-short-version-string "${{ secrets.VERSION }}" \
-            --apiKey "${{ secrets.API_KEY_ID }}" \
-            --apiIssuer "${{ secrets.API_ISSUER_ID }}"
-
-      - name: Clean up keychain
-        if: always()
-        run: security delete-keychain "$RUNNER_TEMP/build.keychain-db"
-```
-
 ### macOS Build + Notarize + DMG Workflow
-
-Based on the CodeEdit pre-release pipeline:
 
 ```yaml
 name: Build macOS Release
@@ -754,12 +603,6 @@ jobs:
 | `CODESIGN_SIGN` | Signing identity string (e.g., `"Developer ID Application: Company (TEAMID)"`) |
 | `PROVISION_PROFILE_B64` | Base64-encoded `.mobileprovision` (iOS only) |
 
-### Generating an App-Specific Password
-
-1. Go to [appleid.apple.com](https://appleid.apple.com)
-2. Sign in > Security > App-Specific Passwords
-3. Generate and store in GitHub Secrets as `APPLE_ID_PWD`
-
 ---
 
 ## 10. App Store Connect API Key Authentication
@@ -802,17 +645,6 @@ xcrun altool --upload-package MyApp.ipa \
   --apiIssuer "$API_ISSUER_ID"
 ```
 
-### Using with Fastlane
-
-```ruby
-# In Appfile or lane configuration
-app_store_connect_api_key(
-  key_id: "KEYID",
-  issuer_id: "ISSUER_UUID",
-  key_filepath: "./AuthKey_KEYID.p8"
-)
-```
-
 ### CI Secrets
 
 | Secret | Value |
@@ -825,23 +657,7 @@ app_store_connect_api_key(
 
 ## 11. Xcode Cloud
 
-Xcode Cloud is Apple's first-party CI/CD service, integrated directly into Xcode and App Store Connect. It builds, tests, and distributes your app on Apple-hosted infrastructure.
-
-### Key Features
-
-- **Zero signing configuration** — Xcode Cloud manages certificates and profiles automatically via cloud signing.
-- **Integrated TestFlight distribution** — builds are uploaded to TestFlight as a post-action.
-- **Pull request workflows** — trigger builds on PR creation or updates.
-- **Parallel testing** — run tests across multiple simulators and OS versions.
-
-### Workflow Configuration
-
-Workflows are configured in Xcode (Product > Xcode Cloud > Manage Workflows) or via the App Store Connect web UI. A workflow defines:
-
-- **Start conditions**: branch changes, PR events, tag creation, or manual trigger.
-- **Environment**: Xcode version and macOS version.
-- **Actions**: build, test, analyze, archive.
-- **Post-actions**: deploy to TestFlight (internal or external group), notify via Slack, etc.
+Xcode Cloud manages signing automatically; configure workflows in Xcode (Product > Xcode Cloud) or App Store Connect.
 
 ### Custom Build Scripts (`ci_scripts/`)
 
@@ -869,27 +685,3 @@ Xcode Cloud provides environment variables:
 | `CI_WORKSPACE` | Path to the workspace |
 | `CI_DERIVED_DATA_PATH` | Path to DerivedData |
 | `CI_ARCHIVE_PATH` | Path to the `.xcarchive` (post-archive) |
-
-### Example: Install Dependencies Post-Clone
-
-```bash
-#!/bin/sh
-# ci_scripts/ci_post_clone.sh
-set -e
-
-# Install Homebrew dependencies
-brew install swiftlint
-
-# Resolve Swift packages (if needed outside Xcode's auto-resolution)
-cd "$CI_WORKSPACE"
-swift package resolve
-```
-
-### TestFlight Integration
-
-When the workflow's post-action is set to distribute via TestFlight:
-
-1. Xcode Cloud archives and signs the build automatically.
-2. The build is uploaded to App Store Connect.
-3. Internal testers receive it immediately; external groups require beta review.
-4. Build numbers are managed by the `CI_BUILD_NUMBER` environment variable.

@@ -13,7 +13,6 @@
 9. [Dark Mode Implementation](#9-dark-mode-implementation)
 10. [Accessibility](#10-accessibility)
 11. [Cross-Platform (iOS + macOS)](#11-cross-platform-ios--macos)
-12. [Common Mistakes](#12-common-mistakes)
 
 ---
 
@@ -600,15 +599,3 @@ var defaultTint: Color {
 ```
 
 ---
-
-## 12. Common Mistakes
-
-- **Using raw hex/RGB values directly in views** — bypasses the token layer, making theme changes impossible without hunting through every file.
-- **Using asset catalog colors for theming** — loses runtime swappability, harder to manage at scale, merge conflicts in `.xcassets` JSON.
-- **Defining colors in each view file** — scatters definitions, guarantees inconsistency.
-- **Using `.foregroundColor()` (deprecated)** — use `.foregroundStyle()` instead. `foregroundStyle` supports `ShapeStyle` (gradients, materials), not just `Color`.
-- **Hardcoding dark mode colors** — provide both light and dark variants through `ColorSet` conformances. Don't check `colorScheme` in views to pick colors manually.
-- **Not testing with Increase Contrast / Bold Text** — these accessibility settings affect real users. Verify your tokens are legible in all modes.
-- **Creating too many tokens upfront** — add them when a new semantic purpose actually appears. Unused tokens are noise.
-- **Using `@AppStorage` inside a class** — `@AppStorage` is designed for `View` structs. In `@Observable` classes, use `UserDefaults` with a `didSet` pattern.
-- **Using `configureWithTransparentBackground()` for global navigation bar appearance** — this removes the automatic opaque background that iOS draws when list content scrolls behind the navigation bar, causing title text to overlap with scrolling content. Use `configureWithOpaqueBackground()` with an explicit `backgroundColor` matching your theme instead. This applies to all three appearances: `standardAppearance`, `compactAppearance`, and `scrollEdgeAppearance`.

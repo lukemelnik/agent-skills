@@ -244,23 +244,7 @@ e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWith
 1. Add the Associated Domains capability: `applinks:example.com`.
 2. Host an `apple-app-site-association` file at `https://example.com/.well-known/apple-app-site-association`:
 
-**Legacy format** (using `"paths"`):
-
-```json
-{
-  "applinks": {
-    "apps": [],
-    "details": [
-      {
-        "appID": "TEAMID.com.example.app",
-        "paths": ["/posts/*", "/users/*"]
-      }
-    ]
-  }
-}
-```
-
-**Modern format** (iOS 14+, using `"components"` — preferred):
+Use the `"components"` format:
 
 ```json
 {
@@ -279,7 +263,7 @@ e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWith
 }
 ```
 
-> **Note:** The `"paths"` key is legacy. Prefer `"components"` for new projects -- it supports matching query parameters, fragments, and exclusion patterns.
+> The legacy `"paths"` key lacks query/fragment/exclusion matching.
 
 - Served with `Content-Type: application/json`, no redirects.
 - Apple CDN caches this — changes can take 24-48 hours to propagate.
@@ -381,30 +365,14 @@ struct MyEntry: TimelineEntry {
     let value: Int
 }
 
-// 2. Provider — supplies timeline entries
-struct MyProvider: TimelineProvider {
-    func placeholder(in context: Context) -> MyEntry {
-        MyEntry(date: .now, title: "Placeholder", value: 0)
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (MyEntry) -> Void) {
-        completion(MyEntry(date: .now, title: "Snapshot", value: 42))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<MyEntry>) -> Void) {
-        // Fetch data, build entries
-        let entry = MyEntry(date: .now, title: "Live", value: 99)
-        let timeline = Timeline(entries: [entry], policy: .atEnd)
-        completion(timeline)
-    }
-}
+// 2. Provider — use AppIntentTimelineProvider (see below), not the completion-handler TimelineProvider
 
 // 3. Widget — glues it together
 struct MyWidget: Widget {
     let kind = "MyWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: MyProvider()) { entry in
+        AppIntentConfiguration(kind: kind, intent: MyWidgetConfig.self, provider: MyIntentProvider()) { entry in
             MyWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
@@ -660,7 +628,7 @@ func refreshEntitlements() async {
 
 ## 7. Live Activities
 
-iOS 16.1+ via ActivityKit. Display real-time, glanceable information on the Lock Screen and Dynamic Island.
+ActivityKit. Display real-time, glanceable information on the Lock Screen and Dynamic Island.
 
 ### Key Types
 

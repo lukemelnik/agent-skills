@@ -1,67 +1,31 @@
 # Release Flow (TestFlight and App Store)
 
+Pre-submission audit: use `app-review`; run `asc validate --app <APP_ID> --version <VERSION>` for the CLI readiness report. Signing and archive/export: `apple-release`.
+
 ## Preconditions
 - New build number for each upload
-- Build must have encryption compliance resolved (see submission.md)
+- Encryption compliance resolved (see submission.md)
 
-## iOS Release
+## Preferred end-to-end commands
+- TestFlight: `asc publish testflight --app <APP_ID> --ipa <PATH> --group <GROUP_ID>[,<GROUP_ID>] [--wait] [--notify]`
+- App Store: `asc publish appstore --app <APP_ID> --ipa <PATH> --version <VERSION> [--wait] [--submit --confirm]`
+- Use `--dry-run` to preview. `asc submit` is lower-level; `asc publish appstore --submit` is the canonical ship path.
 
-### Preferred end-to-end commands
-- TestFlight:
-  - `asc publish testflight --app <APP_ID> --ipa <PATH> --group <GROUP_ID>[,<GROUP_ID>]`
-  - Optional: `--wait`, `--notify`, `--platform`, `--poll-interval`, `--timeout`
-- App Store:
-  - `asc publish appstore --app <APP_ID> --ipa <PATH> --version <VERSION>`
-  - Optional: `--wait`, `--submit --confirm`, `--platform`, `--poll-interval`, `--timeout`
+## Manual sequence
+1. `asc builds upload --app <APP_ID> --ipa <PATH>` (prepares upload only)
+2. Find the build: `asc builds info --app <APP_ID> --latest [--version <VERSION>] [--platform <PLATFORM>]`; `asc builds wait --build-id <BUILD_ID>` for processing
+3. TestFlight: `asc builds add-groups --build-id <BUILD_ID> --group <GROUP_ID>[,<GROUP_ID>]`
+4. App Store attach + submit: `asc review submit --app <APP_ID> --version <VERSION> --build-id <BUILD_ID> --confirm` (wraps attach-build, submissions-create, items-add, submissions-submit)
+5. Check/cancel: `asc review status --app <APP_ID>`, `asc review doctor --app <APP_ID>`, `asc submit status|cancel`
 
-### Manual sequence (when you need more control)
-1. Upload the build:
-   - `asc builds upload --app <APP_ID> --ipa <PATH>`
-2. Find the build ID if needed:
-   - `asc builds latest --app <APP_ID> [--version <VERSION>] [--platform <PLATFORM>]`
-3. TestFlight distribution:
-   - `asc builds add-groups --build <BUILD_ID> --group <GROUP_ID>[,<GROUP_ID>]`
-4. App Store attach + submit:
-   - `asc versions attach-build --version-id <VERSION_ID> --build <BUILD_ID>`
-   - `asc submit create --app <APP_ID> --version <VERSION> --build <BUILD_ID> --confirm`
-5. Check or cancel submission:
-   - `asc submit status --id <SUBMISSION_ID>` or `--version-id <VERSION_ID>`
-   - `asc submit cancel --id <SUBMISSION_ID> --confirm`
-
-## macOS Release
-
-macOS apps are distributed as `.pkg` files, not `.ipa`.
-
-### Upload PKG
+## macOS
+macOS apps ship as `.pkg`, not `.ipa`:
 ```bash
-asc builds upload \
-  --app <APP_ID> \
-  --pkg <PATH_TO_PKG> \
-  --version <VERSION> \
-  --build-number <BUILD_NUMBER> \
-  --wait
+asc builds upload --app <APP_ID> --pkg <PATH_TO_PKG> --version <VERSION> --build-number <BUILD_NUMBER> --wait
+asc versions attach-build --version-id <VERSION_ID> --build-id <BUILD_ID> --platform MAC_OS
+asc review submit --app <APP_ID> --version <VERSION> --build-id <BUILD_ID> --confirm
 ```
+For visionOS/tvOS use `--platform VISION_OS` / `TV_OS`.
 
-### Attach and Submit
-Same as iOS, but use `--platform MAC_OS`:
-```bash
-asc builds list --app <APP_ID> --platform MAC_OS --limit 5
-asc versions attach-build --version-id <VERSION_ID> --build <BUILD_ID>
-asc review submissions-create --app <APP_ID> --platform MAC_OS
-asc review items-add --submission <SUBMISSION_ID> --item-type appStoreVersions --item-id <VERSION_ID>
-asc review submissions-submit --id <SUBMISSION_ID> --confirm
-```
-
-## visionOS / tvOS Release
-
-Same as iOS flow, use appropriate `--platform`: `VISION_OS`, `TV_OS`.
-
-## Pre-submission Checklist
-- [ ] Build status is `VALID` (not processing)
-- [ ] Encryption compliance resolved
-- [ ] Content rights declaration set
-- [ ] Copyright field populated
-- [ ] All localizations complete
-- [ ] Screenshots present
-
-See submission.md for detailed preflight checks.
+## Build cleanup
+`asc builds expire-all --app <APP_ID> --older-than 90d --dry-run` first, then `--confirm`.

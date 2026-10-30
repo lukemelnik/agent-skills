@@ -23,13 +23,13 @@ asc testflight testers invite --app "APP_ID" --email "tester@example.com"
 
 ## Distribute builds
 ```bash
-asc builds add-groups --build "BUILD_ID" --group "GROUP_ID"
-asc builds remove-groups --build "BUILD_ID" --group "GROUP_ID" --confirm
+asc builds add-groups --build-id "BUILD_ID" --group "GROUP_ID"
+asc builds remove-groups --build-id "BUILD_ID" --group "GROUP_ID" --confirm
 ```
 
 ## What to Test notes
 ```bash
-asc builds test-notes create --build "BUILD_ID" --locale "en-US" --whats-new "Test instructions"
+asc builds test-notes create --build-id "BUILD_ID" --locale "en-US" --whats-new "Test instructions"
 asc builds test-notes update --id "LOCALIZATION_ID" --whats-new "Updated notes"
 ```
 

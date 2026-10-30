@@ -6,7 +6,7 @@
 2. [State Management](#2-state-management)
 3. [Dependency Injection](#3-dependency-injection)
 4. [Module / Package Structure](#4-module--package-structure)
-5. [Concurrency (Swift 6)](#5-concurrency-swift-6)
+5. [Concurrency](#5-concurrency)
 6. [Logging](#6-logging)
 7. [Service Layer](#7-service-layer)
 8. [When to Use AppKit vs SwiftUI vs Hybrid](#8-when-to-use-appkit-vs-swiftui-vs-hybrid)
@@ -243,106 +243,15 @@ CodeEdit uses `Features/Editor/{Models,Views,Controllers}/`. Simpler build setup
 
 ---
 
-## 5. Concurrency (Swift 6)
+## 5. Concurrency
 
-### Adopt Swift 6 Language Mode
-
-Enable strict concurrency checking in Package.swift or build settings:
-
-```swift
-.target(name: "MyFeature", swiftSettings: [.swiftLanguageMode(.v6)])
-```
-
-### Default Main Actor Isolation
-
-Use `.defaultIsolation(MainActor.self)` on UI feature packages (requires swift-tools-version 6.2+; for 6.0, use `.swiftLanguageMode(.v6)` instead). Most UI code is main-actor anyway.
-
-### Sendable
-
-All types crossing isolation boundaries must conform to `Sendable`.
-
-### OSAllocatedUnfairLock
-
-Prefer over actors when you need synchronous access. Actors are implicitly `Sendable`, but all external access requires `await`, making them unsuitable when callers need synchronous reads:
-
-```swift
-// @Observable synthesizes mutable backing storage, so use @unchecked Sendable
-@Observable final class CacheService: @unchecked Sendable {
-    private let storage = OSAllocatedUnfairLock(initialState: [String: Data]())
-    func get(_ key: String) -> Data? { storage.withLock { $0[key] } }
-    func set(_ key: String, data: Data) { storage.withLock { $0[key] = data } }
-}
-```
-
-### Actors for Data Sources
-
-Use actors for background data processing (IceCubesApp's `TimelineDatasource`):
-
-```swift
-actor TimelineDatasource {
-    private var events: [TimelineEvent] = []
-    func append(_ newEvents: [TimelineEvent]) { events.append(contentsOf: newEvents) }
-    func filtered(matching query: String) -> [TimelineEvent] {
-        events.filter { $0.content.localizedCaseInsensitiveContains(query) }
-    }
-}
-```
-
-### Dedicated DispatchQueues for C Libraries
-
-IINA pattern — one queue per subsystem (events, rendering). Dispatch to main thread from C callbacks:
-
-```swift
-private let eventQueue = DispatchQueue(label: "com.app.player.events")
-
-mpv_set_wakeup_callback(handle, { ctx in
-    let player = Unmanaged<MediaPlayer>.fromOpaque(ctx!).takeUnretainedValue()
-    player.eventQueue.async { player.processEvents() }
-}, Unmanaged.passUnretained(self).toOpaque())
-
-// In processEvents():
-DispatchQueue.main.async { self.handleEvent(event) }
-```
-
-### Energy-Aware Patterns
-
-- Stop timers when window not visible, idle display links when paused
-- Check `ProcessInfo.processInfo.isLowPowerModeEnabled`
+See the `swift-concurrency` skill for isolation, `Sendable`, actors, and Swift 6 migration.
 
 ---
 
 ## 6. Logging
 
-### Category-Based Unified Logging
-
-Use Apple's `os.Logger` with an enum of categories for consistent, filterable diagnostics. This is always-on (not `#if DEBUG`-gated) — `os.Logger` has near-zero overhead and the OS handles filtering. Use Console.app to filter by subsystem and category.
-
-```swift
-import os.log
-
-enum AppLog {
-    static let subsystem = "com.example.MyApp"
-
-    enum Category: String {
-        case networking = "Networking"
-        case persistence = "Persistence"
-        case auth = "Auth"
-        case ui = "UI"
-    }
-
-    static func logger(_ category: Category) -> os.Logger {
-        os.Logger(subsystem: subsystem, category: category.rawValue)
-    }
-
-    // Convenience accessors
-    static let networking = logger(.networking)
-    static let persistence = logger(.persistence)
-    static let auth = logger(.auth)
-    static let ui = logger(.ui)
-}
-```
-
-Usage: `AppLog.networking.info("Request completed: \(url, privacy: .private)")`. Use `privacy: .private` for user data, file paths, and anything potentially sensitive — these are redacted in release builds but visible during debug.
+Use one `os.Logger` per subsystem/category, always on (not `#if DEBUG`-gated), with `privacy: .private` for user data and file paths. See the `build-run-debug` skill for adding and verifying runtime logs.
 
 ### Pure Decision Engines
 

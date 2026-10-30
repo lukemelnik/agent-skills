@@ -1,6 +1,6 @@
 # Project Setup
 
-How to scaffold a new iOS project using XcodeGen, SwiftLint, SwiftFormat, and a Makefile-driven workflow. Covers every file needed to go from `git clone` to coding in one command.
+Scaffold a new iOS project with XcodeGen, SwiftLint, SwiftFormat, and a Makefile.
 
 ---
 
@@ -29,7 +29,7 @@ myapp/
 ├── .swiftlint.yml
 ├── .swiftformat
 ├── Makefile
-└── CLAUDE.md
+└── AGENTS.md
 ```
 
 The `.xcodeproj` is generated — never committed.
@@ -72,7 +72,7 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"          # iPhone only; "1,2" for universal
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES  # CRITICAL — see §9
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES  # CRITICAL — see Common Gotchas: letterboxed app
 
   MyAppTests:
     type: bundle.unit-test
@@ -474,35 +474,35 @@ custom_rules:
     name: "No Raw Colors in Views"
     regex: 'Color\(red:|Color\(hex:|#colorLiteral|Color\(\.sRGB|Color\(\.displayP3|Color\(uiColor:'
     included: ".*(UI|App)/(?!.*Theme).*\\.swift"
-    message: "Use Color.theme.* tokens instead of raw color values. Raw colors bypass the theme system, break visual consistency, and make theme changes impossible. See theming.md §2."
+    message: "Use Color.theme.* tokens instead of raw color values. Raw colors bypass the theme system, break visual consistency, and make theme changes impossible."
     severity: error
 
   no_named_color_in_views:
     name: "No Named Colors in Views"
     regex: '\bColor\.(red|blue|green|orange|yellow|purple|pink|brown|cyan|indigo|mint|teal|gray|white|black|primary|secondary)\b|Color\(\.system'
     included: ".*(UI|App)/(?!.*Theme).*\\.swift"
-    message: "Use Color.theme.* tokens instead of SwiftUI named colors (Color.red, .white, etc.). Named colors bypass the theme and won't match your palette. See theming.md §3."
+    message: "Use Color.theme.* tokens instead of SwiftUI named colors (Color.red, .white, etc.). Named colors bypass the theme and won't match your palette."
     severity: error
 
   no_shape_style_color_literal:
     name: "No Color Literals as ShapeStyle"
     regex: 'foregroundStyle\(\.(white|black|red|blue|green|orange|yellow|purple|pink|gray|cyan|indigo|mint|teal|brown)\)|\.background\(\.(white|black|red|blue|green|orange|yellow|purple|pink|gray|cyan|indigo|mint|teal|brown)\)'
     included: ".*(UI|App)/(?!.*Theme).*\\.swift"
-    message: "Use Color.theme.* tokens instead of ShapeStyle color literals (.white, .black, etc.). These bypass the theme system. Use .foregroundStyle(Color.theme.foreground) or .background(Color.theme.background) instead. See theming.md §3."
+    message: "Use Color.theme.* tokens instead of ShapeStyle color literals (.white, .black, etc.). These bypass the theme system. Use .foregroundStyle(Color.theme.foreground) or .background(Color.theme.background) instead."
     severity: error
 
   no_hardcoded_font_size:
     name: "No Hardcoded Font Sizes"
     regex: 'Font\.system\(size:'
     included: ".*(UI|App)/(?!.*Theme).*\\.swift"
-    message: "Use Font.app* extensions (e.g. .appHeadline, .appBody) or semantic text styles (.headline, .body) instead of Font.system(size:). Hardcoded sizes bypass Dynamic Type scaling. See theming.md §6, hig.md §3.1."
+    message: "Use Font.app* extensions (e.g. .appHeadline, .appBody) or semantic text styles (.headline, .body) instead of Font.system(size:). Hardcoded sizes bypass Dynamic Type scaling."
     severity: error
 
   no_hardcoded_padding:
     name: "No Hardcoded Padding Values"
     regex: '\.padding\(\d'
     included: ".*(UI|App)/.*\\.swift"
-    message: "Consider defining spacing constants (Spacing.sm/.md/.lg) instead of hardcoded padding values. Consistent spacing improves visual rhythm across the app. See theming.md §7."
+    message: "Consider defining spacing constants (Spacing.sm/.md/.lg) instead of hardcoded padding values. Consistent spacing improves visual rhythm across the app."
     severity: warning
 
   # ═══════════════════════════════════════════════════════════
@@ -512,130 +512,130 @@ custom_rules:
   no_navigation_view:
     name: "No NavigationView"
     regex: 'NavigationView\b'
-    message: "Use NavigationStack (iOS 16+) instead of NavigationView. NavigationView is deprecated and doesn't support programmatic value-based navigation. See architecture.md §7, code-review.md §1."
+    message: "Use NavigationStack (iOS 16+) instead of NavigationView. NavigationView is deprecated and doesn't support programmatic value-based navigation."
     severity: error
 
   no_state_object:
     name: "No @StateObject"
     regex: '@StateObject\b'
-    message: "Use @State with @Observable instead of @StateObject. This project targets iOS 17+ and uses @Observable, not ObservableObject. See architecture.md §5."
+    message: "Use @State with @Observable instead of @StateObject. This project targets iOS 17+ and uses @Observable, not ObservableObject."
     severity: error
 
   no_observable_object:
     name: "No ObservableObject"
     regex: ': ObservableObject\b|ObservableObject\b'
     included: ".*Sources/.*\\.swift"
-    message: "Use @Observable macro instead of ObservableObject protocol. @Observable provides better performance with automatic property tracking — no @Published needed. See architecture.md §2."
+    message: "Use @Observable macro instead of ObservableObject protocol. @Observable provides better performance with automatic property tracking — no @Published needed."
     severity: error
 
   no_observed_object:
     name: "No @ObservedObject"
     regex: '@ObservedObject\b'
-    message: "Use @Environment or pass @Observable objects as regular properties with @Bindable. @ObservedObject belongs to the ObservableObject pattern which this project doesn't use. See architecture.md §5."
+    message: "Use @Environment or pass @Observable objects as regular properties with @Bindable. @ObservedObject belongs to the ObservableObject pattern which this project doesn't use."
     severity: error
 
   no_published:
     name: "No @Published"
     regex: '@Published\b'
-    message: "Remove @Published — @Observable tracks all stored properties automatically. @Published only works with ObservableObject, which this project doesn't use. See architecture.md §2."
+    message: "Remove @Published — @Observable tracks all stored properties automatically. @Published only works with ObservableObject, which this project doesn't use."
     severity: error
 
   no_uikit_in_models:
     name: "No UIKit in Model Layers"
     regex: 'import UIKit'
     included: ".*(Database|MusicTheory|Store|Models)/.*\\.swift"
-    message: "Use Foundation instead of UIKit in model/data layers. UIKit creates unnecessary platform coupling and prevents code reuse on macOS/watchOS. See architecture.md §1."
+    message: "Use Foundation instead of UIKit in model/data layers. UIKit creates unnecessary platform coupling and prevents code reuse on macOS/watchOS."
     severity: error
 
   no_singleton_in_features:
     name: "No Direct Singleton Access in Views"
     regex: '\w+\.shared\b'
     included: ".*(UI)/(?!.*Theme).*\\.swift"
-    message: "Inject dependencies via initializer or @Environment instead of accessing .shared singletons. Direct singleton access hides dependencies and makes testing/previewing harder. See architecture.md §2."
+    message: "Inject dependencies via initializer or @Environment instead of accessing .shared singletons. Direct singleton access hides dependencies and makes testing/previewing harder."
     severity: warning
 
   no_app_storage_in_class:
     name: "No @AppStorage in Classes"
     regex: '@AppStorage\b'
     included: ".*ViewModel\\.swift|.*Manager\\.swift|.*Store\\.swift|.*Service\\.swift"
-    message: "@AppStorage is designed for View structs, not classes. In @Observable classes, use UserDefaults with a didSet pattern to persist values. See theming.md §4."
+    message: "@AppStorage is designed for View structs, not classes. In @Observable classes, use UserDefaults with a didSet pattern to persist values."
     severity: error
 
   # ═══════════════════════════════════════════════════════════
-  # DEPRECATED APIs — code-review.md §1
+  # DEPRECATED APIs
   # ═══════════════════════════════════════════════════════════
 
   no_corner_radius:
     name: "No .cornerRadius() (Deprecated)"
     regex: '\.cornerRadius\('
-    message: "Use .clipShape(.rect(cornerRadius:)) instead of .cornerRadius(). cornerRadius is deprecated, clips content, and can't be combined with borders. See code-review.md §1."
+    message: "Use .clipShape(.rect(cornerRadius:)) instead of .cornerRadius(). cornerRadius is deprecated, clips content, and can't be combined with borders."
     severity: error
 
   no_navigation_link_destination:
     name: "No NavigationLink(destination:)"
     regex: 'NavigationLink\(destination:'
-    message: "Use NavigationLink(value:) with .navigationDestination(for:) instead of NavigationLink(destination:). Value-based navigation is type-safe and supports programmatic control. See code-review.md §1, architecture.md §7."
+    message: "Use NavigationLink(value:) with .navigationDestination(for:) instead of NavigationLink(destination:). Value-based navigation is type-safe and supports programmatic control."
     severity: error
 
   no_animation_without_value:
     name: "No .animation() Without Value"
     regex: '\.animation\(\.[a-zA-Z]+(|\([^)]*\))\)\s*$'
-    message: "Use .animation(.spring(), value: someState) instead of .animation(.spring()). Animations without a value parameter apply implicitly to the entire subtree, causing unexpected animations. See code-review.md §1."
+    message: "Use .animation(.spring(), value: someState) instead of .animation(.spring()). Animations without a value parameter apply implicitly to the entire subtree, causing unexpected animations."
     severity: warning
 
   no_any_view:
     name: "No AnyView"
     regex: '\bAnyView\b'
-    message: "Use @ViewBuilder, Group, or generics instead of AnyView. AnyView erases type information, preventing SwiftUI from diffing efficiently, which hurts performance. See code-review.md §1, performance.md."
+    message: "Use @ViewBuilder, Group, or generics instead of AnyView. AnyView erases type information, preventing SwiftUI from diffing efficiently, which hurts performance."
     severity: error
 
   no_preview_provider:
     name: "No PreviewProvider (Deprecated)"
     regex: 'PreviewProvider\b'
-    message: "Use #Preview { } macro instead of PreviewProvider. #Preview is simpler and supports multiple named previews. See code-review.md §1."
+    message: "Use #Preview { } macro instead of PreviewProvider. #Preview is simpler and supports multiple named previews."
     severity: error
 
   no_deprecated_toolbar_placement:
     name: "No Deprecated Toolbar Placement"
     regex: '\.navigationBarTrailing|\.navigationBarLeading'
-    message: "Use .topBarTrailing / .topBarLeading instead of .navigationBarTrailing / .navigationBarLeading. The navigationBar* placements are deprecated. See code-review.md §1."
+    message: "Use .topBarTrailing / .topBarLeading instead of .navigationBarTrailing / .navigationBarLeading. The navigationBar* placements are deprecated."
     severity: error
 
   no_geometry_reader:
     name: "Prefer Modern Layout Over GeometryReader"
     regex: '\bGeometryReader\b'
-    message: "Consider containerRelativeFrame(), visualEffect(), or the Layout protocol instead of GeometryReader. GeometryReader causes parent-dependent sizing issues. Only use it when no modern alternative works. See code-review.md §1."
+    message: "Consider containerRelativeFrame(), visualEffect(), or the Layout protocol instead of GeometryReader. GeometryReader causes parent-dependent sizing issues. Only use it when no modern alternative works."
     severity: warning
 
   # ═══════════════════════════════════════════════════════════
-  # SWIFT IDIOMS — code-review.md §2
+  # SWIFT IDIOMS
   # ═══════════════════════════════════════════════════════════
 
   no_force_unwrap:
     name: "No Force Unwraps in Views"
     regex: '[a-zA-Z0-9_\])\.]!\s*[^=")\]]'
     included: ".*View\\.swift|.*ViewModel\\.swift"
-    message: "Avoid force unwraps (!) — use if let, guard let, or nil-coalescing. Force unwraps crash at runtime on unexpected nil. If failure is truly unrecoverable, use fatalError() with a description. See code-review.md §2."
+    message: "Avoid force unwraps (!) — use if let, guard let, or nil-coalescing. Force unwraps crash at runtime on unexpected nil. If failure is truly unrecoverable, use fatalError() with a description."
     severity: warning
 
   no_force_try:
     name: "No Force Try"
     regex: '\btry!\b'
-    message: "Avoid try! — use do/catch or try? with fallback handling. Force try crashes on any thrown error. See code-review.md §2."
+    message: "Avoid try! — use do/catch or try? with fallback handling. Force try crashes on any thrown error."
     severity: warning
 
   no_print_in_production:
     name: "No print() in Production Code"
     regex: '^\s*print\('
     included: ".*Sources/.*\\.swift"
-    message: "Use os.Logger or a structured logging system instead of print(). print() has no log levels, no filtering, and clutters the console. See architecture.md §8."
+    message: "Use os.Logger or a structured logging system instead of print(). print() has no log levels, no filtering, and clutters the console."
     severity: warning
 
   no_silent_catch:
     name: "No Silent Error Swallowing"
     regex: '\}\s*catch\s*\{?\s*\n?\s*\}'
     included: ".*Sources/.*\\.swift"
-    message: "Don't silently swallow errors with empty catch blocks. Log the error or surface it to the user. Silent catches hide bugs. See code-review.md §2."
+    message: "Don't silently swallow errors with empty catch blocks. Log the error or surface it to the user. Silent catches hide bugs."
     severity: warning
 
   # ═══════════════════════════════════════════════════════════
@@ -645,38 +645,38 @@ custom_rules:
   no_foreground_color:
     name: "Use .foregroundStyle()"
     regex: '\.foregroundColor\('
-    message: "Use .foregroundStyle() instead of .foregroundColor(). foregroundColor is soft-deprecated and doesn't support ShapeStyle (gradients, materials). See code-review.md §1."
+    message: "Use .foregroundStyle() instead of .foregroundColor(). foregroundColor is soft-deprecated and doesn't support ShapeStyle (gradients, materials)."
     severity: warning
 
   no_ignores_safe_area_bare:
     name: "Specify ignoresSafeArea Edges"
     regex: '\.ignoresSafeArea\(\)'
-    message: "Specify which edges to ignore: .ignoresSafeArea(.container, edges: .bottom). Bare .ignoresSafeArea() ignores ALL safe areas including the Dynamic Island and home indicator. See hig.md §1.2."
+    message: "Specify which edges to ignore: .ignoresSafeArea(.container, edges: .bottom). Bare .ignoresSafeArea() ignores ALL safe areas including the Dynamic Island and home indicator."
     severity: warning
 
   no_on_tap_gesture_for_buttons:
     name: "Prefer Button Over onTapGesture"
     regex: '\.onTapGesture\s*\{'
     included: ".*View\\.swift"
-    message: "Prefer Button over .onTapGesture for interactive elements. Button provides accessibility traits (.isButton), keyboard focus, and proper hit testing automatically. If onTapGesture is unavoidable, add .accessibilityAddTraits(.isButton). See hig.md §5.6."
+    message: "Prefer Button over .onTapGesture for interactive elements. Button provides accessibility traits (.isButton), keyboard focus, and proper hit testing automatically. If onTapGesture is unavoidable, add .accessibilityAddTraits(.isButton)."
     severity: warning
 
   no_binding_get_set:
     name: "No Binding(get:set:) in Views"
     regex: 'Binding\(get:|Binding\(\s*get:'
     included: ".*View\\.swift"
-    message: "Avoid Binding(get:set:) in view body code — it creates a new Binding each render, causing unnecessary invalidation. Use @State/@Binding with .onChange() instead. See components.md §1."
+    message: "Avoid Binding(get:set:) in view body code — it creates a new Binding each render, causing unnecessary invalidation. Use @State/@Binding with .onChange() instead."
     severity: warning
 
   # ═══════════════════════════════════════════════════════════
-  # CONCURRENCY — architecture.md §3
+  # CONCURRENCY
   # ═══════════════════════════════════════════════════════════
 
   no_bare_task_in_views:
     name: "Prefer .task Modifier in Views"
     regex: 'onAppear[^}]*Task\s*\{'
     included: ".*View\\.swift"
-    message: "Replace .onAppear { Task { } } with .task { }. The .task modifier automatically cancels work when the view disappears, preventing memory leaks. See architecture.md §3."
+    message: "Replace .onAppear { Task { } } with .task { }. The .task modifier automatically cancels work when the view disappears, preventing memory leaks."
     severity: warning
 
   # ═══════════════════════════════════════════════════════════
@@ -686,17 +686,17 @@ custom_rules:
   no_uuid_in_foreach_id:
     name: "No UUID() in ForEach Identity"
     regex: '\.id\(UUID\(\)\)'
-    message: "Never use .id(UUID()) — it generates a new identity every render, destroying view state and forcing full recreation. Use a stable identifier from your model. See performance.md."
+    message: "Never use .id(UUID()) — it generates a new identity every render, destroying view state and forcing full recreation. Use a stable identifier from your model."
     severity: error
 
   # ═══════════════════════════════════════════════════════════
-  # LOCALIZATION — localization.md §7
+  # LOCALIZATION
   # ═══════════════════════════════════════════════════════════
 
   no_left_right_padding:
     name: "No .leading/.trailing as .left/.right"
     regex: '\.padding\(\.left|\.padding\(\.right|alignment:\s*\.left|alignment:\s*\.right'
-    message: "Use .leading/.trailing instead of .left/.right. Left/right don't adapt for RTL languages (Arabic, Hebrew). See localization.md §3."
+    message: "Use .leading/.trailing instead of .left/.right. Left/right don't adapt for RTL languages (Arabic, Hebrew)."
     severity: error
 ```
 
@@ -764,9 +764,9 @@ Replace `XXXXXXXXXX` with your Apple Developer Team ID.
 
 ---
 
-## 8. `CLAUDE.md`
+## 8. `AGENTS.md`
 
-Every project gets a `CLAUDE.md` at the repo root so agents have immediate context.
+Every project gets an `AGENTS.md` (project agent instructions) at the repo root.
 
 ```markdown
 # MyApp
@@ -831,14 +831,7 @@ The asset catalog needs both a root `Contents.json` and an `AppIcon.appiconset/C
 
 ## 10. Pre-Commit Hook
 
-The `make setup` target installs a git pre-commit hook automatically. The hook runs:
-
-1. **SwiftFormat lint** — checks all source files are formatted. Fails fast with a message to run `make format`.
-2. **SwiftLint strict** — checks architecture and code quality rules. Fails with a message to run `make lint`.
-
-If you need to bypass the hook for a WIP commit: `git commit --no-verify`
-
-**Important:** The hook runs on every commit. If `make setup` hasn't been run (e.g., fresh clone), remind the user to run it first.
+`make setup` installs a pre-commit hook running SwiftFormat lint then SwiftLint strict. Bypass for WIP with `--no-verify`. On a fresh clone, remind the user to run `make setup`.
 
 ---
 

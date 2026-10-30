@@ -7,7 +7,7 @@ description: Use XcodeBuildMCP to build, run, launch, and debug the current iOS 
 
 ## Overview
 
-Use XcodeBuildMCP to build and run the current project scheme on a booted iOS simulator, interact with the UI, capture logs, and run tests when requested. Prefer MCP tools for simulator control, logs, and view inspection.
+Use XcodeBuildMCP tools for simulator control, logs, and view inspection.
 
 ## Core Workflow
 
@@ -39,7 +39,6 @@ Follow this sequence unless the user asks for a narrower action.
 ### 4) Run tests (when requested)
 
 - Call `mcp__XcodeBuildMCP__test_sim` to run the test suite on the simulator.
-- Review test output, fix failures, re-run until tests pass.
 
 ## UI Interaction & Debugging
 
@@ -56,18 +55,6 @@ Use these when asked to inspect or interact with the running app.
 - Start logs: `mcp__XcodeBuildMCP__start_sim_log_cap` with the app bundle id.
 - Stop logs: `mcp__XcodeBuildMCP__stop_sim_log_cap` and summarize important lines.
 - For console output, set `captureConsole: true` and relaunch if required.
-
-## Agentic Build/Test Loop
-
-For implementing features end-to-end:
-
-1. Implement the feature code.
-2. Build the app (`build_run_sim`) if the user wants a runtime check.
-3. If build fails, fix errors and rebuild before interacting with the simulator.
-4. Verify launch with `describe_ui` or `screenshot`.
-5. Run tests (`test_sim`) when the user asked for test validation.
-6. If tests fail, fix and re-run.
-7. Interact with the feature and confirm the observed behavior.
 
 ## Troubleshooting
 

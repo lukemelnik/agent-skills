@@ -1,73 +1,31 @@
 ---
 name: build-run-debug
-description: Build, run, and debug local macOS apps and desktop executables using shell-first Xcode and Swift workflows. Use when asked to build a Mac app, launch it, diagnose compiler or linker failures, inspect startup problems, or debug desktop-only runtime issues.
+description: Build, run, and debug local macOS apps and SwiftPM packages from the shell, triage failing macOS tests, and verify os.Logger events after a run. Use when asked to build or launch a Mac app, diagnose compiler/linker/launch failures, run macOS tests, or confirm logged events fire.
 ---
 
 # Build / Run / Debug
 
-## Quick start
-
-Prefer shell-first workflows:
-
-- `xcodebuild` for Xcode workspaces or projects
-- `swift build` and `swift run` for pure SwiftPM executables
-- a project-local `script/build_and_run.sh` as the stable kill-build-run entrypoint once it exists
-
-Do not assume simulators or iOS tooling for macOS work.
+Shell-first (`xcodebuild`, `swift build`/`run`/`test`). Do not assume simulators or iOS tooling for macOS work.
 
 ## Workflow
 
-1. Discover the project shape.
-   - Check whether the workspace already belongs to a git repo with `git rev-parse --is-inside-work-tree`.
-   - If no repo exists, initialize one at the project root so Codex app git-backed features work.
-   - Look for `.xcworkspace`, `.xcodeproj`, and `Package.swift`.
-2. Resolve the runnable target and process name.
-   - For Xcode, list schemes and prefer the app-producing scheme unless the user names another one.
-   - For SwiftPM, identify executable products and explain ambiguity if there are several.
-3. Create or update `script/build_and_run.sh`.
-   - Make it executable.
-   - Default path: stop the existing process, build, then launch the fresh app or executable.
-   - Optional flags can support `--debug`, `--logs`, `--telemetry`, or `--verify`.
-4. Write `.codex/environments/environment.toml` once the script exists.
-   - Point the Run action at `./script/build_and_run.sh`.
-   - Update the existing action instead of creating duplicates.
-5. Build and run through the script.
-   - Use the simple path first.
-   - Reach for debug or log flags only when the user needs them.
-6. Classify failures correctly.
-   - Compiler
-   - Linker
-   - Signing
-   - Build settings
-   - Missing SDK or toolchain
-   - Script bug
-   - Runtime launch
+1. Find `.xcworkspace`, `.xcodeproj`, `Package.swift`. For Xcode, prefer the app-producing scheme unless the user names one; for SwiftPM, state which executable product you chose if several exist.
+2. Create or update `script/build_and_run.sh` as the stable kill-build-run entrypoint: stop the existing process, build, launch the fresh app. Optional flags: `--debug`, `--logs`, `--telemetry`, `--verify`. Don't leave the user with a one-off command chain once the script exists.
+3. Build and run through the script; use debug/log flags only when needed.
+4. Classify failures: compiler, linker, signing, build settings, missing SDK/toolchain, script bug, runtime launch. If output is huge, report the first real blocker and the next proof step.
 
-## Preferred commands
+## SwiftPM notes
 
-- `find . -name '*.xcworkspace' -o -name '*.xcodeproj' -o -name 'Package.swift'`
-- `xcodebuild -list -workspace <workspace>`
-- `xcodebuild -list -project <project>`
-- `./script/build_and_run.sh`
-- `./script/build_and_run.sh --debug`
-- `./script/build_and_run.sh --logs`
-- `./script/build_and_run.sh --telemetry`
-- `./script/build_and_run.sh --verify`
+- A library-only package is not runnable; a pure package produces no app bundle.
+- Filter tests with `swift test --filter <Target>/<Case>`.
 
-## Guardrails
+## Test triage
 
-- Prefer the narrowest command that proves or disproves the current theory.
-- Do not leave the user with a one-off manual command chain once a stable run script can own the workflow.
-- Do not point the Codex Run action at a stale script path.
-- Do not describe mobile or simulator workflows as if they apply to macOS.
-- If output is huge, summarize the first real blocker and the next proof step.
+- Run the smallest failing scope first; separate compile failures from test execution failures.
+- App-hosted tests can fail from a missing host app, entitlements, or sandbox rather than a regression; check these before blaming the code.
+- Flag iOS/simulator-only assumptions and mark likely flakes as such.
 
-## Output expectations
+## Logging
 
-Provide:
-
-- the detected project type
-- the script path and Run action you configured, if applicable
-- the command you ran
-- whether build and launch succeeded
-- the top blocker if they failed
+- Use `os.Logger` (subsystem = bundle id, category per feature), not `print`; never log secrets or document contents.
+- After a run, verify the event fired: `log stream --style compact --predicate 'subsystem == "<bundle id>"'`. Don't claim an event is wired without this.

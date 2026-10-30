@@ -2,309 +2,16 @@
 
 ## Table of Contents
 
-1. [SwiftData](#1-swiftdata)
-2. [SwiftData Schema Migration](#2-swiftdata-schema-migration)
-3. [Core Data](#3-core-data)
-4. [AppStorage and UserDefaults](#4-appstorage-and-userdefaults)
-5. [Keychain](#5-keychain)
-6. [Codable to File](#6-codable-to-file)
-7. [Document-Based Persistence with NSDocument](#7-document-based-persistence-with-nsdocument)
-8. [Security-Scoped Bookmarks Integration](#8-security-scoped-bookmarks-integration)
-9. [SQLite/GRDB for High-Performance Needs](#9-sqlitegrdb-for-high-performance-needs)
-10. [Decision Guide](#10-decision-guide)
+1. [UserDefaults with @Observable](#1-userdefaults-with-observable)
+2. [Codable to File](#2-codable-to-file)
+3. [Document-Based Persistence with NSDocument](#3-document-based-persistence-with-nsdocument)
+4. [Security-Scoped Bookmarks Integration](#4-security-scoped-bookmarks-integration)
+5. [SQLite/GRDB for High-Performance Needs](#5-sqlitegrdb-for-high-performance-needs)
+6. [Decision Guide](#6-decision-guide)
 
 ---
 
-## 1. SwiftData
-
-### Model Definition
-
-```swift
-import SwiftData
-
-@Model class Draft {
-    var content: String = ""
-    var creationDate: Date = Date()
-
-    init(content: String) {
-        self.content = content
-        self.creationDate = Date()
-    }
-}
-
-@Model class TagGroup: Equatable {
-    var title: String = ""
-    var symbolName: String = ""
-    var tags: [String] = []
-    var creationDate: Date = Date()
-
-    init(title: String, symbolName: String, tags: [String]) {
-        self.title = title
-        self.symbolName = symbolName
-        self.tags = tags
-        self.creationDate = Date()
-    }
-}
-```
-
-### Relationships
-
-```swift
-@Model class Folder {
-    var name: String = ""
-    @Relationship(deleteRule: .cascade, inverse: \Item.folder)
-    var items: [Item] = []
-}
-
-@Model class Item {
-    var title: String = ""
-    var folder: Folder?
-}
-```
-
-Delete rules: `.cascade`, `.nullify` (default), `.deny`, `.noAction`.
-
-### ModelContainer Setup
-
-```swift
-@main
-struct MyApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-        .modelContainer(for: [Draft.self, TagGroup.self])
-
-        // Document-based SwiftData app
-        DocumentGroup(editing: .myDocument, migrationPlan: MyMigrationPlan.self) {
-            ContentView()
-        }
-    }
-}
-```
-
-### @Query in Views
-
-```swift
-struct DraftsListView: View {
-    @Environment(\.modelContext) private var context
-    @Query(sort: \Draft.creationDate, order: .reverse) var drafts: [Draft]
-
-    var body: some View {
-        List {
-            ForEach(drafts) { draft in
-                Text(draft.content)
-            }
-            .onDelete { indexes in
-                if let index = indexes.first {
-                    context.delete(drafts[index])
-                }
-            }
-        }
-    }
-}
-```
-
-### Compound Predicates and Dynamic Queries
-
-```swift
-@Query(filter: #Predicate<Item> { item in
-    item.isComplete == false && item.priority > 3
-}, sort: \Item.dueDate)
-var urgentItems: [Item]
-
-// Dynamic predicate via init
-init(searchText: String) {
-    _items = Query(filter: #Predicate<Item> { item in
-        searchText.isEmpty || item.title.localizedStandardContains(searchText)
-    })
-}
-```
-
-### CRUD in ModelContext
-
-```swift
-// Insert
-let draft = Draft(content: "Hello")
-context.insert(draft)
-
-// Update — mutate directly
-draft.content = "Updated"
-
-// Delete
-context.delete(draft)
-
-// Manual fetch
-var descriptor = FetchDescriptor<Draft>(
-    predicate: #Predicate { $0.content.contains("search") },
-    sortBy: [SortDescriptor(\.creationDate, order: .reverse)]
-)
-descriptor.fetchLimit = 20
-let results = try context.fetch(descriptor)
-```
-
----
-
-## 2. SwiftData Schema Migration
-
-### VersionedSchema
-
-```swift
-enum SchemaV1: VersionedSchema {
-    static var versionIdentifier = Schema.Version(1, 0, 0)
-    static var models: [any PersistentModel.Type] { [Item.self] }
-
-    @Model class Item {
-        var title: String = ""
-    }
-}
-
-enum SchemaV2: VersionedSchema {
-    static var versionIdentifier = Schema.Version(2, 0, 0)
-    static var models: [any PersistentModel.Type] { [Item.self] }
-
-    @Model class Item {
-        var title: String = ""
-        var priority: Int = 0
-    }
-}
-```
-
-### SchemaMigrationPlan
-
-```swift
-enum ItemMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [SchemaV1.self, SchemaV2.self] }
-    static var stages: [MigrationStage] { [migrateV1toV2] }
-
-    static let migrateV1toV2 = MigrationStage.lightweight(
-        fromVersion: SchemaV1.self,
-        toVersion: SchemaV2.self
-    )
-}
-```
-
-Custom migration with data transform:
-
-```swift
-static let migrateV1toV2 = MigrationStage.custom(
-    fromVersion: SchemaV1.self,
-    toVersion: SchemaV2.self,
-    willMigrate: nil,
-    didMigrate: { context in
-        let items = try context.fetch(FetchDescriptor<SchemaV2.Item>())
-        for item in items {
-            item.priority = item.title.contains("urgent") ? 5 : 0
-        }
-        try context.save()
-    }
-)
-```
-
-- **Lightweight**: adding properties with defaults, renaming with `@Attribute(originalName:)`.
-- **Custom**: data transforms, splitting/merging models, computed defaults.
-
----
-
-## 3. Core Data
-
-For existing apps or when SwiftData doesn't cover the use case.
-
-### NSPersistentContainer Setup
-
-```swift
-final class CoreDataStore {
-    private let persistentContainer: NSPersistentContainer
-
-    init(modelName: String, appContainerURL: URL) async throws {
-        guard let modelURL = Bundle.module.url(forResource: modelName, withExtension: "momd"),
-              let model = NSManagedObjectModel(contentsOf: modelURL) else {
-            throw StoreError.missingDataModel
-        }
-
-        let description = NSPersistentStoreDescription(
-            url: appContainerURL.appendingPathComponent("\(modelName).sqlite")
-        )
-        description.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
-        description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
-
-        let container = NSPersistentContainer(name: modelName, managedObjectModel: model)
-        container.persistentStoreDescriptions = [description]
-
-        try await withCheckedThrowingContinuation { continuation in
-            container.loadPersistentStores { _, error in
-                if let error { continuation.resume(throwing: error) }
-                else { continuation.resume() }
-            }
-        }
-
-        container.viewContext.automaticallyMergesChangesFromParent = true
-        container.viewContext.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy
-        self.persistentContainer = container
-    }
-
-    var viewContext: NSManagedObjectContext { persistentContainer.viewContext }
-    var newBackgroundContext: NSManagedObjectContext { persistentContainer.newBackgroundContext() }
-}
-```
-
-### NSFetchRequest Pattern
-
-```swift
-func fetchOrCreate<T: NSManagedObject>(
-    entityType: T.Type,
-    predicate: NSPredicate?,
-    in context: NSManagedObjectContext
-) throws -> T {
-    let request = NSFetchRequest<T>(entityName: NSStringFromClass(entityType))
-    request.predicate = predicate
-    request.fetchLimit = 1
-    if let existing = try context.fetch(request).first {
-        return existing
-    }
-    return T(context: context)
-}
-```
-
-### Core Data Migration
-
-Versioned `.xcdatamodeld` bundles handle schema evolution:
-
-- **Lightweight**: add attributes with defaults, add/remove relationships, rename with renaming ID.
-- **Heavy**: requires `NSMappingModel` + `NSMigrationManager` for data transforms.
-
-Enable via persistent store description options (shown above).
-
----
-
-## 4. AppStorage and UserDefaults
-
-### Basic @AppStorage
-
-```swift
-struct SettingsView: View {
-    @AppStorage("preferred_theme") var preferredTheme: ThemeMode = .system
-    @AppStorage("show_sidebar") var showSidebar = true
-}
-```
-
-### Custom Types with RawRepresentable
-
-```swift
-enum ThemeMode: String, CaseIterable {
-    case system, light, dark
-}
-
-// Arrays via RawRepresentable
-extension [String]: @retroactive RawRepresentable {
-    public var rawValue: String {
-        (try? JSONEncoder().encode(self)).flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
-    }
-    public init?(rawValue: String) {
-        self = (try? JSONDecoder().decode([String].self, from: Data(rawValue.utf8))) ?? []
-    }
-}
-```
+## 1. UserDefaults with @Observable
 
 ### @Observable + UserDefaults Bridge
 
@@ -352,72 +59,7 @@ private var workspaceState: [String: Any] {
 
 ---
 
-## 5. Keychain
-
-### Protocol-Based Keychain Access
-
-```swift
-protocol KeychainStorage {
-    func dataValue(service: String, key: String) throws -> Data
-    func setDataValue(_ dataValue: Data, service: String, key: String) throws
-    func removeValue(service: String, key: String) throws
-}
-
-final class KeychainStorageImpl: KeychainStorage {
-    private func baseQuery(service: String, key: String) -> [String: Any] {
-        [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key,
-        ]
-    }
-
-    func dataValue(service: String, key: String) throws -> Data {
-        var query = baseQuery(service: service, key: key)
-        query[kSecMatchLimit as String] = kSecMatchLimitOne
-        query[kSecReturnData as String] = true
-
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess else { throw KeychainError(status) }
-        return item as! Data
-    }
-
-    func setDataValue(_ dataValue: Data, service: String, key: String) throws {
-        let query = baseQuery(service: service, key: key)
-        let attributes: [String: Any] = [
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-            kSecValueData as String: dataValue,
-        ]
-
-        let addQuery = query.merging(attributes) { _, new in new }
-        let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
-        if addStatus == errSecSuccess { return }
-        guard addStatus == errSecDuplicateItem else { throw KeychainError(addStatus) }
-
-        let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-        guard updateStatus == errSecSuccess else { throw KeychainError(updateStatus) }
-    }
-
-    func removeValue(service: String, key: String) throws {
-        let query = baseQuery(service: service, key: key)
-        let status = SecItemDelete(query as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw KeychainError(status)
-        }
-    }
-}
-```
-
-### When to Use Keychain
-
-- OAuth tokens, API keys, passwords, cryptographic keys, database encryption keys.
-- Data that should survive app reinstall (with correct accessibility setting).
-- **Never** store large or frequently accessed data — it's slow.
-
----
-
-## 6. Codable to File
+## 2. Codable to File
 
 ### JSON Settings to Application Support
 
@@ -557,7 +199,7 @@ The fixtures are real serialized output captured from each version — not hand-
 
 ---
 
-## 7. Document-Based Persistence with NSDocument
+## 3. Document-Based Persistence with NSDocument
 
 macOS document architecture manages file reading, writing, autosave, and dirty state.
 
@@ -682,7 +324,7 @@ override func updateChangeCount(_ change: NSDocument.ChangeType) {
 
 ---
 
-## 8. Security-Scoped Bookmarks Integration
+## 4. Security-Scoped Bookmarks Integration
 
 Persist access to user-selected files/folders across app launches. See `references/capabilities.md` for full bookmark save/restore code.
 
@@ -768,7 +410,7 @@ func resolveBookmark(key: String) -> URL? {
 
 ---
 
-## 9. SQLite/GRDB for High-Performance Needs
+## 5. SQLite/GRDB for High-Performance Needs
 
 When Core Data/SwiftData overhead is unacceptable or you need full SQL control.
 
@@ -919,7 +561,7 @@ try pool.write { db in
 
 ---
 
-## 10. Decision Guide
+## 6. Decision Guide
 
 | Approach | Best For | Size | Queryable | Encrypted | Survives Reinstall |
 |----------|----------|------|-----------|-----------|-------------------|

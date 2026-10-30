@@ -63,16 +63,8 @@ Skip if Astro MCP not connected.
 **Summary:** X errors, Y warnings across Z locales
 
 #### Recommendations
-1. [Highest priority — errors first]
-2. [Keyword waste]
-3. [Utilization improvements]
+(errors first)
 ```
-
-## Keyword Field Rules
-- Comma-separated, **no spaces after commas**
-- Don't duplicate words from title or subtitle
-- Prefer single words over phrases (enables more cross-field combinations)
-- Always validate with popularity data before making swaps
 
 ## Character Limits
 | Field | Limit |

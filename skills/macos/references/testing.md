@@ -2,259 +2,19 @@
 
 ## Table of Contents
 
-1. [Swift Testing Framework](#1-swift-testing-framework)
-2. [XCTest Essentials](#2-xctest-essentials)
-3. [Testing @Observable ViewModels](#3-testing-observable-viewmodels)
-4. [Async Test Patterns](#4-async-test-patterns)
-5. [Protocol-Based Mocking](#5-protocol-based-mocking)
-6. [Snapshot Testing](#6-snapshot-testing)
-7. [UI Testing with XCUIApplication](#7-ui-testing-with-xcuiapplication)
-8. [Menu Testing](#8-menu-testing)
-9. [Multi-Window Testing](#9-multi-window-testing)
-10. [Testing AppKit Bridges](#10-testing-appkit-bridges)
-11. [Testing Document-Based Apps](#11-testing-document-based-apps)
-12. [Accessibility-Based UI Tests](#12-accessibility-based-ui-tests)
-13. [Preview-Based Testing](#13-preview-based-testing)
+1. [Protocol-Based Mocking](#1-protocol-based-mocking)
+2. [Snapshot Testing](#2-snapshot-testing)
+3. [UI Testing with XCUIApplication](#3-ui-testing-with-xcuiapplication)
+4. [Menu Testing](#4-menu-testing)
+5. [Multi-Window Testing](#5-multi-window-testing)
+6. [Testing AppKit Bridges](#6-testing-appkit-bridges)
+7. [Testing Document-Based Apps](#7-testing-document-based-apps)
+8. [Accessibility-Based UI Tests](#8-accessibility-based-ui-tests)
+9. [Scenario-Based State Machine Testing](#9-scenario-based-state-machine-testing)
 
 ---
 
-## 1. Swift Testing Framework
-
-Preferred for new unit tests (macOS 14+/Xcode 16+). CodeEdit uses Swift Testing for newer tests.
-
-### @Test and #expect
-
-```swift
-import Testing
-@testable import MyApp
-
-@MainActor
-@Suite(.serialized)
-class TaskManagerTests {
-    var taskManager: TaskManager!
-
-    init() throws {
-        let settings = try JSONDecoder().decode(WorkspaceSettings.self, from: Data("{}".utf8))
-        taskManager = TaskManager(workspaceSettings: settings, workspaceURL: nil)
-    }
-
-    @Test
-    func executeTaskInZsh() async throws {
-        Settings.shared.preferences.terminal.shell = .zsh
-        let task = CETask(name: "Test", command: "echo 'Hello World'")
-        taskManager.executeActiveTask()
-
-        // waitForExpectation is a CodeEdit custom helper (not a standard Swift Testing API).
-        // The standard Swift Testing approach for async callbacks is `confirmation`:
-        //
-        //   await confirmation("task finished", expectedCount: 1) { confirm in
-        //       taskManager.onStatusChange { status in
-        //           if status == .finished { confirm() }
-        //       }
-        //       taskManager.executeActiveTask()
-        //   }
-        //
-        await waitForExpectation(timeout: .seconds(10)) {
-            self.taskManager.activeTasks[task.id]?.status == .finished
-        } onTimeout: {
-            Issue.record("Status never changed to finished.")
-        }
-
-        let output = try #require(taskManager.activeTasks[task.id]?.output?.getBufferAsString())
-        #expect(output.contains("Hello World"))
-    }
-}
-```
-
-### `confirmation` — Standard Async Verification
-
-Swift Testing's built-in API for verifying async callbacks:
-
-```swift
-@Test
-func callbackInvoked() async {
-    let sut = MyService()
-    await confirmation("callback invoked") { confirm in
-        sut.onComplete { confirm() }
-        sut.start()
-    }
-}
-
-// With expected count
-@Test
-func multipleCallbacks() async {
-    await confirmation("events received", expectedCount: 3) { confirm in
-        sut.onEvent { _ in confirm() }
-        sut.sendEvents(count: 3)
-    }
-}
-```
-
-### Key Differences from XCTest
-
-- `@Test` instead of `func test...` naming convention
-- `#expect(condition)` instead of `XCTAssert*`
-- `#require(optional)` instead of `XCTUnwrap` (throws on nil)
-- `@Suite("Name")` for grouping, replaces class inheritance
-- `struct` test types allowed (prefer for value semantics)
-- Test types using `init`/`deinit` for setup/teardown must be classes (`deinit` is not available on structs). Prefer structs for stateless test suites
-
-### Traits
-
-```swift
-@Test(.disabled("Tasks in shells don't receive signals in CI"))
-func terminateSelectedTask() async throws { }
-
-@Suite(.serialized)  // Run tests sequentially (CodeEdit pattern for stateful tests)
-class TaskManagerTests { }
-```
-
-### Parameterized Tests
-
-```swift
-@Test(arguments: [Shell.zsh, Shell.bash])
-func executeTask(shell: Shell) async throws {
-    Settings.shared.preferences.terminal.shell = shell
-    // Test with each shell
-}
-```
-
----
-
-## 2. XCTest Essentials
-
-Still required for UI tests. Used extensively in CodeEdit, NetNewsWire, and mature macOS projects.
-
-### Basic Structure
-
-```swift
-import XCTest
-@testable import MyApp
-
-final class FuzzySearchTests: XCTestCase {
-    private var directory: URL!
-    private var mockWorkspace: WorkspaceDocument!
-
-    override func setUp() async throws {
-        directory = try FileManager.default.url(
-            for: .developerApplicationDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        .appending(path: "MyApp/Tests", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    }
-
-    override func tearDown() async throws {
-        try? FileManager.default.removeItem(at: directory)
-    }
-}
-```
-
-### Common Assertions
-
-```swift
-XCTAssertEqual(actual, expected)
-XCTAssertTrue(condition)
-XCTAssertFalse(condition)
-XCTAssertNil(optional)
-XCTAssertNotNil(optional)
-XCTAssertThrowsError(try expression())
-let unwrapped = try XCTUnwrap(optional)
-```
-
----
-
-## 3. Testing @Observable ViewModels
-
-### Direct State Mutation Testing
-
-CodeEdit pattern -- construct, call methods, assert:
-
-```swift
-@MainActor
-final class UtilityAreaViewModelTests: XCTestCase {
-    func testInitialization() {
-        let vm = UtilityAreaViewModel()
-        XCTAssertFalse(vm.isMaximized)
-        XCTAssertTrue(vm.selectedTerminals.isEmpty)
-    }
-
-    func testToggleMaximize() {
-        let vm = UtilityAreaViewModel()
-        vm.toggleMaximized()
-        XCTAssertTrue(vm.isMaximized)
-        vm.toggleMaximized()
-        XCTAssertFalse(vm.isMaximized)
-    }
-}
-```
-
-### Testing with Workspace Documents
-
-CodeEdit pattern -- create real temp workspace, test against it:
-
-```swift
-override func setUp() async throws {
-    directory = tempDirectoryURL()
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    try "content".write(to: directory.appending(path: "file.txt"), atomically: true, encoding: .utf8)
-
-    mockWorkspace = try await WorkspaceDocument(
-        for: directory,
-        withContentsOf: directory,
-        ofType: ""
-    )
-}
-```
-
----
-
-## 4. Async Test Patterns
-
-### Polling-Based Wait Helper (Swift Testing)
-
-CodeEdit custom helper -- repeatedly check condition, fail on timeout. Note: `waitForExpectation` is a CodeEdit custom utility, not a standard Swift Testing API. `Issue.record()` is a Swift Testing call.
-
-```swift
-await waitForExpectation(timeout: .seconds(10)) {
-    self.taskManager.activeTasks[task.id]?.status == .finished
-} onTimeout: {
-    Issue.record("Status never changed to finished.")  // Swift Testing
-}
-```
-
-### Waiting for Indexing / Background Work (XCTest)
-
-CodeEdit pattern -- poll for async indexing completion. Uses `XCTFail` (XCTest).
-
-```swift
-let startTime = Date()
-let timeoutInSeconds = 2.0
-while searchState.indexStatus != .done {
-    try? await Task.sleep(nanoseconds: 100_000_000)
-    if Date().timeIntervalSince(startTime) > timeoutInSeconds {
-        XCTFail("TIMEOUT: Indexing took too long or did not complete.")  // XCTest
-        return
-    }
-}
-```
-
-### Predicate-Based Expectations (XCTest)
-
-CodeEdit UI test pattern -- wait for window state changes. Uses `expectation(for:)` and `wait(for:timeout:)` (XCTest).
-
-```swift
-let notExistsPredicate = NSPredicate(format: "exists == false")
-let expectation = expectation(for: notExistsPredicate, evaluatedWith: window)
-application.typeKey("w", modifierFlags: .command)
-wait(for: [expectation], timeout: 5.0)
-```
-
----
-
-## 5. Protocol-Based Mocking
+## 1. Protocol-Based Mocking
 
 ### AppKit Mock Objects
 
@@ -276,72 +36,7 @@ final class NSHapticFeedbackPerformerMock: NSObject, NSHapticFeedbackPerformer {
 }
 ```
 
-### In-Memory Database Mock
-
-Signal-iOS pattern -- swap persistent store for in-memory:
-
-```swift
-final class CallRecordStoreTest: XCTestCase {
-    private var inMemoryDB: InMemoryDB!
-    private var callRecordStore: ExplainingCallRecordStoreImpl!
-
-    override func setUp() {
-        inMemoryDB = InMemoryDB()
-        callRecordStore = ExplainingCallRecordStoreImpl(
-            deletedCallRecordStore: MockDeletedCallRecordStore()
-        )
-    }
-
-    func testInsertAndFetch() throws {
-        let record = makeCallRecord()
-        try inMemoryDB.write { tx in
-            try callRecordStore._insert(callRecord: record, tx: tx)
-        }
-        let fetched = inMemoryDB.read { tx in
-            callRecordStore.fetch(callId: record.callId, tx: tx)
-        }
-        XCTAssertNotNil(fetched)
-    }
-}
-```
-
-### Simulating Mock
-
-wikipedia-ios pattern -- mock wraps and simulates system type:
-
-```swift
-class MockCLLocationManager {
-    var isUpdatingLocation = false
-    var isUpdatingHeading = false
-
-    func simulate(authorizationStatus: CLAuthorizationStatus) {
-        simulatedAuthStatus = authorizationStatus
-        delegate?.locationManagerDidChangeAuthorization(self)
-    }
-
-    func simulateUpdate(location: CLLocation) {
-        delegate?.locationManager?(self, didUpdateLocations: [location])
-    }
-}
-```
-
-### Tracking Mock with Invocation Counts
-
-```swift
-class MockNotificationManager: NotificationManagerProtocol {
-    var requestAuthorizationCalled = false
-    var scheduledNotifications = 0
-
-    func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        requestAuthorizationCalled = true
-        completion(true, nil)
-    }
-}
-```
-
----
-
-## 6. Snapshot Testing
+## 2. Snapshot Testing
 
 Uses [swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing). CodeEdit uses it for macOS component testing.
 
@@ -401,7 +96,7 @@ assertSnapshot(matching: hosting, as: .image, record: .all)
 
 ---
 
-## 7. UI Testing with XCUIApplication
+## 3. UI Testing with XCUIApplication
 
 ### Launch Configuration
 
@@ -489,7 +184,7 @@ func testNavigatorOpenFilesAndFolder() {
 
 ---
 
-## 8. Menu Testing
+## 4. Menu Testing
 
 ### Testing Menu Commands via Keyboard Shortcuts
 
@@ -548,7 +243,7 @@ func testMenuBarItemToggles() {
 
 ---
 
-## 9. Multi-Window Testing
+## 5. Multi-Window Testing
 
 ### Testing Window Lifecycle
 
@@ -623,7 +318,7 @@ func testShiftCmdWClosesWindowWithOpenTab() {
 
 ---
 
-## 10. Testing AppKit Bridges
+## 6. Testing AppKit Bridges
 
 ### Strategy: Test the Model, Not the View
 
@@ -662,7 +357,7 @@ func testSourceEditorAppearance() {
 
 ---
 
-## 11. Testing Document-Based Apps
+## 7. Testing Document-Based Apps
 
 ### Workspace Document Lifecycle Testing
 
@@ -743,7 +438,7 @@ func testUTTypeDetection() {
 
 ---
 
-## 12. Accessibility-Based UI Tests
+## 8. Accessibility-Based UI Tests
 
 ### Using Accessibility Identifiers
 
@@ -813,41 +508,7 @@ class AppleScriptXCTestCase: XCTestCase {
 }
 ```
 
----
-
-## 13. Preview-Based Testing
-
-Use `#Preview` as a lightweight validation layer alongside snapshot tests.
-
-### Key States to Cover
-
-```swift
-#Preview("Sidebar - Normal") {
-    SidebarView()
-        .environment(WorkspaceModel.mock)
-}
-
-#Preview("Sidebar - Empty Project") {
-    SidebarView()
-        .environment(WorkspaceModel.empty)
-}
-
-#Preview("Editor - Dark Mode") {
-    SourceEditorView(document: .mockSwiftFile)
-        .preferredColorScheme(.dark)
-}
-```
-
-### macOS-Specific Preview Considerations
-
-- Test both `.aqua` and `.darkAqua` appearances
-- Verify toolbar rendering in preview
-- Check window-size-dependent layouts at different frame sizes
-- Previews should cover: light/dark, empty/loaded states, sidebar collapsed/expanded
-
----
-
-## 14. Scenario-Based State Machine Testing
+## 9. Scenario-Based State Machine Testing
 
 For stateful systems that process events over time (gesture recognizers, hotkey processors, animation state machines, multi-step workflows), use a declarative scenario pattern:
 

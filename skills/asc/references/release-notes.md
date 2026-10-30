@@ -1,104 +1,44 @@
 # What's New Writer
 
-Generate engaging, localized release notes from git log, bullet points, or free text.
+Release notes from git history, bullets, or free text, then upload via `asc`.
 
 ## Preconditions
 - Metadata pulled locally: `asc metadata pull --app "APP_ID" --version "1.2.3" --dir "./metadata"`
 - Primary locale is `en-US` unless specified otherwise.
 
-## Phase 1: Gather Input
+## Phase 1: Gather input
 
-Accept one of three input modes (auto-detect):
+### Git log
+Run `scripts/collect_release_changes.sh [since_ref] [until_ref]` (defaults: last tag via `git describe --tags --abbrev=0`, `HEAD`). It prints the commit list and files touched for the range. With no tags it falls back to full history.
 
-### Git Log
-```bash
-git describe --tags --abbrev=0
-git log $(git describe --tags --abbrev=0)..HEAD --oneline --no-merges
-```
-Filter out: merge commits, dependency bumps, CI changes, formatting-only commits.
+Triage for user impact: drop internal-only work (refactors, dependency bumps, CI, build scripts, dev tooling, internal logging, analytics unless they change privacy or behavior). Group by New / Improved / Fixed and dedupe. If a change is ambiguous, ask rather than guess. Every bullet must map to a real change in the range.
 
-### Bullet Points
-User provides rough bullets like "improved search", "fixed crash on launch".
+### Bullets / free text
+Use the user's rough bullets or description as the change list.
 
-### Free Text
-User describes changes conversationally. Extract and structure the changes.
-
-## Phase 2: Draft Notes (Primary Locale)
-
-### 1. Classify Changes
-- **New** — new features or capabilities
-- **Improved** — enhancements to existing features
-- **Fixed** — bug fixes users would notice
-
-Omit empty sections.
-
-### 2. Write Benefit-Focused Copy
-- Describe user impact, not implementation details
-- Use direct address ("you") and action verbs
-- Be specific — mention concrete improvements
-
-### 3. Front-Load the Hook
-First ~170 characters are visible before "more." Lead with the single most impactful change in a complete, compelling sentence.
-
-### 4. Echo Keywords
-Read `keywords` from `metadata/version/{latest}/{primary-locale}.json`. Weave relevant ones naturally — never force or stuff.
-
-### 5. Character Limits
-- Target 500-1500 characters (leaves room for localized expansions)
-- Hard limit: 4,000 characters
-
-### 6. Present Draft
-Show draft with character count. Wait for approval before localizing.
+## Phase 2: Draft (primary locale)
+- Omit empty New / Improved / Fixed sections; describe user impact, one sentence per bullet, no codenames, ticket IDs, or file paths.
+- The first ~170 characters show before "more": lead with the most impactful change.
+- Echo relevant `keywords` from `metadata/version/{latest}/{primary-locale}.json` only where natural.
+- Target 500-1500 characters; hard limit 4,000.
+- Show the draft with a character count and wait for approval before localizing.
 
 ## Phase 3: Localize
-
-### Translation Rules
-- Formal register: formal "you" forms (Russian: вы, German: Sie, French: vous, Spanish: usted)
-- Adapt tone to local market — playful English may need adjustment for formal markets
-- Do NOT literally translate idioms — adapt to local equivalents
-
-### Per-Locale Keyword Echo
-Read locale-specific `keywords` from metadata. Echo naturally in translated notes.
-
-### Validate
-- All translations ≤ 4,000 characters
-- Promotional text ≤ 170 characters per locale
-- If exceeds limit, shorten — never truncate mid-sentence
+- Use formal register where the language has one (German Sie, French vous, Spanish usted, Russian вы); adapt idioms, do not translate literally.
+- Echo each locale's own `keywords`.
+- Validate: notes <= 4,000 chars, promotional text <= 170 per locale. Shorten rather than truncate mid-sentence.
 
 ## Phase 4: Upload
-
 ```bash
-# Individual locale
 asc apps info edit --app "APP_ID" --version-id "VERSION_ID" --locale "en-US" --whats-new "Notes here"
 
-# Bulk push
 asc metadata push --app "APP_ID" --version "1.2.3" --dir "./metadata" --dry-run
 asc metadata push --app "APP_ID" --version "1.2.3" --dir "./metadata"
 ```
 
-## Anti-Patterns
+## Don't
+- "Bug fixes and improvements" (says nothing)
+- Version numbers in headings, or competitor mentions (Review Guidelines)
+- Keyword stuffing: What's New is not indexed
 
-| Don't | Why |
-|-------|-----|
-| "Bug fixes and improvements" | Tells the user nothing |
-| Version numbers in headings | Violates Apple guidelines |
-| Mentioning competitors | Against Review Guidelines |
-| Keyword stuffing | What's New is NOT indexed — write for humans |
-| Marketing fluff with no substance | Erodes trust |
-
-## Good Examples
-
-**Bad:** "Bug fixes and performance improvements."
-**Good:** "Search just got faster — find what you need in seconds. Plus: improved notification accuracy and smoother transitions."
-
-**Bad:** "We've been working hard on improvements!"
-**Good:** "New sleep timer options let you drift off to soothing audio. Choose 15, 30, 45, or 60 minutes."
-
-## Promotional Text Pairing
-
-170 chars max. Summarize the update's theme in one punchy line. Updatable without app submission. Refresh monthly or with each major update.
-
-## Notes
-- What's New is **not indexed** for App Store search — write for humans.
-- Promotional text is the only metadata field updatable without a new submission.
-- Ideal update cadence: every 2-4 weeks.
+Promotional text (170 chars) is the only metadata field updatable without a new submission.

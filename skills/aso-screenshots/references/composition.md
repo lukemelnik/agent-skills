@@ -2,19 +2,7 @@
 
 ## Brand Color Selection
 
-Determine automatically — do NOT ask the user to pick:
-
-1. Check codebase for accent colors, tint colors, brand colors in asset catalogs, theme files, color constants
-2. Study simulator screenshots — dominant colors, palette
-3. Consider app domain and audience
-
-Pick a color that:
-- **Complements screenshots** — makes app screens pop. If app UI is light, use bold saturated background.
-- **Stops the scroll** — vibrant, bold, saturated. No pastels.
-- **Suits the app's personality**
-- **Avoids pitfalls** — no white/light grey (disappears), avoid colors too close to app UI's dominant color
-
-Present your choice with brief reasoning. User can override but don't present as a question.
+Choose automatically (do not ask): derive from accent/brand colors in asset catalogs or theme files and the simulator screenshots. Pick a bold, saturated color that contrasts with the app UI's dominant color; no pastels, white, or light grey. State the choice with brief reasoning; the user can override.
 
 ## Scaffold Generation
 

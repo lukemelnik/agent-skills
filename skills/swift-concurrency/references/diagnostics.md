@@ -55,7 +55,7 @@ These are different boundary choices, not interchangeable suppressions.
 
 A call crosses an isolation boundary and requires an async hop. Often surprises when calling actor-isolated methods from outside the actor, or accessing `@MainActor` state from a non-isolated context.
 
-**Fix:** Add `await`. If the call is in synchronous code that cannot be made async, wrap in `Task {}` (but see `unstructured.md` for when that's appropriate).
+**Fix:** Add `await`. If the call is in synchronous code that cannot be made async, wrap in `Task {}`.
 
 
 ## "Main actor-isolated conformance of 'X' to 'Y' cannot be used in nonisolated context"

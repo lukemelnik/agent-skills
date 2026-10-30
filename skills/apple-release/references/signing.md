@@ -9,14 +9,11 @@
 5. [Capabilities and Entitlements](#5-capabilities-and-entitlements)
 6. [Hardened Runtime (macOS)](#6-hardened-runtime-macos)
 7. [Keychain Management for CI](#7-keychain-management-for-ci)
-8. [Team Management](#8-team-management)
-9. [Common Signing Errors and Fixes](#9-common-signing-errors-and-fixes)
+8. [Common Signing Errors and Fixes](#8-common-signing-errors-and-fixes)
 
 ---
 
 ## 1. Certificates
-
-Apple uses two layers of trust: a **certificate** (proves identity) and a **provisioning profile** (authorizes the app to run).
 
 ### Certificate Types
 
@@ -41,25 +38,8 @@ security find-identity -v -p codesigning
 ```
 
 - Certificates expire after **1 year** (development and Apple Distribution) or **5 years** (Developer ID only).
-- Each team member gets their own development certificate; distribution certificates are shared.
 - Revoking a certificate invalidates all provisioning profiles that reference it.
-- **Maximum 5** Developer ID Application certificates per team.
-
-### Creating Certificates Manually
-
-```bash
-# Generate a Certificate Signing Request (CSR)
-# Keychain Access > Certificate Assistant > Request a Certificate From a Certificate Authority
-# Or via command line:
-openssl req -new -newkey rsa:2048 -nodes \
-  -keyout dev.key -out dev.csr \
-  -subj "/emailAddress=dev@example.com/CN=Dev Name/C=US"
-
-# Upload the CSR to developer.apple.com > Certificates
-# Download the .cer and import:
-security import developer_id.cer -k ~/Library/Keychains/login.keychain-db
-security import developer_id.key -k ~/Library/Keychains/login.keychain-db
-```
+- Limits per team: 3 Apple Distribution, 3 Developer ID Application. Revoking a distribution certificate affects all team members.
 
 ### Exporting for CI
 
@@ -76,8 +56,6 @@ base64 -i certs.p12 | pbcopy
 
 ## 2. Provisioning Profiles
 
-A provisioning profile bundles: **App ID** + **Certificate(s)** + **Device UDIDs** (development only) + **Entitlements**.
-
 ### Profile Types
 
 | Profile | Devices | Distribution |
@@ -88,45 +66,17 @@ A provisioning profile bundles: **App ID** + **Certificate(s)** + **Device UDIDs
 | Enterprise | Any device | In-house (requires Enterprise account) |
 | Developer ID (macOS) | Any Mac | Outside App Store |
 
-### Profile Locations
+### Inspecting Profiles
 
 ```bash
-# Xcode-managed profiles
 ls ~/Library/MobileDevice/Provisioning\ Profiles/
-
 # Inspect a profile
 security cms -D -i profile.mobileprovision
-```
-
-### Manual Profile Management
-
-```bash
-# Download from developer.apple.com or use Fastlane:
-fastlane sigh download_all
-
-# Install a profile manually
-cp MyApp.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
-
-# List installed profiles
-ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision
 ```
 
 ---
 
 ## 3. App IDs and Bundle Identifiers
-
-### Structure
-
-- **App ID Prefix**: Team ID (e.g., `ABC123DEF4`)
-- **Bundle ID**: Reverse-domain string (e.g., `com.company.appname`)
-- **Full App ID**: `ABC123DEF4.com.company.appname`
-
-### Wildcard vs Explicit
-
-| Type | Example | Capabilities |
-|------|---------|-------------|
-| Explicit | `com.company.myapp` | All capabilities (push, IAP, etc.) |
-| Wildcard | `com.company.*` | Limited (no push, no App Groups, no iCloud) |
 
 ### App Extensions
 
@@ -145,19 +95,13 @@ Each extension needs its own App ID, provisioning profile, and entitlements file
 
 ## 4. Automatic vs Manual Signing
 
-### Automatic Signing (Recommended for Development)
+### Automatic Signing (development)
 
 In `project.pbxproj`:
 ```
 CODE_SIGN_STYLE = Automatic;
 DEVELOPMENT_TEAM = "TEAMID";
 ```
-
-Xcode will:
-- Create/renew development certificates
-- Generate and update provisioning profiles
-- Register devices automatically
-- Manage App IDs
 
 ### Manual Signing (Required for CI)
 
@@ -166,16 +110,6 @@ CODE_SIGN_STYLE = Manual;
 DEVELOPMENT_TEAM = "TEAMID";
 CODE_SIGN_IDENTITY = "Apple Distribution: Company Name (TEAMID)";
 PROVISIONING_PROFILE_SPECIFIER = "MyApp AppStore Profile";
-```
-
-### Per-Configuration Signing
-
-Common pattern: automatic for Debug, manual for Release.
-
-```
-// In Xcode build settings or xcodebuild:
-CODE_SIGN_STYLE[config=Debug] = Automatic;
-CODE_SIGN_STYLE[config=Release] = Manual;
 ```
 
 ### xcodebuild Overrides
@@ -193,33 +127,6 @@ xcodebuild archive \
 ---
 
 ## 5. Capabilities and Entitlements
-
-### Entitlements File
-
-An `.entitlements` file is a property list declaring what your app is allowed to do. Example from CodeEdit:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>com.apple.security.app-sandbox</key>
-    <true/>
-    <key>com.apple.security.files.user-selected.read-write</key>
-    <true/>
-    <key>com.apple.security.files.bookmarks.app-scope</key>
-    <true/>
-    <key>com.apple.security.network.client</key>
-    <true/>
-    <key>com.apple.security.application-groups</key>
-    <array>
-        <string>app.codeedit.CodeEdit.shared</string>
-        <string>$(TeamIdentifierPrefix)</string>
-    </array>
-</dict>
-</plist>
-```
 
 ### Capability Registration
 
@@ -270,7 +177,6 @@ Extensions get their own entitlements file. The Finder Sync, Share, or Widget ex
 |-----------|--------|----------------------|
 | Code injection | No loading unsigned dylibs | `com.apple.security.cs.disable-library-validation` |
 | DYLD env vars | DYLD_* ignored | `com.apple.security.cs.allow-dyld-environment-variables` |
-| Debugging | Can't attach debugger | `com.apple.security.cs.allow-unsigned-executable-memory` |
 | JIT | No writable+executable memory | `com.apple.security.cs.allow-jit` |
 | Unsigned memory | No unsigned executable pages | `com.apple.security.cs.allow-unsigned-executable-memory` |
 
@@ -297,7 +203,7 @@ codesign --sign "Developer ID Application: Company (TEAMID)" \
 
 ### Framework and Embedded Binary Signing
 
-When distributing outside the App Store, you must re-sign embedded frameworks with Hardened Runtime. CodeEdit's CI pipeline demonstrates this:
+When distributing outside the App Store, you must re-sign embedded frameworks with Hardened Runtime. Sign inside-out:
 
 ```bash
 # Sign each embedded framework individually
@@ -383,38 +289,7 @@ Match encrypts everything with a passphrase. All team members and CI use the sam
 
 ---
 
-## 8. Team Management
-
-### Individual vs Organization
-
-| Feature | Individual ($99/yr) | Organization ($99/yr) | Enterprise ($299/yr) |
-|---------|--------------------|-----------------------|---------------------|
-| App Store distribution | Yes | Yes | No |
-| TestFlight | Yes | Yes | No |
-| In-house distribution | No | No | Yes |
-| Team members | 1 | Unlimited | Unlimited |
-| Developer ID (macOS) | Yes | Yes | No |
-| Custom apps (Apple Business Manager) | No | Yes | Yes |
-
-### Roles
-
-| Role | Certificates | Profiles | App Store Connect | Users |
-|------|-------------|----------|-------------------|-------|
-| Account Holder | Full | Full | Full | Full |
-| Admin | Full | Full | Full | Manage |
-| App Manager | No | No | Full | No |
-| Developer | Development only | Development only | Limited | No |
-
-### Certificate Limits
-
-- **3** Apple Distribution certificates per team
-- **3** Developer ID Application certificates per team
-- Development certificates: one per team member
-- Revoking a distribution certificate affects all team members
-
----
-
-## 9. Common Signing Errors and Fixes
+## 8. Common Signing Errors and Fixes
 
 ### "No signing certificate found"
 

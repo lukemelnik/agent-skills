@@ -1,6 +1,6 @@
 # Screenshot Pipeline (xcodebuild -> AXe -> frame -> asc)
 
-Agent-driven screenshot workflow: build and launch with Xcode CLI, drive UI with AXe, upload with `asc`.
+Agent-driven screenshot workflow: build and launch with Xcode CLI, drive UI with AXe, upload with `asc`. Creative production (benefits, captions, composed panels) belongs to `aso-screenshots`; this file covers capture, framing, sizes, and upload.
 
 ## Defaults
 - Settings file: `.asc/shots.settings.json`
@@ -157,10 +157,7 @@ for LOCALE in "${!LOCALE_UDID[@]}"; do
 done
 ```
 
-## Agent behavior
-- Confirm exact flags with `--help` — screenshot commands are evolving quickly.
-- Default to JSON for machine steps.
-- Check `asc screenshots list-frame-devices --output json` before selecting a frame device.
-- Ensure screenshot files exist before upload.
-- Screenshot-local automation is experimental — call it out in user-facing notes.
+## Notes
+- Confirm exact flags with `--help`; screenshot commands change quickly. Screenshot-local automation is experimental; say so in user-facing notes.
+- Check `asc screenshots list-frame-devices --output json` before choosing a frame device.
 - If framing fails, re-install pinned Koubou: `pip install koubou==0.14.0`.

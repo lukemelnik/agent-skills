@@ -19,7 +19,7 @@ Always decide whether the app should have a questionnaire flow at all. Many iOS 
 ## Workflow
 
 1. Inspect the app before proposing screens.
-   - Read `CLAUDE.md`, README, App Store copy, and any existing onboarding or paywall code.
+   - Read the project agent instructions (AGENTS.md or equivalent), README, App Store copy, and any existing onboarding or paywall code.
    - Inspect the app entry point, first-launch gating, and the first real user action.
    - Inspect `Info.plist`, entitlements, and permission request sites in code.
 2. Decide whether questionnaire onboarding is appropriate.

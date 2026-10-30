@@ -67,14 +67,10 @@ After completing all categories, provide:
 3. **Warnings**: list every WARNING item — these should be manually verified.
 4. **Action Plan**: numbered list of concrete fixes, ordered by priority (blockers first).
 
-If any items are FAIL, read `references/rejection-fixes.md` for the relevant guideline and include the specific fix guidance in the action plan.
+For each FAIL, include the fix from the checklist item in the action plan.
 
 ## References
 
 ### `references/checklist.md`
 
-The complete audit checklist. Read this to execute the audit — it contains every check item organized by App Store Review Guideline category, with specific files/patterns to search for and fix instructions.
-
-### `references/rejection-fixes.md`
-
-Detailed fix guides for the top 10 most common rejection reasons. Read this when a checklist item fails to get the exact guideline text, code-level fixes, and appeal guidance.
+The complete audit checklist. Read this to execute the audit — every check item by guideline category, with patterns to search for and fixes.

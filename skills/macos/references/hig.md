@@ -17,10 +17,8 @@
 13. [Printing](#13-printing) — MEDIUM
 14. [Services Menu](#14-services-menu) — MEDIUM
 15. [Table View](#15-table-view) — HIGH
-16. [Visual Design](#16-visual-design) — HIGH
-17. [Accessibility](#17-accessibility) — HIGH
-18. [Anti-Patterns](#anti-patterns)
-19. [Evaluation Checklist](#evaluation-checklist)
+16. [Anti-Patterns](#anti-patterns)
+17. [Evaluation Checklist](#evaluation-checklist)
 
 ---
 
@@ -68,29 +66,7 @@ editMenu.addItem(.separator())
 
 ### 1.2 — Keyboard Shortcuts for Common Actions
 
-Standard actions must use the conventional shortcuts below. Frequently-used app-specific actions should also have shortcuts. Rarely-used or context-dependent items (e.g., dynamic submenus, one-time setup actions) don't need shortcuts:
-
-| Action | Shortcut |
-|--------|----------|
-| New | Cmd+N |
-| Open | Cmd+O |
-| Close | Cmd+W |
-| Save | Cmd+S |
-| Save As | Cmd+Shift+S |
-| Print | Cmd+P |
-| Undo | Cmd+Z |
-| Redo | Cmd+Shift+Z |
-| Cut / Copy / Paste | Cmd+X / C / V |
-| Select All | Cmd+A |
-| Find | Cmd+F |
-| Find Next / Previous | Cmd+G / Cmd+Shift+G |
-| Preferences/Settings | Cmd+, |
-| Hide App | Cmd+H |
-| Quit | Cmd+Q |
-| Minimize | Cmd+M |
-| Fullscreen | Fn+F (Globe+F) or Cmd+Ctrl+F |
-
-Custom shortcuts: Cmd+letter for primary, Cmd+Shift for variants, Cmd+Option for alternatives, Cmd+Ctrl for window/view controls.
+Use the standard system shortcuts for standard actions (Cmd+N/O/W/S, Cmd+, Settings, etc.). Custom: Cmd+letter primary, Cmd+Shift variants, Cmd+Option alternatives, Cmd+Ctrl window/view controls. Rarely-used items don't need shortcuts.
 
 ### 1.3 — Dynamic Menu Updates
 
@@ -152,33 +128,11 @@ struct MyApp: App {
 ## 2. Windows
 **CRITICAL**
 
-### 2.1 — Resizable with Sensible Minimums
+### 2.1 — Windows
 
-Main document/content windows should generally be freely resizable. Only cap the size when the content has real layout constraints; utility panels and tightly scoped inspectors can be intentionally smaller or fixed.
+Main windows should be freely resizable (`.frame(minWidth:minHeight:)` + `.defaultSize`); SwiftUI provides fullscreen and frame autosave for `WindowGroup`. Support multiple windows unless the app is a single-purpose utility.
 
-```swift
-// SwiftUI
-WindowGroup {
-    ContentView()
-        .frame(minWidth: 600, minHeight: 400)
-}
-.defaultSize(width: 900, height: 600)
-
-// AppKit
-window.minSize = NSSize(width: 600, height: 400)
-```
-
-### 2.2 — Support Fullscreen and Split View
-
-```swift
-// AppKit
-window.collectionBehavior.insert(.fullScreenPrimary)
-// SwiftUI gets fullscreen automatically
-```
-
-### 2.3 — Multiple Windows
-
-Support multiple windows unless single-purpose utility. Use `WindowGroup` or `DocumentGroup`.
+For scene/window modifiers (toolbar and title styling, drag regions, restoration, placement, borderless windows), see the `window-management` skill.
 
 ### 2.4 — Title Bar Shows Document Info
 
@@ -188,17 +142,6 @@ Show document name, support proxy icon, show edited state, support title bar ren
 window.representedURL = document.fileURL
 window.title = document.displayName
 window.isDocumentEdited = document.hasUnsavedChanges
-```
-
-### 2.5 — Remember Window State
-
-```swift
-// AppKit
-window.setFrameAutosaveName("MainWindow")
-
-// SwiftUI — automatic with WindowGroup
-WindowGroup(id: "main") { ContentView() }
-    .defaultPosition(.center)
 ```
 
 ### 2.6 — Traffic Light Buttons
@@ -346,37 +289,7 @@ Label("Inbox", systemImage: "tray")
 ## 5. Keyboard
 **CRITICAL**
 
-### 5.1 — Keyboard Shortcuts for Common Actions
-
-Frequently-used actions should have keyboard equivalents. Standard system shortcuts are mandatory. Not every menu item or button needs a shortcut — prioritize actions users perform repeatedly.
-
-| Modifier | Usage |
-|----------|-------|
-| Cmd+letter | Primary actions |
-| Cmd+Shift+letter | Variant of primary |
-| Cmd+Option+letter | Alternative mode |
-| Cmd+Ctrl+letter | Window/view controls |
-| Ctrl+letter | Emacs-style text nav |
-
-### 5.2 — Full Keyboard Navigation
-
-Tab between controls, arrow keys within lists/grids/tables, Shift+Tab for reverse.
-
-```swift
-struct ContentView: View {
-    @FocusState private var focusedField: Field?
-
-    var body: some View {
-        VStack {
-            TextField("Name", text: $name)
-                .focused($focusedField, equals: .name)
-            TextField("Email", text: $email)
-                .focused($focusedField, equals: .email)
-        }
-        .onSubmit { advanceFocus() }
-    }
-}
-```
+Standard shortcuts are mandatory; see 1.2 for modifier conventions. Support Tab / Shift+Tab and arrow-key navigation within lists, grids and tables (`@FocusState` for field order).
 
 ### 5.3 — Escape to Cancel or Close
 
@@ -399,10 +312,6 @@ Button("Cancel") { cancel() }
     .keyboardShortcut(.cancelAction)   // Esc
 ```
 
-### 5.5 — Delete for Removal
-
-Delete key removes selected items. Cmd+Delete for Trash. Always support Cmd+Z to undo.
-
 ### 5.6 — Space for Quick Look
 
 ```swift
@@ -413,10 +322,6 @@ List(selection: $selection) {
 }
 .quickLookPreview($quickLookItem, in: fileURLs)  // quickLookItem: Binding<URL?>, fileURLs: [URL]
 ```
-
-### 5.7 — Arrow Key Navigation
-
-Up/Down move selection. Left/Right collapse/expand. Cmd+Up/Down goes to beginning/end.
 
 ---
 
@@ -996,113 +901,6 @@ Table(of: Item.self) {
 
 ---
 
-## 16. Visual Design
-**HIGH**
-
-### 16.1 — System Fonts
-
-SF Pro for UI, SF Mono for code. Semantic styles only.
-
-```swift
-Text("Title").font(.title)
-Text("Headline").font(.headline)
-Text("Body").font(.body)
-Text("let x = 42").font(.system(.body, design: .monospaced))
-```
-
-### 16.2 — Vibrancy and Materials
-
-```swift
-// SwiftUI
-List { ... }
-    .listStyle(.sidebar)  // Automatic vibrancy
-
-// AppKit
-let visualEffect = NSVisualEffectView()
-visualEffect.material = .sidebar
-visualEffect.blendingMode = .behindWindow
-visualEffect.state = .followsWindowActiveState
-```
-
-### 16.3 — System Accent Color
-
-Never override with brand color on standard controls.
-
-```swift
-Button("Action") { doSomething() }
-    .buttonStyle(.borderedProminent)  // Uses system accent
-```
-
-### 16.4 — Full Dark Mode Support
-
-Use semantic colors. Never `Color.white` or `Color.black` for UI surfaces.
-
-```swift
-Text("Title").foregroundStyle(.primary)
-Text("Subtitle").foregroundStyle(.secondary)
-
-RoundedRectangle(cornerRadius: 8)
-    .fill(Color(nsColor: .controlBackgroundColor))
-```
-
-### 16.5 — Respect Reduce Transparency
-
-```swift
-@Environment(\.accessibilityReduceTransparency) var reduceTransparency
-
-var body: some View {
-    if reduceTransparency {
-        Color(nsColor: .windowBackgroundColor)
-    } else {
-        // .background(.ultraThinMaterial) is the native SwiftUI approach.
-        // VisualEffectView is not built-in — it requires a custom
-        // NSViewRepresentable wrapper around NSVisualEffectView.
-        Color.clear.background(.ultraThinMaterial)
-    }
-}
-```
-
-### 16.6 — Spacing
-
-20pt window margins, 8pt between related controls, 12pt between form controls, 20pt between groups. Align to 8pt grid.
-
----
-
-## 17. Accessibility
-**HIGH**
-
-### 17.1 — VoiceOver
-
-Labels, values, hints on all controls. Test with Cmd+F5.
-
-```swift
-ColorSwatch(color: selectedColor)
-    .accessibilityLabel("Selected color")
-    .accessibilityValue(selectedColor.name)
-    .accessibilityHint("Opens color picker")
-    .accessibilityAddTraits(.isButton)
-```
-
-### 17.2 — Keyboard Accessibility
-
-Every element reachable via keyboard. `.focusable()` and `@FocusState`. No keyboard traps.
-
-### 17.3 — High Contrast
-
-Test with Increase Contrast. Semantic system colors adapt automatically. Add asset catalog variants for custom colors.
-
-### 17.4 — Reduce Motion
-
-```swift
-@Environment(\.accessibilityReduceMotion) var reduceMotion
-
-withAnimation(reduceMotion ? nil : .spring()) {
-    isExpanded.toggle()
-}
-```
-
----
-
 ## Anti-Patterns
 
 1. **No menu bar** — every Mac app needs one.
@@ -1157,7 +955,6 @@ withAnimation(reduceMotion ? nil : .spring()) {
 - [ ] Dark Mode fully supported
 - [ ] System accent color respected
 - [ ] Accessibility: VoiceOver, reduce transparency, reduce motion, high contrast
-- [ ] Consistent spacing on 8pt grid
 
 ### System
 - [ ] Dock menu with quick actions

@@ -11,7 +11,7 @@ Use this workflow to produce App Store-ready iPhone screenshot panels. The canon
 benefits -> real simulator screenshots -> one image-gen portrait per panel -> normalize -> QA -> final/
 ```
 
-The current image model handles headline text and device-framed portrait layouts well enough that the best result comes from generating each final portrait panel individually while treating real app screenshots as strict UI references.
+Generate each final portrait panel individually, treating real app screenshots as strict UI references.
 
 ## State File
 
@@ -30,12 +30,7 @@ Summary:
 3. Draft 3-5 headline pairs in the shape `ACTION VERB` + `SPECIFIC OUTCOME`.
 4. Iterate with the user until they approve the exact headline text.
 
-Rules:
-
-- Benefits must describe what the user gets, not implementation details.
-- Be specific and concrete.
-- Avoid vague claims like “practice smarter” unless the app genuinely supports them.
-- Keep headline text short enough for a portrait screenshot.
+Headlines must be short enough for a portrait screenshot.
 
 ## Phase 2: Raw Screenshot Capture
 
@@ -104,7 +99,7 @@ For each panel:
    - a realistic iPhone device frame
    - a polished marketing background
    - no fake UI and no altered app content
-4. Copy the generated image from `$CODEX_HOME/generated_images/...` into `screenshots/<version>/final/`.
+4. Copy the generated image from the image-generation tool's output location into `screenshots/<version>/final/`.
 5. Normalize it to `1290x2796`.
 
 Prompt template:

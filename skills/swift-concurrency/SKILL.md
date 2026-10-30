@@ -7,7 +7,7 @@ description: Swift Concurrency review, writing, and remediation for Swift 6.2+. 
 
 ## Overview
 
-Review, write, and fix Swift Concurrency code in Swift 6.2+ codebases. Covers actor isolation, Sendable safety, structured/unstructured concurrency, async streams, legacy migration, and modern concurrency patterns.
+Review, write, and fix Swift Concurrency code in Swift 6.2+ codebases. 
 
 ## Which references to load
 
@@ -17,13 +17,13 @@ Load only the references relevant to the task. Do not load all files for every t
 |------|----------------------|
 | **Review existing concurrency code** | `bug-patterns.md`, `actors.md`, `diagnostics.md` |
 | **Fix compiler errors** | `diagnostics.md`, `swift-6-2-concurrency.md`, `bridging.md` |
-| **Write new concurrent code** | `structured.md`, `actors.md`, `async-streams.md` |
+| **Write new concurrent code** | `actors.md`, `bug-patterns.md` |
 | **Adopt Swift 6.2 / approachable concurrency** | `swift-6-2-concurrency.md`, `approachable-concurrency.md` |
-| **Migrate from GCD/Combine/delegates** | `interop.md`, `bridging.md`, `async-streams.md` |
-| **SwiftUI concurrency** | `swiftui-concurrency.md`, `cancellation.md`, `unstructured.md` |
-| **Background/offloading work** | `swift-6-2-concurrency.md`, `structured.md`, `unstructured.md` |
+| **Migrate from GCD/Combine/delegates** | `interop.md`, `bridging.md` |
+| **SwiftUI concurrency** | `swiftui-concurrency.md`, `cancellation.md` |
+| **Background/offloading work** | `swift-6-2-concurrency.md`, `bug-patterns.md` |
 | **Write or fix concurrency tests** | `testing.md`, `actors.md` |
-| **Task lifecycle and cancellation** | `cancellation.md`, `unstructured.md`, `structured.md` |
+| **Task lifecycle and cancellation** | `cancellation.md`, `bug-patterns.md` |
 
 ## Workflow
 
@@ -110,15 +110,12 @@ To offload:
 ### Core concepts
 - `references/swift-6-2-concurrency.md` — Full walkthrough of Swift 6.2 changes with code examples.
 - `references/approachable-concurrency.md` — Quick guide for projects opted into approachable concurrency mode.
-- `references/actors.md` — Actor reentrancy, global actor inference, `isolated` parameters, runtime assertions.
+- `references/actors.md` — Reentrancy, global actor inference, `isolated deinit`, runtime assertions.
 
 ### Task management
-- `references/structured.md` — `async let` vs task groups, `withDiscardingTaskGroup`, concurrency limiting, error handling with partial results.
-- `references/unstructured.md` — `Task` vs `Task.detached`, `Task.immediate`, anti-patterns, cancellation management.
-- `references/cancellation.md` — Cooperative cancellation, propagation rules, `withTaskCancellationHandler`, SwiftUI `.task()` auto-cancellation.
+- `references/cancellation.md` — Cancellation gotchas, `withTaskCancellationHandler`, `.task()`.
 
 ### Async patterns
-- `references/async-streams.md` — `AsyncStream.makeStream(of:)`, continuation lifecycle, buffering policies, delegate wrapping.
 - `references/bridging.md` — Checked continuations (resume exactly once), token-based lifecycle for system resources (bridging callback APIs into structured concurrency with cancellation), `@unchecked Sendable`, `nonisolated(nonsending)`, runtime actor assertions.
 
 ### Migration and debugging

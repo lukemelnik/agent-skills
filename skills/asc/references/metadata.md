@@ -40,7 +40,7 @@ asc versions update --version-id "VERSION_ID" --release-type AFTER_APPROVAL
 
 ### TestFlight notes
 ```bash
-asc build-localizations create --build "BUILD_ID" --locale "en-US" --whats-new "TestFlight notes here"
+asc build-localizations create --build-id "BUILD_ID" --locale "en-US" --whats-new "TestFlight notes here"
 ```
 
 ## Legacy Metadata Format

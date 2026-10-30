@@ -4,8 +4,8 @@
 
 1. [When to Bridge](#when-to-bridge)
 2. [NSViewRepresentable](#nsviewrepresentable)
-3. [NSHostingView and NSHostingController](#nshosting)
-4. [State Management Across Frameworks](#state-management)
+3. [NSHostingView and NSHostingController](#nshostingview-and-nshostingcontroller)
+4. [State Management Across Frameworks](#state-management-across-frameworks)
 5. [MTKView Bridging (Metal)](#mtkview-bridging-metal)
 6. [WKWebView Bridging](#wkwebview-bridging)
 7. [NSOutlineView / Tree View Bridging](#nsoutlineview--tree-view-bridging)
@@ -20,6 +20,14 @@
 - SwiftUI lacks a native equivalent (e.g., `NSTextView` rich text, `MTKView` for Metal rendering)
 - You need fine-grained control over AppKit view lifecycle
 - Performance-critical views need AppKit (e.g., `NSTableView` with 100k+ rows)
+
+### Use NSViewControllerRepresentable when:
+- You need controller lifecycle, delegation, or presentation coordination
+
+### Use a narrow NSWindow / responder-chain bridge when:
+- You need window mutation, panels, menu validation, or first-responder control that scene modifiers don't cover
+
+Keep SwiftUI the source of truth; AppKit objects live inside the representable, coordinator, or bridge object. Don't store long-lived `NSView`/`NSWindow` instances globally.
 
 ### Use NSHostingView/Controller when:
 - Incrementally adopting SwiftUI in an existing AppKit app

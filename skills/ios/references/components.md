@@ -2,19 +2,14 @@
 
 ## Table of Contents
 
-1. [Navigation](#1-navigation)
-2. [Lists and Collections](#2-lists-and-collections)
-3. [Pagination and Infinite Scroll](#3-pagination-and-infinite-scroll)
-4. [Modern ScrollView APIs](#4-modern-scrollview-apis)
-5. [Forms and Input](#5-forms-and-input)
-6. [Sheets and Modals](#6-sheets-and-modals)
-7. [Search](#7-search)
-8. [Loading and Progress](#8-loading-and-progress)
-9. [Adaptive Layouts](#9-adaptive-layouts)
-10. [Animations](#10-animations)
-11. [Gestures](#11-gestures)
-12. [Feedback](#12-feedback)
-13. [Error and Empty States](#13-error-and-empty-states)
+1. Navigation
+2. Pagination and Infinite Scroll
+3. Modern ScrollView APIs
+4. Forms and Input
+5. Sheets and Modals
+6. Search
+7. Loading and Progress
+8. Error and Empty States
 
 ---
 
@@ -163,13 +158,6 @@ TabView {
     }
 }
 
-// Pre-iOS 18 tabItem syntax (iOS 17 and earlier)
-TabView {
-    HomeView()
-        .tabItem { Label("Home", systemImage: "house") }
-    SearchView()
-        .tabItem { Label("Search", systemImage: "magnifyingglass") }
-}
 ```
 
 ### Toolbar Placements
@@ -247,59 +235,7 @@ Key rules:
 
 ---
 
-## 2. Lists and Collections
-
-### Swipe Actions and Reordering
-
-```swift
-List {
-    ForEach(items) { item in
-        ItemRow(item: item)
-            .swipeActions(edge: .trailing) {
-                Button(role: .destructive) { delete(item) } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-                Button { archive(item) } label: {
-                    Label("Archive", systemImage: "archivebox")
-                }
-                .tint(.blue)
-            }
-    }
-    .onDelete(perform: deleteItems)
-    .onMove(perform: moveItems)
-}
-.listStyle(.insetGrouped)
-.refreshable { await loadItems() }
-```
-
-### Adaptive Grid
-
-```swift
-struct AdaptiveGridView: View {
-    @Environment(\.horizontalSizeClass) private var sizeClass
-
-    private var columns: [GridItem] {
-        sizeClass == .regular
-            ? [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
-            : [GridItem(.adaptive(minimum: 150, maximum: 200))]
-    }
-
-    var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 16) {
-                ForEach(items) { item in
-                    ItemCard(item: item)
-                }
-            }
-            .padding()
-        }
-    }
-}
-```
-
----
-
-## 3. Pagination and Infinite Scroll
+## 2. Pagination and Infinite Scroll
 
 ### Paging State and Fetcher Protocol
 
@@ -401,7 +337,7 @@ struct FeedView<Fetcher: StatusesFetcher>: View {
 
 ---
 
-## 4. Modern ScrollView APIs
+## 3. Modern ScrollView APIs
 
 ### scrollPosition(id:) -- Programmatic Scroll Tracking
 
@@ -496,56 +432,7 @@ ScrollView {
 
 ---
 
-## 5. Forms and Input
-
-### TextField with Vertical Axis
-
-Prefer `TextField(axis: .vertical)` over `TextEditor` for most multiline input — it supports placeholder text and integrates better with forms:
-
-```swift
-// Good — placeholder, auto-grows, works in Form
-TextField("Notes", text: $notes, axis: .vertical)
-    .lineLimit(3...10)
-
-// Only use TextEditor for full-screen editing or rich text
-```
-
-### Slider in Forms
-
-Wrap `Slider` in `LabeledContent` inside `Form` for proper title/control layout:
-
-```swift
-Form {
-    LabeledContent("Volume") {
-        Slider(value: $volume, in: 0...1)
-    }
-}
-```
-
-### Settings Form
-
-```swift
-Form {
-    Section("Account") {
-        TextField("Username", text: $username)
-            .textContentType(.username)
-            .autocorrectionDisabled()
-    }
-    Section("Preferences") {
-        Toggle("Notifications", isOn: $notificationsEnabled)
-        Toggle("Sound Effects", isOn: $soundEnabled)
-        Picker("Theme", selection: $selectedTheme) {
-            ForEach(Theme.allCases) { theme in
-                Text(theme.rawValue).tag(theme)
-            }
-        }
-    }
-    Section("About") {
-        LabeledContent("Version", value: "1.0.0")
-        Link("Privacy Policy", destination: URL(string: "https://example.com/privacy")!)
-    }
-}
-```
+## 4. Forms and Input
 
 ### Validated Input
 
@@ -673,7 +560,7 @@ struct LoginForm: View {
 
 ---
 
-## 6. Sheets and Modals
+## 5. Sheets and Modals
 
 ### Prefer `sheet(item:)` Over `sheet(isPresented:)` for Optional Data
 
@@ -748,7 +635,7 @@ struct EditorSheet: View {
 
 ---
 
-## 7. Search
+## 6. Search
 
 ### Searchable with Scopes
 
@@ -789,7 +676,7 @@ if filteredItems.isEmpty && !searchText.isEmpty {
 
 ---
 
-## 8. Loading and Progress
+## 7. Loading and Progress
 
 ### Skeleton Loading
 
@@ -865,219 +752,7 @@ struct AsyncContentView<T, Content: View>: View {
 }
 ```
 
-### AsyncImage
-
-```swift
-AsyncImage(url: imageURL) { phase in
-    switch phase {
-    case .empty: ProgressView()
-    case .success(let image):
-        image.resizable().aspectRatio(contentMode: .fill)
-    case .failure:
-        Image(systemName: "photo").foregroundStyle(.secondary)
-    @unknown default: EmptyView()
-    }
-}
-.frame(width: 100, height: 100)
-.clipShape(RoundedRectangle(cornerRadius: 8))
-```
-
----
-
-## 9. Adaptive Layouts
-
-### Size Class Adaptation
-
-```swift
-@Environment(\.horizontalSizeClass) private var sizeClass
-@Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-var body: some View {
-    if dynamicTypeSize.isAccessibilitySize {
-        VStack(alignment: .leading, spacing: 12) {
-            leadingContent
-            trailingContent
-        }
-    } else {
-        HStack {
-            leadingContent
-            Spacer()
-            trailingContent
-        }
-    }
-}
-```
-
----
-
-## 10. Animations
-
-### Spring Animations
-
-```swift
-withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-    isExpanded.toggle()
-}
-```
-
-### Custom Transitions
-
-```swift
-extension AnyTransition {
-    static var slideAndFade: AnyTransition {
-        .asymmetric(
-            insertion: .move(edge: .trailing).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
-        )
-    }
-}
-```
-
-### Phase Animator (iOS 17+)
-
-```swift
-// Triggered animation — animates through phases each time `trigger` changes
-@State private var tapped = false
-
-Button("Tap Me") { tapped.toggle() }
-    .buttonStyle(.borderedProminent)
-    .phaseAnimator([false, true], trigger: tapped) { content, phase in
-        content.scaleEffect(phase ? 1.05 : 1.0)
-    } animation: { _ in
-        .easeInOut(duration: 0.5)
-    }
-```
-
-### Chaining Animations
-
-Chain animations via `withAnimation` completion, not delays:
-
-```swift
-Button("Animate") {
-    withAnimation {
-        scale = 2
-    } completion: {
-        withAnimation {
-            scale = 1
-        }
-    }
-}
-```
-
-### Zoom Transition (iOS 18+)
-
-```swift
-struct ZoomTransitionExample: View {
-    @Namespace private var namespace
-    let items: [Item]
-
-    var body: some View {
-        NavigationStack {
-            List(items) { item in
-                NavigationLink(value: item) {
-                    ItemRow(item: item)
-                        .matchedTransitionSource(id: item.id, in: namespace)
-                }
-            }
-            .navigationDestination(for: Item.self) { item in
-                ItemDetailView(item: item)
-                    .navigationTransition(.zoom(sourceID: item.id, in: namespace))
-            }
-        }
-    }
-}
-```
-
----
-
-## 11. Gestures
-
-### Drag Gesture
-
-```swift
-struct DraggableCard: View {
-    @State private var offset = CGSize.zero
-    @State private var isDragging = false
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 16)
-            .fill(.blue)
-            .frame(width: 200, height: 150)
-            .offset(offset)
-            .scaleEffect(isDragging ? 1.05 : 1.0)
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        offset = value.translation
-                        isDragging = true
-                    }
-                    .onEnded { _ in
-                        withAnimation(.spring()) {
-                            offset = .zero
-                            isDragging = false
-                        }
-                    }
-            )
-    }
-}
-```
-
-### Pinch to Zoom
-
-```swift
-Image("photo")
-    .resizable()
-    .aspectRatio(contentMode: .fit)
-    .scaleEffect(scale)
-    .gesture(
-        MagnifyGesture()
-            .onChanged { value in scale = lastScale * value.magnification }
-            .onEnded { value in lastScale = scale }
-    )
-    .gesture(
-        TapGesture(count: 2)
-            .onEnded {
-                withAnimation { scale = 1.0; lastScale = 1.0 }
-            }
-    )
-```
-
----
-
-## 12. Feedback
-
-### Haptics
-
-Use the SwiftUI `.sensoryFeedback()` modifier (iOS 17+):
-
-```swift
-// On a button or interactive view
-Button("Complete") { completeTask() }
-    .sensoryFeedback(.success, trigger: taskCompleted)
-
-// Common feedback types: .impact, .selection, .success, .warning, .error
-Toggle("Enable", isOn: $isEnabled)
-    .sensoryFeedback(.selection, trigger: isEnabled)
-```
-
-### SF Symbols
-
-```swift
-// Multicolor rendering
-Image(systemName: "cloud.sun.fill")
-    .symbolRenderingMode(.multicolor)
-
-// Variable value (iOS 16+)
-Image(systemName: "speaker.wave.3.fill", variableValue: volume)
-
-// Symbol effect (iOS 17+)
-Image(systemName: "bell.fill")
-    .symbolEffect(.bounce, value: notificationCount)
-```
-
----
-
-## 13. Error and Empty States
+## 8. Error and Empty States
 
 ```swift
 // Error

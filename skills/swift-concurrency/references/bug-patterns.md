@@ -42,7 +42,7 @@ Two callers can both see `nil` and both download. The force unwrap crashes if a 
 
 **Failure:** `for item in items { Task { await process(item) } }` creates fire-and-forget tasks with no cancellation propagation, no error collection, and no way to await completion.
 
-**Fix:** Use `withTaskGroup` or `withThrowingTaskGroup`. See `structured.md`.
+**Fix:** Use `withTaskGroup` or `withThrowingTaskGroup`.
 
 
 ## 5. Swallowed errors in Task closures
@@ -75,7 +75,7 @@ Task {
 
 **Failure:** A high-throughput producer yields values faster than the consumer processes them. With the default `.unbounded` buffering policy, memory grows without limit.
 
-**Fix:** Specify `.bufferingNewest(n)` or `.bufferingOldest(n)`. See `async-streams.md`.
+**Fix:** Specify `.bufferingNewest(n)` or `.bufferingOldest(n)`. 
 
 
 ## 8. Ignoring `CancellationError` in catch blocks
@@ -100,3 +100,11 @@ do {
 **Failure:** A class is marked `@unchecked Sendable` to suppress compiler errors, but its mutable `var` properties have no synchronization. The data race still exists at runtime.
 
 **Fix:** Restructure to use value types, use an `actor`, or move state behind a lock (`Mutex`). Check whether Swift 6 region-based isolation makes `@unchecked Sendable` unnecessary. See `bridging.md`.
+
+
+## Additional gotchas
+
+- `Task {}` per loop iteration or in `onAppear`: use a task group / `.task {}`. `Task { try await ... }` silently swallows thrown errors; catch inside the task.
+- `Task {}` inherits the caller's actor; `Task.detached` does not (and drops priority). Prefer `@concurrent` for background work.
+- Task groups cancel all children when one throws; to keep partial results, catch inside each child and return a `Result`. Groups start all children eagerly, so cap concurrency with a sliding window (add the next task as each finishes). Use `withDiscardingTaskGroup` when results are unused.
+- `AsyncStream`: prefer `AsyncStream.makeStream(of:)`; the continuation must be finished or the consumer's `for await` hangs; clean up the source in `continuation.onTermination`. A stored-continuation delegate wrapper supports a single consumer only; single-shot callbacks should use `withCheckedContinuation`.

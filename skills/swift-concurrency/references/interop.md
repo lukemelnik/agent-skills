@@ -21,7 +21,7 @@ If the SDK already provides an async overload, use it directly instead of wrappi
 
 ## Delegates -> `AsyncStream`
 
-Delegates that deliver multiple values over time map to `AsyncStream`. Use `makeStream(of:)` and yield from delegate callbacks. See `async-streams.md` for the full pattern.
+Delegates that deliver multiple values over time map to `AsyncStream`. Use `makeStream(of:)` and yield from delegate callbacks.
 
 Single-shot delegates (one callback, then done) can use `withCheckedContinuation` instead.
 
@@ -69,7 +69,7 @@ self.result = await heavyComputation()
 
 A plain `async` helper does not offload CPU work by itself in Swift 6.2 — it stays on the caller's executor. If the goal is to leave the caller's executor, make that explicit with `@concurrent`.
 
-For parallel batch work, use `withTaskGroup`. See `structured.md`.
+For parallel batch work, use `withTaskGroup`.
 
 
 ## Serial `DispatchQueue` -> `actor`

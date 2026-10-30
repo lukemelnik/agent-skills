@@ -1,6 +1,6 @@
 ---
 name: macos
-description: Build native macOS apps with SwiftUI and AppKit. Covers app architecture (lifecycle, state management, DI, modules, Swift 6 concurrency), navigation and multi-window (document-based, router pattern, split views, focus tracking), Human Interface Guidelines (menu bars, windows, toolbars, sidebars, keyboard shortcuts, popovers, menu bar extras), AppKit-SwiftUI bridging (NSViewRepresentable, NSHostingView, state management), platform capabilities (sandboxing, security-scoped bookmarks, login items, background tasks, file monitoring), undo/redo architecture, accessibility, and desktop power-user patterns. Use when building, reviewing, or refactoring macOS desktop apps.
+description: Build native macOS apps with SwiftUI and AppKit: architecture, navigation and multi-window, HIG, AppKit bridging, sandboxing and platform capabilities, persistence, and testing. Use when building, reviewing, or refactoring macOS desktop apps.
 ---
 
 # macOS Development
@@ -11,16 +11,10 @@ Choose the narrowest skill that matches the request:
 
 - **General macOS architecture, UI, navigation, capabilities, persistence, or HIG questions**: stay in this `macos` skill and load the relevant reference.
 - **Protocol customization or object-lifetime bug**: load `references/architecture.md` for dispatch through abstractions, explicit ownership, and optimized-build diagnosis.
-- **Build, launch, logs, shell-first debugging, or Codex Run button setup**: use `build-run-debug`.
-- **Pure `Package.swift` workflow**: use `swiftpm-macos`.
-- **SwiftUI/AppKit boundary work**: use `appkit-interop`.
-- **Unified logging and runtime event verification**: use `telemetry`.
-- **macOS test failures**: use `test-triage`.
+- **Build, launch, logs, test failures, or shell-first debugging**: use `build-run-debug`.
 - **Window or scene chrome/placement behavior**: use `window-management`.
 - **Modern Liquid Glass adoption**: use `liquid-glass`.
-- **Codesigning, entitlements, Gatekeeper, or sandbox diagnosis**: use `signing-entitlements`.
-- **Packaging or notarization readiness**: use `packaging-notarization`.
-- **Archiving, shipping, App Store, or Developer ID distribution**: use `apple-release`.
+- **Signing, notarization, archiving, or distribution**: use `apple-release`.
 - **Actor isolation, Sendable, or Swift 6.2 concurrency issues**: use `swift-concurrency`.
 
 Prefer the focused skill when the user request is clearly narrower than broad macOS app development.
@@ -44,9 +38,9 @@ Prefer the focused skill when the user request is clearly narrower than broad ma
 
 ### `references/architecture.md`
 
-Read when setting up a new macOS app, choosing state management patterns, structuring modules/packages, implementing dependency injection, adopting Swift 6 concurrency, or deciding between AppKit vs SwiftUI vs hybrid.
+Read when setting up a new macOS app, choosing state management patterns, structuring modules/packages, implementing dependency injection, or deciding between AppKit vs SwiftUI vs hybrid.
 
-Covers: app lifecycle (@main + NSApplicationDelegate, async shutdown, ownership and optimized object lifetimes), protocol customization-point dispatch, state management (@Observable scene models, scoped environment state, @AppStorage workaround, optimistic updates, thread-safe state), DI (environment-based composition roots, typed dependencies), module structure (SPM packages vs feature folders), Swift 6 concurrency (MainActor isolation, OSAllocatedUnfairLock, actors, C library bridging queues), logging (category-based os.Logger, privacy annotations), pure decision engines (extracting complex branching into testable structs), service layer (Endpoint enum pattern), AppKit vs SwiftUI decision guide.
+Covers: app lifecycle (@main + NSApplicationDelegate, async shutdown, ownership and optimized object lifetimes), protocol customization-point dispatch, state management (@Observable scene models, scoped environment state, @AppStorage workaround, optimistic updates, thread-safe state), DI (environment-based composition roots, typed dependencies), module structure (SPM packages vs feature folders), pure decision engines (extracting complex branching into testable structs), service layer (Endpoint enum pattern), AppKit vs SwiftUI decision guide.
 
 ### `references/navigation.md`
 
@@ -58,7 +52,7 @@ Covers: window architecture decision guide, document-based apps (DocumentGroup v
 
 Read when building macOS UI, reviewing HIG compliance, implementing menus/toolbars/sidebars, adding keyboard shortcuts, or auditing before release.
 
-Covers: menu bar (CRITICAL), windows (CRITICAL), keyboard (CRITICAL), toolbars, sidebars, popovers/panels, menu bar extras, undo/redo, settings window, notifications, system integration, visual design, accessibility, anti-patterns, evaluation checklist.
+Covers: menu bar (CRITICAL), windows (CRITICAL), keyboard, toolbars, sidebars, popovers/panels, menu bar extras, undo/redo, settings window, notifications, system integration, anti-patterns, evaluation checklist.
 
 ### `references/appkit-bridge.md`
 
@@ -68,15 +62,15 @@ Covers: when to bridge (decision guide), NSViewRepresentable full protocol (coor
 
 ### `references/persistence.md`
 
-Read when implementing data storage, choosing a persistence strategy, setting up SwiftData or Core Data, storing credentials, caching data, using NSDocument for file-based apps, or integrating SQLite/GRDB.
+Read when implementing data storage, choosing a persistence strategy, caching data, using NSDocument for file-based apps, or integrating SQLite/GRDB.
 
-Covers: SwiftData (@Model, @Query, ModelContainer, relationships, predicates, CRUD), schema migration (VersionedSchema, SchemaMigrationPlan, lightweight vs custom), Core Data (NSPersistentContainer, NSFetchRequest, migration), @AppStorage (UserDefaults, custom RawRepresentable types, @Observable bridge, workspace-specific state), Keychain (Security framework, protocol-based access), Codable-to-file (JSON settings with throttled auto-save, actor-based caches, versioned settings with fixture-based migration testing), NSDocument (lifecycle, read/write, autosave, undo, NSDocumentController), security-scoped bookmarks integration (with SwiftData, UserDefaults), SQLite/GRDB (record pattern, encrypted databases, actor-based wrappers, migration system), decision guide.
+Covers: @Observable + UserDefaults bridge, Codable-to-file (JSON settings with throttled auto-save, actor-based caches, versioned settings with fixture-based migration testing), NSDocument (lifecycle, read/write, autosave, undo, NSDocumentController), security-scoped bookmarks integration (with SwiftData, UserDefaults), SQLite/GRDB (record pattern, encrypted databases, actor-based wrappers, migration system), decision guide.
 
 ### `references/testing.md`
 
-Read when writing unit tests, UI tests, setting up mocks, testing async code, adding snapshot tests, testing document-based apps, testing menus/windows, or reviewing test coverage.
+Read when writing macOS UI tests, mocking AppKit, adding snapshot tests, testing document-based apps, testing menus/windows, or reviewing test coverage.
 
-Covers: Swift Testing framework (@Test, #expect, @Suite, traits, parameterized tests), XCTest essentials (XCTestCase, assertions, expectations), testing @Observable ViewModels, async test patterns (polling waits, predicate expectations, indexing waits), protocol-based mocking (AppKit mocks, in-memory DB mocks, tracking mocks, simulating mocks), snapshot testing (NSHostingView, light/dark appearance), UI testing with XCUIApplication (launch helpers, element query organization, navigator interactions), menu testing (keyboard shortcuts, menu item state), multi-window testing (window lifecycle, tab close vs window close, different window types), testing AppKit bridges (NSViewRepresentable coordinators, snapshot verification), testing document-based apps (workspace lifecycle, file indexing, UTType detection), accessibility-based UI tests (identifiers, predicates, AppleScript), preview-based testing, scenario-based state machine testing (declarative time-stamped steps, dependency-injected time control).
+Covers: AppKit protocol mocks, snapshot testing (NSHostingView, light/dark appearance), UI testing with XCUIApplication (launch helpers, element query organization, navigator interactions), menu testing (keyboard shortcuts, menu item state), multi-window testing (window lifecycle, tab close vs window close, different window types), testing AppKit bridges (NSViewRepresentable coordinators, snapshot verification), testing document-based apps (workspace lifecycle, file indexing, UTType detection), accessibility-based UI tests (identifiers, predicates, AppleScript), scenario-based state machine testing (declarative time-stamped steps, dependency-injected time control).
 
 ### `references/capabilities.md`
 
