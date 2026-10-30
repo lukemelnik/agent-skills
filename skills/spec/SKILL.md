@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Create a structured GitHub Issue spec for dependency-aware agent implementation. Use when planning implementation work before /implement.
+description: Interview the user on open decisions, then create a structured GitHub Issue spec for dependency-aware agent implementation. Use when planning implementation work before /implement.
 ---
 
 # Create Spec
@@ -14,6 +14,18 @@ This skill owns the canonical final structure and publishing rules. Publish as a
 ## Research
 
 Before drafting, identify contracts, generated/registration files, integration points, failure modes, and project-specific gates.
+
+## Interview
+
+Resolve the decisions only the user can make before drafting. Keep notes in the conversation; there is no working document.
+
+- Answer anything the codebase can answer yourself. Ask the user only about intent, priorities, and trade-offs.
+- Ask one consequential question at a time, with your recommended answer and why. Batch only trivial clarifications.
+- Resolve dependent decisions before opening unrelated ones. Challenge assumptions when the requested mechanism may not match the desired outcome.
+- For non-trivial features, cover UI states (empty, loading, error), data flows, persistence, background work, affected features, permissions, failure modes, data integrity, and rollout. Ask only where the answer would change scope, architecture, contracts, or the task graph.
+- If discussion can't settle a UI decision or another material uncertainty, propose a prototype and get approval. An approved UI prototype becomes part of the spec (see Quality rules).
+- Stop asking once the remaining questions wouldn't change the spec; say so and offer to draft.
+- If the user says to wrap up ("enough", "just write it", "draft it"), stop immediately. Use your recommended answers for anything still open and list them as assumptions in `Decisions & Trade-offs` so they are visible in the issue.
 
 ## Canonical format
 
