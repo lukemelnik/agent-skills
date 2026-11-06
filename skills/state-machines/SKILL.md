@@ -30,7 +30,7 @@ Leave linear code, simple toggles, and derived values alone. Follow an existing 
 
 - Default to the language's sum type and a transition function: a TypeScript discriminated union, a Swift or Rust enum with associated values, or a Go sealed interface.
 - Use a flat status enum and a transition table when states carry no distinct data or the status is stored as a single column.
-- Use a library only when the project already has one, or when hierarchical or parallel states justify it. A new dependency needs user approval.
+- Use a library only when the project already has one, or when hierarchical or parallel states, or timers and async work that must be cancelled on state exit, justify it. A new dependency needs user approval.
 
 ```ts
 type Upload =
