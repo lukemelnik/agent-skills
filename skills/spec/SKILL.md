@@ -22,7 +22,7 @@ Resolve the decisions only the user can make before drafting. Keep notes in the 
 - Answer anything the codebase can answer yourself. Ask the user only about intent, priorities, and trade-offs.
 - Ask one consequential question at a time, with your recommended answer and why. Batch only trivial clarifications.
 - Resolve dependent decisions before opening unrelated ones. Challenge assumptions when the requested mechanism may not match the desired outcome.
-- For non-trivial features, cover UI states (empty, loading, error), data flows, persistence, background work, affected features, permissions, failure modes, data integrity, and rollout. Ask only where the answer would change scope, architecture, contracts, or the task graph.
+- For non-trivial features, cover UI states (empty, loading, error), data flows, persistence, background work, lifecycle states and transitions, affected features, permissions, failure modes, data integrity, and rollout. Ask only where the answer would change scope, architecture, contracts, or the task graph.
 - If discussion can't settle a UI decision or another material uncertainty, propose a prototype and get approval. An approved UI prototype becomes part of the spec (see Quality rules).
 - Stop asking once the remaining questions wouldn't change the spec; say so and offer to draft.
 - If the user says to wrap up ("enough", "just write it", "draft it"), stop immediately. Use your recommended answers for anything still open and list them as assumptions in `Decisions & Trade-offs` so they are visible in the issue.
@@ -55,7 +55,7 @@ Resolve the decisions only the user can make before drafting. Keep notes in the 
 - `path` — [pattern to reuse]
 
 ## Architecture
-[Solution shape, stable contracts, and shared integration points. For non-trivial cross-module behavior, include a compact current → proposed execution flow; at important boundaries, name input/output types and effect/failure ownership. List type fields only for new or changed shared contracts.]
+[Solution shape, stable contracts, and shared integration points. For non-trivial cross-module behavior, include a compact current → proposed execution flow; at important boundaries, name input/output types and effect/failure ownership. For behavior with a lifecycle, retries, or cancellation, include a state and transition table covering failure and terminal states. List type fields only for new or changed shared contracts.]
 
 ## Relevant Files
 - `path` — [why relevant]
