@@ -11,6 +11,8 @@ This skill owns the canonical final structure and publishing rules. Publish as a
 
 **Input:** $ARGUMENTS
 
+For GitHub backlog placement, parent/sub-issue links and resumable ownership, use [github-issues](../github-issues/SKILL.md). Preserve this skill's full implementation-spec structure.
+
 ## Research
 
 Before drafting, identify contracts, generated/registration files, integration points, failure modes, and project-specific gates.

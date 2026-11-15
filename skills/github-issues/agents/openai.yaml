@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Issues"
+  short_description: "Track work and resumable agent handoffs in GitHub issues"
+  default_prompt: "Use $github-issues to maintain a concise, resumable GitHub work tracker."

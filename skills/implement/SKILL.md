@@ -11,6 +11,8 @@ Execute a spec from plan to shipped code. The parent owns product judgment, spec
 
 **Input:** $ARGUMENTS — a spec path or GitHub issue number, optionally followed by `auto`. Without `auto`, stop for approval before shipping. With `auto`, ship without stopping unless a risk trigger fires (see Finish).
 
+For issue claims, checkpoints, parent/sub-issue status and verified closure, use [github-issues](../github-issues/SKILL.md). Read the complete selected spec before implementation.
+
 ## Initialize
 
 1. Read the entire file, or fetch an open issue with `gh issue view`. Read every Relevant File and named prior-art/test helper.
