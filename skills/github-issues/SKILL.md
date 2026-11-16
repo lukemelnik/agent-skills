@@ -17,7 +17,7 @@ gh issue list --state open --limit 100 --json number,title,labels,updatedAt,url
 
 Paginate when the result reaches the limit. Filter the returned metadata locally, or query one status label at a time. Repeated `--label` flags mean AND, so they do not find the union of `now` and `next`.
 
-Cache fetched state for the current session and refresh changed or claimed items at decision boundaries. Read a selected task's full spec and linked contracts before implementation; token savings must not omit its requirements. On resume, read its checkpoint and only the evidence/comments needed to resolve gaps. The latest comment is not necessarily the authoritative checkpoint.
+Cache fetched state for the current session and refresh changed or claimed items at decision boundaries. Read a selected task's full spec and linked contracts before implementation; token savings must not omit its requirements. On resume, read its latest `## Resume here` comment (see Resumable checkpoints) and only the evidence/comments needed to resolve gaps. The latest comment is not necessarily the authoritative checkpoint.
 
 ## Capture and relationships
 
@@ -41,16 +41,27 @@ For an explicitly approved parking-lot cleanup, keep a compact index of links, o
 
 ## Resumable checkpoints
 
-Keep a parent focused on its goal, important constraints, relationships and current coordination. A short `Resume here` block (roughly 10–15 lines) should identify:
+A checkpoint is a new issue comment whose body starts with the exact line `## Resume here` (roughly 10–15 lines). It identifies:
 
 - Checkpoint date and owner, with a retrievable thread link and branch/worktree when applicable.
 - Latest integrated commit and any unmerged backup commit/branch; distinguish local, pushed, deployed and released states.
 - Verified completed work and direct proof links, plus outstanding gates or limitations.
 - The next bounded action, blockers, shared-file ownership and material stop conditions.
 
-A child needs its own checkpoint when it has independent in-flight work. Record the claim before overlapping execution and clear or transfer it on handoff. A silent/lost conversation does not prove its work stopped; inspect the recorded branch/commit and coordinate before assigning the same write boundary again. Never overwrite uncommitted work to recover a thread.
+Post one at these events only, not on a timer: when claiming work, after each push to the default branch or deploy, immediately after any production operation, and before stopping with work unfinished. Each checkpoint stands alone; never append a running diary.
 
-Rewrite only the owned checkpoint section rather than appending a running diary to the body. Put significant decisions and evidence in comments, then link the relevant comment from the checkpoint. Preserve binding spec sections. Re-fetch immediately before a body edit; if someone else changed it, reconcile instead of submitting an old whole-body replacement. Do not replace an active owner's checkpoint during unrelated cleanup.
+Read only the latest checkpoint; never page through the whole thread to find it. The filter runs locally, so only that one comment enters context:
+
+```sh
+gh api repos/OWNER/REPO/issues/N/comments --paginate \
+  --jq '[.[] | select(.body | startswith("## Resume here"))] | last | .body'
+```
+
+Do not edit the issue body to record progress: that re-uploads the whole spec and can overwrite concurrent edits. Edit the body only for agreed scope or spec changes; re-fetch immediately before editing and reconcile if it changed.
+
+Reference the issue in every commit message (`Refs #N`, or `Refs: none` for unrelated commits) so the issue timeline lists landed work even when an agent stops before checkpointing.
+
+A child needs its own checkpoint when it has independent in-flight work. Record the claim before overlapping execution and clear or transfer it on handoff. A silent/lost conversation does not prove its work stopped; compare its latest checkpoint against commits referencing the issue and the recorded branch, and coordinate before assigning the same write boundary again. Never overwrite uncommitted work to recover a thread.
 
 ## Completion and cleanup
 
