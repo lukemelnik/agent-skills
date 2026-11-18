@@ -21,6 +21,8 @@ Do not polish an incomplete flow. If core states are missing or the interaction 
 - Containers are not added just to make spacing feel safe.
 - Cards are not nested. Use typography, spacing, dividers, or background tone.
 - Icons are optically centered and sized consistently.
+- Nested rounded shapes are concentric: outer radius = inner radius + the padding between them. Equal radii on parent and child make the inner shape look pinched.
+- Icon stroke matches the adjacent text weight (roughly 1.5px beside regular text, 2px beside semibold). Keep one icon set per surface; outline is the default and fill marks only the active state.
 
 ## Typography
 
@@ -28,7 +30,7 @@ Do not polish an incomplete flow. If core states are missing or the interaction 
 - Scale has clear hierarchy without unnecessary sizes.
 - Labels and metadata are legible, not decorative gray dust.
 - Numbers align when scanning matters.
-- No orphaned one-word lines in key marketing copy when avoidable.
+- No orphaned one-word lines in key marketing copy when avoidable (`text-wrap: balance` on headings, `pretty` on body text).
 
 ## Color and elevation
 
@@ -37,6 +39,7 @@ Do not polish an incomplete flow. If core states are missing or the interaction 
 - Status colors have consistent meaning.
 - Focus rings meet contrast and are visible against nearby surfaces.
 - Shadows/elevation match the system. Do not add default drop shadows to make cards feel finished.
+- Photos and artwork get a 1px outline at about 10% opacity so their edge holds against any surface: pure black in light mode, pure white in dark mode, never a tinted neutral that reads as dirt.
 - Dark mode and high-contrast modes are checked when the project supports them.
 
 ## Interaction details
