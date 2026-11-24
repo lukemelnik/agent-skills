@@ -63,7 +63,7 @@ Advance dependents only after their contract barrier is verified. Repeat until n
 
 - Replace blanket per-sprint full gates with targeted task, contract, and wave proof.
 - Run the repository's complete required gates once after all waves and integration are green. Preserve project-specific requirements, including required pre-commit gates and web/iOS UI verification.
-- Commit only at meaningful integrated green boundaries, never per worker. Workers never stage files; the parent stages explicit paths for each commit and checks `git diff --cached --stat` before committing. Follow the repository commit skill/policy.
+- Commit only at meaningful integrated green boundaries, never per worker. Workers never stage files; the parent stages explicit paths for each commit and checks `git diff --cached --stat` before committing. Follow the repository's commit and push rules (its `AGENTS.md`).
 - After each commit, back up the feature branch with a normal `git push -u origin <branch>`. Do not rebase until Finish, so backup pushes never need force.
 - If final gates fail, use the same fresh verification, ownership clustering, repair, and diagnosis rules; rerun failed checks before the final suite as needed.
 
